@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>라스트콜 라운지</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&family=Yellowtail&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl" tabindex="-1" aria-label="3D 재즈 라운지 바"></canvas>
+  <div id="bubbles"></div>
+
+  <header class="top">
+    <div class="brand"><span class="neon">Last Call</span><span class="brand-sub">라운지 · 프로토타입</span></div>
+    <div class="top-r">
+      <div class="stat"><span>오늘의 팁</span><b id="tips">₩0</b></div>
+      <button class="btn sm" id="btn-music" type="button" aria-pressed="false">음악 켜기</button>
+    </div>
+  </header>
+
+  <section class="dock" id="ui-guest">
+    <button class="btn lg primary" id="btn-make" type="button"><span id="make-label">칵테일 만들기</span><i class="badge" id="make-badge" hidden>0</i></button>
+    <button class="btn" id="btn-cheers" type="button">건배</button>
+    <p class="hint" id="guest-hint">손님 머리 위 말풍선을 눌러도 주문을 받을 수 있어요.</p>
+  </section>
+
+  <section id="ui-bar" hidden>
+    <details class="ticket" id="ticket" open>
+      <summary><span class="tk-no" id="tk-no">주문</span><b id="tk-name">-</b></summary>
+      <div class="tk-body">
+        <p class="tk-meta" id="tk-meta"></p>
+        <ul class="tk-lines" id="tk-lines"></ul>
+        <p class="tk-extra" id="tk-extra" hidden></p>
+      </div>
+    </details>
+    <button class="btn sm leave" id="btn-leave" type="button">손님석으로</button>
+
+    <div class="bar-bottom">
+      <ol class="steps" id="steps">
+        <li data-step="pour">붓기</li><li data-step="mix">섞기</li><li data-step="garnish">가니시</li><li data-step="serve">서빙</li>
+      </ol>
+      <div class="panel" id="panel-pour">
+        <div class="chips" id="chips"></div>
+        <div class="row">
+          <button class="btn sm" id="btn-reset" type="button">비우고 다시</button>
+          <button class="btn primary" id="btn-next-pour" type="button">다 넣었어요</button>
+        </div>
+      </div>
+      <div class="panel" id="panel-mix" hidden>
+        <p class="say" id="mix-say"></p>
+        <div class="mixmeter"><i id="mix-fill"></i></div>
+        <div class="row"><button class="btn primary" id="btn-strain" type="button">잔에 따르기</button></div>
+      </div>
+      <div class="panel" id="panel-garnish" hidden>
+        <p class="say">가니시를 골라 올려 주세요.</p>
+        <div class="chips" id="garnish-chips"></div>
+        <div class="row"><button class="btn primary" id="btn-serve" type="button">서빙하기</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="result" id="result" hidden>
+    <div class="rcard" role="dialog" aria-labelledby="r-title">
+      <p class="r-who" id="r-who"></p>
+      <h2 id="r-title"></h2>
+      <div class="stars" id="r-stars" role="img" aria-label="별점"></div>
+      <p class="r-say" id="r-say"></p>
+      <ul class="r-lines" id="r-lines"></ul>
+      <div class="r-tip">팁<b id="r-tip">₩0</b></div>
+      <div class="row">
+        <button class="btn sm" id="btn-r-leave" type="button">손님석으로</button>
+        <button class="btn primary" id="btn-r-next" type="button">다음 주문</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="loading">바를 여는 중…</div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
