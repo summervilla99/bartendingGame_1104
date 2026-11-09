@@ -1,5 +1,5 @@
 import {t,tr,getLang,setLang,onLang} from './i18n.js';
-import {TIMES,TIME_ORDER,FAM_ORDER,FAMILIES,MODES,STAGES,DIFFS,loadStory,isUnlocked,poolFor} from './session.js';
+import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,FAMILIES,MODES,STAGES,DIFFS,loadStory,isUnlocked,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
 import {NIGHTS} from './story/night1.js';
 import {loadTale} from './story/save.js';
@@ -51,7 +51,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
       +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
-      +'<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div>'
+      +(talePage?'':'<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div>')
       +'<h2>'+t('st_mode')+'</h2><div class="st-row st-modes">'+modes+'</div>'
       +(talePage?'<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div><p class="st-note">'+t('tale_note')+'</p>':cfg.mode==='story'?'<h2>'+t('st_stage')+'</h2><div class="st-row st-stages">'+stages+'</div>':'<h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>')
       +(talePage?'':'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t(cfg.mode==='practice'?'diff_note2':'diff_note3')+'</p>'+onlHtml)
@@ -65,13 +65,14 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
       const locked=roomLock&&roomLock();
       if(!locked&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
       if(cfg.mode==='tale'&&!locked)onl.mode='solo';
+      if(cfg.mode==='tale')cfg.time=TALE_TIME;
       err='';hide();onStart(Object.assign({},cfg),locked?{mode:'keep',code:'',name:onl.name}:Object.assign({},onl));return;
     }
     if(b.dataset.k&&!b.disabled){
       const card=root.querySelector('.st-card'),y=card?card.scrollTop:0;
       if(b.dataset.k==='online'){onl.mode=b.dataset.v;err='';}
       else if(b.dataset.k==='chairs')onl.chairs=+b.dataset.v;
-      else{cfg[b.dataset.k]=b.dataset.v;if(b.dataset.k==='time')onPreview(cfg.time);}
+      else{cfg[b.dataset.k]=b.dataset.v;if(b.dataset.k==='time')onPreview(cfg.time);if(b.dataset.k==='mode')onPreview(cfg.mode==='tale'?TALE_TIME:cfg.time);}
       render();const c2=root.querySelector('.st-card');if(c2)c2.scrollTop=y;
     }
   });
@@ -81,7 +82,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     else if(el.id==='st-code'){onl.code=normalizeCode(el.value);el.value=onl.code;}
   });
   onLang(()=>{if(open)render();});
-  function show(){cfg=Object.assign({},getCfg());open=true;root.hidden=false;render();onPreview(cfg.time);const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});}
+  function show(){cfg=Object.assign({},getCfg());open=true;root.hidden=false;render();onPreview(cfg.mode==='tale'?TALE_TIME:cfg.time);const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});}
   function hide(){open=false;root.hidden=true;}
   return {show,hide,isOpen:()=>open};
 }

@@ -1,4 +1,4 @@
-/* Night 1 of the tale: Seoyun (the lawyer) and Mr. Park (the department head). Script: docs/story/01-night1.md.
+/* Night 1 of the tale: Seoyun (a professional in a sharp suit) and Mr. Park (the department head). Script: docs/story/01-night1.md.
    Every text is {ko,en}. who: narr (narration) | me | a character id from CHARS. */
 export const CHARS={
   me:{name:{ko:'하랑',en:'Harang'},seat:null},
@@ -31,7 +31,8 @@ const NODES=[
   nar('o3','얼음을 세 번째로 채웠을 때, 문의 종이 울렸다.','I was refilling the ice for the third time when the door chime rang.','e_sy'),
 
   /* Seoyun */
-  {id:'e_sy',t:'enter',who:'seoyun',seat:'g2',next:'sy1'},
+  {id:'e_sy',t:'enter',who:'seoyun',seat:'g2',next:'sy0'},
+  nar('sy0','빈틈없는 검은 정장에 서류 가방. 척 보기에도 전문직의 분위기가 난다.','A flawless black suit and a briefcase. She gives off a professional air at a glance.','sy1'),
   say('sy1','seoyun','아무거나 주세요.','Anything, please.','sy2'),
   nar('sy2','“아무거나”는 바텐더에게 가장 어려운 주문이다.','“Anything” is the hardest order a bartender can get.','c1'),
   /* one fitting line (right), one so-so line, one absurd line: only the fitting one moves the night on */
@@ -43,7 +44,7 @@ const NODES=[
   nar('sy_x1n','싸늘한 침묵. 서윤은 휴대폰을 뒤집어 든 채 조용히 일어섰다.','A cold silence. Seoyun picked up her phone and quietly stood.','l_x_sy1'),
   {id:'l_x_sy1',t:'leave',who:'seoyun',next:'ov_sy'},
   say('sy_x2','seoyun','……민트초코요? (잠시) 농담이죠? ……농담이 아니네요.','…Mint-choc? (pause) You’re joking, right? …You’re not joking.','sy_x2n'),
-  nar('sy_x2n','그녀는 말없이 가방을 들었다. 변호사의 눈빛은 반대 심문을 포기한 눈빛이었다.','She took her bag without a word. It was the look of a lawyer giving up on cross-examination.','l_x_sy2'),
+  nar('sy_x2n','그녀는 말없이 가방을 들었다. 표정 하나 변하지 않는 게 오히려 더 무서웠다.','She took her bag without a word. Not a flicker on her face, which was somehow scarier.','l_x_sy2'),
   {id:'l_x_sy2',t:'leave',who:'seoyun',next:'ov_sy'},
   {id:'ov_sy',t:'over',retry:'e_sy',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
   say('sy_a1','seoyun','쓴 거. 근데 너무 독하진 않은 거요. 오늘은 취하러 온 게 아니라서.','Something bitter. But not too strong. I’m not here to get drunk tonight.','sy_a1n',{hearts:{seoyun:1}}),

@@ -12,6 +12,7 @@ export const TIMES={
     look:{hemi:[0x4a3a58,0x0a0608,.38],pend:[0xff9e5a,.85],key:[0xffb070,.95],bb:.75,lounge:.8,stage:.5,fog:[0x0c0a10,.03],bg:0x07050a,win:[.75,.8,1],neon:1.15,sky:'rain'}}
 };
 export const TIME_ORDER=['golden','prime','last'];
+export const TALE_TIME='prime';          // the tale always happens at the same hour
 
 /* Menu families = which recipes the guests order. null = everything. */
 export const FAMILIES={

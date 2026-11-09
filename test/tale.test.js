@@ -85,7 +85,7 @@ test('each choice has exactly one right answer; the others make the guest leave 
     let g=0; while(view(s2,G).kind==='say'&&g++<10) advance(s2,G);
     assert.equal(view(s2,G).kind,'over');
     assert.ok(drainEvents(s2).some(e=>e.k==='leave'&&e.who==='seoyun'));
-    retry(s2,G); assert.equal(s2.node,'sy1'); assert.equal(view(s2,G).kind,'say');
+    retry(s2,G); assert.equal(s2.node,'sy0'); assert.equal(view(s2,G).kind,'say');
   });
 });
 test('retry restores hearts from before the guest', () => {
