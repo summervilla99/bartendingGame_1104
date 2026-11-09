@@ -11,3 +11,11 @@
 npm install
 npm run dev
 ```
+
+## 온라인 방 (Supabase Realtime)
+
+`.env.example` 을 `.env.local` 로 복사해 Supabase 프로젝트의 URL 과 **publishable 키**를 넣으면 기기 간 방이 동작해요. 비워 두면 같은 브라우저의 탭끼리만 연결돼요(`?net=local` 로 강제할 수도 있어요). secret 키는 절대 넣지 마세요.
+
+```bash
+npm test   # 단위 테스트 (네트워크 필요 없음)
+```

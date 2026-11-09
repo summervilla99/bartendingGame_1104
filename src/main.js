@@ -757,7 +757,9 @@ function frame(now){
 }
 /* ───────────── online room: walking sync (transport is local-tab for now, Supabase later) ───────────── */
 const NAME_KEY='courte.name',LOOK_KEY='courte.look';
-const net=createRoom(createTransport(),{now:()=>performance.now(),onChange:()=>refreshRoomUI()});
+const transport=createTransport();
+const net=createRoom(transport,{now:()=>performance.now(),onChange:()=>refreshRoomUI()});
+if(transport.onStatus)transport.onStatus(st=>{if(st==='error')toast(t('net_error'),4500);refreshRoomUI();});
 const LOOKS=[
   {skin:0xe2b291,top:0x1f3b52,shirt:0xe9dfcc,tie:0xc9a066,pants:0x1c1c20,hair:0x17100c},
   {skin:0xc99372,top:0x5a1e1a,shirt:0xece2cf,pants:0x1e1a1c,hair:0x0e0806,hat:0x2b2522},
@@ -776,7 +778,7 @@ function myLook(){
 }
 function setRoomParam(code){const u=new URL(location.href);if(code)u.searchParams.set('room',code);else u.searchParams.delete('room');history.replaceState(null,'',u);}
 function refreshRoomUI(){
-  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;
+  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');
   if(net.active){chip.textContent=net.code+' · '+net.count;chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
 }
 function connectRoom(onl){

@@ -140,10 +140,11 @@ src/
 
 ## 온라인 방 규칙 (3단계: 걷기 동기화까지)
 
-- 전송은 `net/transport.js` 인터페이스 `{join(code), send(msg), on(h)->unsub, leave()}` 하나뿐이다. 지금 구현은 `BroadcastChannel`(같은 브라우저의 다른 탭끼리, 서버 없음). Supabase Realtime(방마다 broadcast 채널) 은 같은 인터페이스의 두 번째 구현으로 추가한다. 방/동기화 로직은 전송 방식을 몰라야 한다.
+- 전송은 `net/transport.js` 인터페이스 `{join(code), send(msg), on(h)->unsub, leave(), intervals?, status?, onStatus?}` 하나뿐이다. 구현 둘: `local`(BroadcastChannel, 같은 브라우저 탭끼리, 서버 없음)과 `supabase`(Realtime broadcast 채널 `courte-<CODE>`, 기기 간). `.env.local` 에 `VITE_SUPABASE_URL`/`VITE_SUPABASE_KEY` 가 있으면 supabase, 없거나 `?net=local` 이면 local. supabase-js 는 방에 들어갈 때만 동적 import(첫 로딩 번들에 안 들어감). 방/동기화 로직은 전송 방식을 몰라야 한다. supabase 전송은 메시지 쿼터를 아끼려고 전송 주기가 더 느리다(`intervals`).
 - 네트워크로 들어오는 메시지는 모두 신뢰하지 않는다. 반드시 `peers.parse` 를 거쳐 타입, 범위(방 안으로 clamp), 이름(길이/특수문자) 을 정리한 뒤 쓴다. 최대 8명, 5초 동안 조용하면 만료.
 - 메시지: `hello`(입장), `pos`(위치/방향/속도, 이동 중 ~10Hz, 정지 시 ~2Hz), `emote`(건배), `bye`. 방 클라이언트는 자기 시계(`now`) 하나만 쓴다.
 - 백그라운드 탭은 requestAnimationFrame 이 멈추므로 하트비트는 `setInterval` 로도 보낸다.
 - 방 코드 5자리(헷갈리는 글자 제외). 초대 링크는 `?room=CODE`. 닉네임/외형은 localStorage(`courte.name`, `courte.look`).
+- **키 규칙**: 클라이언트에는 **publishable(anon) 키만** 쓴다. secret / service_role 키는 코드, `.env*`, 커밋, 대화 어디에도 두지 않는다(서버 기능이 필요하면 Edge Function 비밀로 보관). `.env.local` 은 git 에서 제외, `.env.example` 만 커밋.
 - **아직 각자 진행하는 것**: NPC 손님, 주문, 제조, 점수. 월드 상태(`game/world.js`)를 방 전체가 공유하는 것이 4단계(주문 티켓/스테이션 동기화)다.
-- 테스트: `test/net.test.js`(메시지 검증, 만료, 두 클라이언트 BroadcastChannel 왕복). 실제 확인은 탭 두 개로 한다(`?debug` 에서 `window.__courte.net`).
+- 테스트: `test/net.test.js`(메시지 검증, 만료, 두 클라이언트 BroadcastChannel 왕복). 실서버 확인은 `SUPABASE_URL=… SUPABASE_KEY=<publishable> npm test`(`test/supabase.live.test.js`, 변수가 없으면 건너뜀). 실제 확인은 탭 두 개로 한다(`?debug` 에서 `window.__courte.net`).

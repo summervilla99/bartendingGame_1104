@@ -10,6 +10,7 @@ export function createRoom(transport,opts){
   const now=(opts&&opts.now)||Date.now,onChange=(opts&&opts.onChange)||(()=>{});
   const me={id:'p'+Math.random().toString(36).slice(2,10),name:'',c:0};
   const peers=createPeers();
+  const iv=transport.intervals||{moving:100,idle:500};
   let code=null,unsub=null,lastSent=0,state={x:0,z:0,yaw:0,sp:0};
 
   const send=(t,extra)=>transport.send(Object.assign({t,id:me.id,name:me.name,c:me.c,x:state.x,z:state.z,yaw:state.yaw,sp:state.sp},extra));
@@ -38,7 +39,7 @@ export function createRoom(transport,opts){
   function update(s){
     if(!code)return;
     const t=now();state=s;
-    if(t-lastSent>=(s.sp>.02?100:500)){send('pos');lastSent=t;}
+    if(t-lastSent>=(s.sp>.02?iv.moving:iv.idle)){send('pos');lastSent=t;}
     if(expire(peers,t).length)onChange();
   }
   function emote(){if(code)send('emote',{e:'cheers'});}
