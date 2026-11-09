@@ -1,13 +1,13 @@
 import {t,tr,getLang,setLang,onLang} from './i18n.js';
 import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,DIFFS,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
-import {NIGHTS} from './story/nights.js';
-import {loadTale,isNightOpen} from './story/save.js';
+import {NIGHTS,ENDINGS} from './story/nights.js';
+import {loadTale,isNightOpen,resetTale} from './story/save.js';
 
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
 export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
-  let cfg=null,open=false,err='';
+  let cfg=null,open=false,err='',view='main',confirmReset=false;
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -36,7 +36,11 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     const hourMenu='<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div><h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>';
     let body='';
     if(kind==='tale'){
-      body='<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div><p class="st-note">'+t('tale_note')+'</p>';
+const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
+      body='<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div><p class="st-note">'+t('tale_note')+'</p>'
+        +'<div class="st-row st-tools"><button type="button" class="btn sm" data-act="gallery">'+t('gal_btn',{n:seen,m:ENDINGS.length})+'</button>'
+        +(confirmReset?'<span class="st-confirm">'+t('tale_reset_q')+' <button type="button" class="btn sm" data-act="reset-yes">'+t('tale_reset_yes')+'</button> <button type="button" class="btn sm" data-act="reset-no">'+t('tale_reset_no')+'</button></span>'
+          :'<button type="button" class="btn sm" data-act="reset">'+t('tale_reset')+'</button>')+'</div>';
     }else if(kind==='practice'){
       body=hourMenu+'<p class="st-note">'+t('practice_note')+'</p>';
     }else{
@@ -51,6 +55,18 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
       }
       if(lock||onl.mode==='create')body+=hourMenu+'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t('diff_note3')+'</p>';
     }
+    if(view==='gallery'){
+      const tl=loadTale();
+      root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
+        +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
+        +'<h1 id="st-h">'+t('gal_title')+'</h1><p class="st-sub">'+t('gal_sub')+'</p>'
+        +'<div class="st-gallery">'+ENDINGS.map(e=>{
+          const ok=!!tl.endings[e.id];
+          return '<article class="st-end'+(ok?'':' locked')+'"><h3>'+(ok?tr(e.title):'???')+'</h3>'
+            +(ok?e.text.map(x=>'<p>'+esc(tr(x))+'</p>').join(''):'<p class="st-hint">'+t('gal_locked')+' · '+esc(tr(e.hint))+'</p>')+'</article>';}).join('')+'</div>'
+        +'<button class="btn lg primary st-go" id="st-back" type="button">'+t('gal_back')+'</button></div>';
+      return;
+    }
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
       +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
@@ -62,6 +78,15 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     if(!open)return;
     const b=e.target.closest('button');if(!b)return;
     if(b.id==='st-lang'){setLang(getLang()==='ko'?'en':'ko');return;}
+    if(b.id==='st-back'){view='main';render();return;}
+    if(b.dataset.act){
+      const a=b.dataset.act;
+      if(a==='gallery')view='gallery';
+      else if(a==='reset')confirmReset=true;
+      else if(a==='reset-no')confirmReset=false;
+      else if(a==='reset-yes'){resetTale();confirmReset=false;cfg.night=1;}
+      render();return;
+    }
     if(b.id==='st-go'){
       const locked=roomLock&&roomLock(),kind=kindOf();
       if(!locked&&kind==='room'&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
@@ -92,6 +117,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
   onLang(()=>{if(open)render();});
   function nextNight(){const tl=loadTale();const n=NIGHTS.find(x=>!tl.done[x.n]&&isNightOpen(x.n,tl));return n?n.n:NIGHTS[NIGHTS.length-1].n;}
   function show(){
+    view='main';confirmReset=false;
     cfg=Object.assign({},getCfg());cfg.night=nextNight();
     if(onl.mode!=='solo')cfg.mode='service';                       // joining or creating a room
     else if(cfg.mode!=='tale')cfg.mode='practice';                 // anything else is solo practice

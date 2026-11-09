@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newState,begin,view,advance,pick,served,drainEvents} from '../src/story/engine.js';
-import {NIGHTS,CHARS,FLAVOR} from '../src/story/nights.js';
+import {NIGHTS,CHARS,FLAVOR,ENDINGS} from '../src/story/nights.js';
 import {RECIPE_BY_ID} from '../src/game/bartending.js';
 import {SEATS} from '../src/game/seats.js';
 
@@ -114,4 +114,10 @@ test('the bond can reach the love ending by playing every right answer in nights
     hearts=st.hearts; flags=st.flags;
   });
   assert.equal(hearts.bond,5);
+});
+test('the ending gallery lists every ending of night 7 with text in both languages', () => {
+  assert.equal(ENDINGS.length,3);
+  const flags=new Set(Object.values(NIGHTS[6].graph).map(n=>n.flag).filter(f=>f&&f.startsWith('ending_')));
+  ENDINGS.forEach(e => { assert.ok(flags.has(e.id), e.id+' is set by the night'); assert.ok(bi(e.title)&&bi(e.hint)); assert.ok(e.text.length>=2); e.text.forEach(x=>assert.ok(bi(x))); });
+  assert.equal(new Set(ENDINGS.map(e=>e.id)).size,3);
 });
