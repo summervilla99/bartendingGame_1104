@@ -2,63 +2,81 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>라스트콜 라운지</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#140a08">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Courte Studio</title>
   <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&family=Yellowtail&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="app">
-  <canvas id="gl" tabindex="-1" aria-label="3D 재즈 라운지 바"></canvas>
+  <canvas id="gl" tabindex="-1" aria-label="Courte Studio 3D lounge"></canvas>
   <div id="bubbles"></div>
 
   <header class="top">
-    <div class="brand"><span class="neon">Last Call</span><span class="brand-sub">라운지 · 프로토타입</span></div>
+    <div class="brand"><span class="neon">Courte Studio</span><span class="brand-sub">BAR &amp; LOUNGE</span><div class="night" id="night-stat" hidden><span id="night-lb"></span><b id="night-prog"></b></div></div>
     <div class="top-r">
-      <div class="stat"><span>오늘의 팁</span><b id="tips">₩0</b></div>
-      <button class="btn sm" id="btn-music" type="button" aria-pressed="false">음악 켜기</button>
+      <button class="stat roomchip" id="room-chip" type="button" hidden></button>
+      <div class="stat"><span data-i18n="tips"></span><b id="tips">₩0</b></div>
+      <button class="ibtn" id="btn-settings" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="settings_aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </div>
   </header>
+  <div class="pop" id="settings" hidden>
+    <div class="srow"><span data-i18n="set_lang"></span><button class="btn sm" id="btn-lang" type="button" data-i18n-aria="lang_aria"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>
+    <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></div>
+    <div class="srow"><span data-i18n="set_music"></span><button class="btn sm" id="btn-music" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">♪</span><span class="lb" id="music-lb"></span></button></div>
+  </div>
 
-  <section class="dock" id="ui-guest">
-    <button class="btn lg primary" id="btn-make" type="button"><span id="make-label">칵테일 만들기</span><i class="badge" id="make-badge" hidden>0</i></button>
-    <button class="btn" id="btn-cheers" type="button">건배</button>
-    <p class="hint" id="guest-hint">손님 머리 위 말풍선을 눌러도 주문을 받을 수 있어요.</p>
+  <section id="ui-walk">
+    <ul class="orders" id="orders" data-i18n-aria="orders_aria"></ul>
+    <div class="joy" id="joy" aria-hidden="true"><i></i></div>
+    <div class="dock">
+      <button class="btn lg primary prompt" id="btn-act" type="button" hidden><kbd>E</kbd><span id="act-label"></span></button>
+      <button class="btn sm" id="btn-cheers" type="button" data-i18n="cheers"></button>
+      <button class="btn sm" id="btn-night" type="button" data-i18n="night_btn"></button>
+      <p class="hint" id="walk-hint" data-i18n-html="hint_kb"></p>
+    </div>
   </section>
 
   <section id="ui-bar" hidden>
     <details class="ticket" id="ticket" open>
-      <summary><span class="tk-no" id="tk-no">주문</span><b id="tk-name">-</b></summary>
+      <summary><span class="tk-no"><span id="tk-no">-</span><span class="tk-tag" id="tk-tag" data-i18n="tag_house" hidden></span></span><span class="tk-row"><b id="tk-name">-</b><span class="tk-method" id="tk-method"></span></span></summary>
       <div class="tk-body">
+        <p class="tk-why" id="tk-why"></p>
+        <div class="tk-know" id="tk-know"></div>
         <p class="tk-meta" id="tk-meta"></p>
+        <p class="tk-story" id="tk-story" hidden></p>
         <ul class="tk-lines" id="tk-lines"></ul>
         <p class="tk-extra" id="tk-extra" hidden></p>
       </div>
     </details>
-    <button class="btn sm leave" id="btn-leave" type="button">손님석으로</button>
+    <button class="btn sm leave" id="btn-leave" type="button" data-i18n="leave"></button>
 
     <div class="bar-bottom">
       <ol class="steps" id="steps">
-        <li data-step="pour">붓기</li><li data-step="mix">섞기</li><li data-step="garnish">가니시</li><li data-step="serve">서빙</li>
+        <li data-step="pour" data-i18n="step_pour"></li><li data-step="mix" data-i18n="step_mix"></li><li data-step="garnish" data-i18n="step_garnish"></li><li data-step="serve" data-i18n="step_serve"></li>
       </ol>
       <div class="panel" id="panel-pour">
+        <div class="tabs" id="tabs" role="tablist"></div>
         <div class="chips" id="chips"></div>
         <div class="row">
-          <button class="btn sm" id="btn-reset" type="button">비우고 다시</button>
-          <button class="btn primary" id="btn-next-pour" type="button">다 넣었어요</button>
+          <button class="btn sm" id="btn-reset" type="button" data-i18n="reset"></button>
+          <button class="btn primary" id="btn-next-pour" type="button" data-i18n="next_pour"></button>
         </div>
       </div>
       <div class="panel" id="panel-mix" hidden>
         <p class="say" id="mix-say"></p>
         <div class="mixmeter"><i id="mix-fill"></i></div>
-        <div class="row"><button class="btn primary" id="btn-strain" type="button">잔에 따르기</button></div>
+        <div class="row"><button class="btn primary" id="btn-strain" type="button" data-i18n="strain"></button></div>
       </div>
       <div class="panel" id="panel-garnish" hidden>
-        <p class="say">가니시를 골라 올려 주세요.</p>
+        <p class="say" data-i18n="garnish_say"></p>
         <div class="chips" id="garnish-chips"></div>
-        <div class="row"><button class="btn primary" id="btn-serve" type="button">서빙하기</button></div>
+        <div class="row"><button class="btn primary" id="btn-serve" type="button" data-i18n="serve"></button></div>
       </div>
     </div>
   </section>
@@ -67,19 +85,36 @@
     <div class="rcard" role="dialog" aria-labelledby="r-title">
       <p class="r-who" id="r-who"></p>
       <h2 id="r-title"></h2>
-      <div class="stars" id="r-stars" role="img" aria-label="별점"></div>
+      <div class="stars" id="r-stars" role="img"></div>
       <p class="r-say" id="r-say"></p>
       <ul class="r-lines" id="r-lines"></ul>
-      <div class="r-tip">팁<b id="r-tip">₩0</b></div>
+      <div class="r-tip"><span data-i18n="tip"></span><b id="r-tip">₩0</b></div>
       <div class="row">
-        <button class="btn sm" id="btn-r-leave" type="button">손님석으로</button>
-        <button class="btn primary" id="btn-r-next" type="button">다음 주문</button>
+        <button class="btn sm" id="btn-r-leave" type="button" data-i18n="leave"></button>
+        <button class="btn primary" id="btn-r-next" type="button" data-i18n="r_next"></button>
       </div>
     </div>
   </div>
 
+  <div class="result" id="summary" hidden>
+    <div class="rcard" role="dialog" aria-labelledby="sum-title">
+      <p class="r-who" id="sum-when"></p>
+      <h2 id="sum-title"></h2>
+      <div class="stars" id="sum-stars" role="img"></div>
+      <p class="r-say" id="sum-say"></p>
+      <ul class="r-lines" id="sum-lines"></ul>
+      <div class="r-tip"><span data-i18n="tip"></span><b id="sum-tip">₩0</b></div>
+      <div class="row">
+        <button class="btn sm" id="btn-sum-new" type="button" data-i18n="sum_new"></button>
+        <button class="btn primary" id="btn-sum-again" type="button" data-i18n="sum_again"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="start" hidden></div>
+
   <div id="toast" role="status" aria-live="polite"></div>
-  <div id="loading">바를 여는 중…</div>
+  <div id="loading" data-i18n="loading"></div>
 </div>
 
 <script type="module" src="/src/main.js"></script>
