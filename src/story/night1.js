@@ -2,9 +2,9 @@
    Every text is {ko,en}. who: narr (narration) | me | a character id from CHARS. */
 export const CHARS={
   me:{name:{ko:'하랑',en:'Harang'},seat:null},
-  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',
+  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
     look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
-  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486',
+  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486',prop:'soju',
     look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
 };
 /* One short flavour line per drink, shown on the recommendation buttons. */
@@ -32,7 +32,8 @@ const NODES=[
 
   /* Seoyun */
   {id:'e_sy',t:'enter',who:'seoyun',seat:'g2',next:'sy0'},
-  nar('sy0','빈틈없는 검은 정장에 서류 가방. 척 보기에도 전문직의 분위기가 난다.','A flawless black suit and a briefcase. She gives off a professional air at a glance.','sy1'),
+  nar('sy0','빈틈없는 검은 정장에 서류 가방. 척 보기에도 전문직의 분위기가 난다.','A flawless black suit and a briefcase. She gives off a professional air at a glance.','sy0b'),
+  nar('sy0b','그녀는 노트를 펼치고 볼펜을 딸깍 눌렀다. 술 마시러 온 사람치고는 너무 진지하다.','She opens a notebook and clicks her pen. Awfully serious for someone who came for a drink.','sy1'),
   say('sy1','seoyun','아무거나 주세요.','Anything, please.','sy2'),
   nar('sy2','“아무거나”는 바텐더에게 가장 어려운 주문이다.','“Anything” is the hardest order a bartender can get.','c1'),
   /* one fitting line (right), one so-so line, one absurd line: only the fitting one moves the night on */
@@ -77,7 +78,7 @@ const NODES=[
   /* Mr. Park */
   {id:'e_ts',t:'enter',who:'taesik',seat:'g1',next:'ts1'},
   say('ts1','taesik','여기 소주 파나요?','Do you sell soju here?','ts1n'),
-  nar('ts1n','지하 리스닝바에서 소주를 찾는 사람은 처음이다. 그것도 큰 소리로.','The first person ever to ask for soju in an underground listening bar. And loudly.','ts2'),
+  nar('ts1n','지하 리스닝바에서 소주를 찾는 사람은 처음이다. 그것도 큰 소리로. 그런데 손에는 이미 소주병이 들려 있다.','The first person ever to ask for soju in an underground listening bar. And loudly. Yet he is already holding a bottle of soju.','ts2'),
   say('ts2','taesik','이 동네에 이런 데가 있었네. 회사 앞 포차는 오늘 휴무라서.','Didn’t know a place like this was around here. The pub by my office is closed today.','c2'),
   {id:'c2',t:'choice',opts:[
     opt('“소주는 없고요, 샴페인 타워 쌓아 드릴까요? 오늘 쏘시는 거죠?”','“No soju, but shall I build a champagne tower? You’re paying tonight, right?”','ts_x2'),

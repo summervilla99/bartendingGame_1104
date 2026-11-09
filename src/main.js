@@ -10,6 +10,7 @@ import {NIGHTS,CHARS as TALE_CHARS} from './story/night1.js';
 import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
+import {makeProp} from './props.js';
 import {makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
 import {buildEnv} from './env.js';
@@ -149,7 +150,7 @@ const PRE={bar:{pos:new THREE.Vector3(0,2.5,-2.15),look:new THREE.Vector3(0,1.12
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let camFov=55,camOff=0;
 const cam={from:null,t:1,dur:1.1};
 const mouse={x:0,y:0},par={x:0,y:0};
-const talkView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:24,off:.17};
+const talkView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:34,off:.24};
 const photoView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:42,off:0};
 function camTarget(){if(S.photo)return photoView;if(S.talkCam&&S.mode==='walk')return talkView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
 function goCam(){cam.from={pos:camPos.clone(),look:camLook.clone(),fov:camFov,off:camOff};cam.t=0;cam.dur=reduceMotion?.01:1.1;}
@@ -1017,6 +1018,7 @@ function frame(now){
   if(S.mode==='walk'){if(!S.paused){player.update(dt,time);updatePlayerPose();}player.view.off=portraitNow()?.12:0;}
   updatePhoto(dt);
   updateCamera(dt);room.animate(dt,time);
+  updateProps(dt);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
   finalPass.uniforms.time.value=time%50;
@@ -1292,7 +1294,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
-  S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
+  Object.keys(taleProps).forEach(removeProp);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1323,17 +1325,31 @@ function restyleGuest(g,look){
 function setTalkCam(g){
   if(g){
     const x=g.fig.position.x;
-    talkView.pos.set(x*.62+.2,1.74,-.3);talkView.look.set(x,1.53,1.25);
+    talkView.pos.set(x*.62+.2,1.7,-.45);talkView.look.set(x,1.4,1.25);
   }
   if(S.talkCam===g)return;
   S.talkCam=g||null;goCam();
+}
+/* Props a story guest brings along: they pop onto the counter beside the guest and go away with them. */
+const taleProps={};
+function removeProp(who){const p=taleProps[who];if(p){scene.remove(p.group);delete taleProps[who];}}
+function addProp(who,g){
+  removeProp(who);
+  const group=makeProp(TALE_CHARS[who].prop);if(!group)return;
+  const dx=who==='taesik'?-.42:-.3;                 // clear of the guest's own drink and out of the close-up's line of sight
+  group.position.set(g.x+dx,COUNTER_TOP,.55);group.rotation.y=who==='seoyun'?Math.PI+.25:-.5;
+  group.scale.multiplyScalar(.01);scene.add(group);
+  taleProps[who]={group,t:0,full:group.scale.x*100};
+}
+function updateProps(dt){
+  Object.keys(taleProps).forEach(w=>{const p=taleProps[w];if(p.t>=1)return;p.t=Math.min(1,p.t+dt/.45);const e=ease(p.t),k=.01+.99*(1-Math.pow(1-e,3));p.group.scale.setScalar(p.full*k);});
 }
 const taleGuest=who=>guests[+TALE_CHARS[who].seat.slice(1)];
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
     const g=taleGuest(e.who);
-    if(e.k==='enter'){g.active=true;restyleGuest(g,TALE_CHARS[e.who].look);g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);setFace(g.fig,'neutral');setTalkCam(g);}
-    else{setTalkCam(null);g.active=false;g.fig.visible=false;restyleGuest(g,null);g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
+    if(e.k==='enter'){g.active=true;restyleGuest(g,TALE_CHARS[e.who].look);g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);setFace(g.fig,'neutral');setTalkCam(g);addProp(e.who,g);}
+    else{removeProp(e.who);setTalkCam(null);g.active=false;g.fig.visible=false;restyleGuest(g,null);g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
   });
 }
 function taleStep(){

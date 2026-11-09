@@ -205,4 +205,5 @@ src/
 - **추천 술 규칙**: `recommend` 후보는 8개, 절반은 어울리는 술(`good` 2, `ok` 2), 절반은 아예 안 맞는 술(`miss` 4). 후보마다 `lead`(그 술에 대한 손님의 한마디)를 서빙 직후 먼저 보여 주고, 그 뒤 별 점수 반응이 이어진다. `good` 만 3성 반응(최고 하트)을 받을 수 있고 `ok` 는 2성까지로 제한, `miss` 는 별 점수와 상관없이 `fail` 노드(손님이 떠남 → 게임 끝)로 간다. 별 점수 반응 문장은 특정 술을 가정하지 않는다.
 - 테스트 `test/tale.test.js`: 노드 참조/ko·en 문장/후보 레시피, 모든 경로가 `close` 에 도달, 전체 플레이, 하트 상한, 직렬화.
 - **캐릭터 외형/표정/클로즈업**: `figures.js` `makeCharacter` 옵션 `bob`/`slick`/`bald`(머리), `glasses`, `earring`, `necklace`, `watch`, `lapel`(블레이저 라펠), `loose`(풀어헤친 넥타이), `belly`, `w`(몸통 폭), `h`(키), `lip`. 표정은 `setFace(fig,'neutral|smile|surprised|sad|angry')`(눈썹과 입 메시). 이야기 노드의 `face` 필드와 추천 술의 `lead`(good=웃음, ok=보통, miss=화남)가 표정을 정한다. 스토리 손님의 룩은 `CHARS[who].look` 에 있고, 등장할 때 `restyleGuest` 가 NPC 모델을 바꿔 끼우고 떠나면 원래대로 되돌린다. 말하는 손님에게는 `setTalkCam` 이 가까이 당겨 보여 준다(`talkView`, 나레이션 동안엔 유지, 주문/종료 때 해제).
+- **소품**: `src/props.js` `makeProp('soju'|'notebook')`(서윤은 노트+볼펜, 태식은 소주병+소주잔). `CHARS[who].prop` 으로 지정하고, 입장하면 카운터에 튀어나오듯 올라오고(`addProp`) 퇴장하면 사라진다(`removeProp`). 대본 나레이션이 소품을 언급한다.
 - 아직 안 한 것: 2~7일 밤, 서윤 × 윤하 인연 게이지("저쪽 손님께서 보내셨습니다"), 윤하·도윤재·깡이 등 나머지 손님의 외형, 소품(가방 등), 입장/퇴장 걷기 연출.
