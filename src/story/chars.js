@@ -21,6 +21,7 @@ export const FLAVOR={
   highball:{ko:'시원한 위스키 소다',en:'Cold whiskey and soda'},gimlet:{ko:'깔끔한 라임 진',en:'Crisp lime gin'},
   oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
   cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
-  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
+  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'},
+  whitenegroni:{ko:'맑고 쌉쌀한 화이트 네그로니',en:'Clear and bitter-floral'},tomcollins:{ko:'레몬과 소다로 길게',en:'Long, lemony and fizzy'}
 };
 
