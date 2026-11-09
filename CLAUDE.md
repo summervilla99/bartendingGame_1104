@@ -168,3 +168,8 @@ src/
 - **채팅**: 방 안에서만 버튼이 보인다(`Enter` 로 열기, `Esc` 로 닫기). 머리 위 말풍선 6초 + 왼쪽 로그 5줄(10초 뒤 사라짐).
 - **포토**: 포토 스팟(`PHOTO_SPOTS`)에서 `E` → 카메라가 아바타 앞으로 돌아 와 0.5초 뒤 캔버스를 캡처(`composer.render` 직후 같은 틱에서 `drawImage`)하고 워터마크(로고, 장소, 날짜, 방 코드)를 합성한다. 저장(다운로드)과 공유(`navigator.share`, 지원할 때만).
 - 확인은 탭 두 개로: 한쪽이 앉기/채팅/손 흔들기 → 다른 쪽의 `net.peers` 와 화면.
+
+## 배포
+
+- Vercel 프로젝트 `courte-studio`, 주소 https://courte-studio.vercel.app . 배포는 `vercel deploy --prod`. 환경 변수는 Vercel 프로젝트에 `VITE_SUPABASE_URL`/`VITE_SUPABASE_KEY`(publishable 만)가 있다. GitHub 저장소 자동 배포 연동은 아직 안 했다(사용자 승인 필요).
+- 배포 전 `npm run build` 와 `npm test` 를 통과시킬 것. 배포 뒤에는 배포 주소에서 방을 하나 만들어 Supabase 연결(방 칩이 흐려지지 않음)을 확인한다.
