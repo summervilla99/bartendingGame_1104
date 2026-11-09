@@ -13,7 +13,7 @@ export const FLAVOR={
   highball:{ko:'시원한 위스키 소다',en:'Cold whiskey and soda'},gimlet:{ko:'깔끔한 라임 진',en:'Crisp lime gin'},
   oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
   cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
-  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
+  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},boilermaker:{ko:'맥주에 위스키 한 샷',en:'A shot of whiskey in beer'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
 };
 
 const say=(id,who,ko,en,next,x)=>Object.assign({id,t:'say',who,text:{ko,en},next},x||{});
@@ -87,15 +87,15 @@ const NODES=[
   nar('ts_x2n','부장님의 위기 대응은 빠른 후퇴였다.','The department head’s crisis response was a swift retreat.','l_x_ts2'),
   {id:'l_x_ts2',t:'leave',who:'taesik',next:'ov_ts'},
   {id:'ov_ts',t:'over',retry:'e_ts',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
-  say('ts_b1','taesik','오, 비슷한 거? 소주처럼 깔끔하게 넘어가는 걸로. 안주 없어도 되는 거.','Oh, something similar? Clean going down like soju. Something that needs no snacks.','rec_ts',{hearts:{taesik:1}}),
-  {id:'rec_ts',t:'recommend',who:'taesik',hint:{ko:'소주처럼 깔끔하게',en:'Clean like soju'},fail:'ts_m',
+  say('ts_b1','taesik','오, 비슷한 거? 소주처럼 쭉 넘어가는, 독한 걸로. 안주 없어도 되는 거.','Oh, something similar? Strong, and straight down like soju. Something that needs no snacks.','rec_ts',{hearts:{taesik:1}}),
+  {id:'rec_ts',t:'recommend',who:'taesik',hint:{ko:'소주처럼 쭉, 독하게',en:'Strong, straight down like soju'},fail:'ts_m',
    cands:[
     cand('cosmopolitan','miss','이게 뭐야, 핑크색이잖아! 나 이런 건 못 먹어!','What’s this, it’s pink! I can’t drink this!'),
-    cand('highball','good','캬— 소주보다 깔끔하네. 이게 위스키라고?','Ahh— cleaner than soju. This is whiskey?'),
-    cand('oldfashioned','ok','위스키가 진하네. 소주처럼 쭉은 못 마시겠는데, 이것도 맛있다.','Strong whiskey. Can’t knock it back like soju, but it’s good too.'),
+    cand('neat','good','캬— 이거지! 위스키는 이렇게 그냥 마셔야 맛이야.','Ahh— that’s it! Whiskey is best straight.'),
+    cand('highball','ok','음, 시원하긴 한데 좀 싱겁네. 이것도 나쁘진 않아.','Refreshing, but a bit weak. Not bad though.'),
     cand('mojito','miss','풀이 들어갔네? 쌈 싸 먹으라는 거야?','There’s grass in it? Am I supposed to wrap meat in it?'),
-    cand('gimlet','good','오, 라임이네. 깔끔하게 넘어가는 게 소주 같아!','Oh, lime. Goes down clean, just like soju!'),
-    cand('whiskeysour','ok','시큼한데 위스키 맛이 나네. 안주가 있으면 더 좋겠다.','Sour, but I taste whiskey. Would be better with a snack.'),
+    cand('boilermaker','good','오! 이거 소맥이잖아! 위스키 폭탄이라니, 말 되네!','Oh! This is somaek! A whiskey bomb? Now we’re talking!'),
+    cand('oldfashioned','ok','달콤한 위스키네. 소주 마시던 입엔 좀 달다.','Sweetish whiskey. A little sweet for a soju mouth.'),
     cand('espressomartini','miss','커피? 이 시간에 마시면 잠은 다 잤네.','Coffee? At this hour I’ll never sleep.'),
     cand('velvetrose','miss','장미? 나 이런 분위기 아니야. 향수 마시는 줄 알았네.','Rose? Not my style. Feels like drinking perfume.')],
    react:{3:'ts_r3',2:'ts_r2',1:'ts_r1'}},
@@ -122,7 +122,7 @@ const NODES=[
   say('ts_c1','taesik','…그거 좋네. 보내 볼까.','…That’s good. Let me send it.','ts_c1n'),
   nar('ts_c1n','웃으며 문자를 보냈다. 아들에게서 곧 답이 올 것 같다.','He sends it with a smile. A reply is probably coming soon.','ts_h'),
   say('ts_h','taesik','내일은… 면담이라 나도 시험이야. 부장 달고 22년인데, 사람 일이 말이야.','Tomorrow I have a meeting, so I’m sitting an exam too. Twenty-two years as head of department, and still, you never know.','ts_hn',{flag:'park_interview_tomorrow'}),
-  nar('ts_hn','22년을 한 곳에서 보낸 아저씨의 소주 대신 하이볼. 오늘 밤 이 한 잔이 위로였기를.','A highball in place of soju for a man who spent twenty-two years in one place. I hope tonight’s glass was a comfort.','l_ts'),
+  nar('ts_hn','22년을 한 곳에서 보낸 아저씨 앞에 소주 대신 놓인 술 한 잔. 오늘 밤 이 한 잔이 위로였기를.','A drink where the soju would have been, for a man who spent twenty-two years in one place. I hope tonight’s glass was a comfort.','l_ts'),
   {id:'l_ts',t:'leave',who:'taesik',next:'cl1'},
 
   /* closing */

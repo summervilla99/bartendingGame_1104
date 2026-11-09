@@ -490,7 +490,7 @@ function afterPour(){
   stopPour();
   const r=S.recipe;
   if(r.method==='build'){
-    S.vessel.setIce(iceFor(r.glass));
+    S.vessel.setIce(iceOf(r));
     goGarnish();return;
   }
   setStage('mix');
@@ -554,6 +554,7 @@ canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercan
 window.addEventListener('pointerup',()=>{stopPour();});
 
 function iceFor(glass){const d=GL[glass];return d?(d.bigIce?1:(d.ice||0)):0;}
+const iceOf=r=>r.noIce?0:iceFor(r.glass);        // neat whiskey and beer drinks take no ice
 function goStrain(){
   if(S.stage!=='mix')return;
   setStage('strain');S.strainT=0;S.strainStream=false;S.drag=null;
@@ -591,7 +592,7 @@ function updateStrain(dt){
     stream.material.color.setRGB(S.strainColor[0],S.strainColor[1],S.strainColor[2]);
     stream.scale.set(1,len,1);stream.position.set(lip.x,surf+len/2,lip.z);
   }
-  if(t>=.35&&sv.ice===0&&iceFor(S.recipe.glass))sv.setIce(iceFor(S.recipe.glass));
+  if(t>=.35&&sv.ice===0&&iceOf(S.recipe))sv.setIce(iceOf(S.recipe));
   if(t>=1){
     S.strainStream=false;stream.visible=false;
     src.group.rotation.set(0,0,0);src.group.position.set(VP.x+.55,VP.y,VP.z);
@@ -667,7 +668,7 @@ function showResult(){
 function spawnDrinkProp(g,d){
   const rc=RECIPE_BY_ID[d.recipeId];
   const prop=makeGlass(rc.glass);prop.group.scale.setScalar(.8);prop.group.position.set(g.x,COUNTER_TOP,.45);
-  prop.setLevel(d.ml);prop.setColor(d.col);if(iceFor(rc.glass))prop.setIce(iceFor(rc.glass));
+  prop.setLevel(d.ml);prop.setColor(d.col);if(iceOf(rc))prop.setIce(iceOf(rc));
   scene.add(prop.group);if(g.drink)scene.remove(g.drink.group);g.drink=prop;
 }
 function finishService(){

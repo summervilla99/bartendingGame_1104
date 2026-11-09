@@ -87,6 +87,7 @@ SPECS.lemon=V('lime',{liq:0xf0dc58,cap:{c:0xd9b81a},lab:{bg:'#f6f0c8',fg:'#7a5a0
 SPECS.grapefruit=V('lime',{liq:0xf0a6a0,cap:{c:0xd9546a},lab:{bg:'#f6e2dc',fg:'#a6243a',ac:'#d9546a',t:'GRAPEFRUIT',s:'JUICE'}});
 SPECS.cranberry=V('lime',{liq:0xa8142c,cap:{c:0x8a0f24},lab:{bg:'#f2dcdc',fg:'#8a0f24',ac:'#a8142c',t:'CRANBERRY',s:'JUICE'}});
 SPECS.ginger=V('soda',{liq:0xd9ac56,cap:{c:0xb8a060,metal:1},lab:{bg:'#f0e0b8',fg:'#5a3a10',ac:'#a8741a',t:'GINGER',s:'BEER'}});
+SPECS.beer=V('soda',{liq:0xd8961c,cap:{c:0x2f5a34,metal:1},lab:{bg:'#f2e4b8',fg:'#3a2a10',ac:'#c9892a',t:'LAGER',s:'BEER'}});
 SPECS.espresso=V('syrup',{liq:0x25120a,cap:{c:0x1c1410},lab:{bg:'#14100e',fg:'#e8d9b4',ac:'#c9a066',t:'ESPRESSO',s:'COLD BREW'}});
 SPECS.mezcal=V('tequilaSq',{liq:0xe8dfb8,tint:0x3a4a2a,op:.3,cap:{c:0x8a6a3a},lab:{bg:'#e6dcc0',fg:'#2a1a10',ac:'#6a4a2a',t:'MEZCAL',s:'ESPADIN'}});
 SPECS.agave=V('syrup',{liq:0xd6a03c,cap:{c:0xa8742c},lab:{bg:'#f0e0b8',fg:'#6a4a10',ac:'#a8742c',t:'AGAVE',s:'NECTAR'}});

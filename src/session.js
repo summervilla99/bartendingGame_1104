@@ -35,7 +35,7 @@ export const limitOf=cfg=>(cfg.mode==='practice'||cfg.mode==='tale')?0:(DIFFS[cf
 
 /* Scenario: easiest drinks first, then the classics, then the complicated ones. */
 export const STAGES=[
-  {id:'s1',goal:5,minStars:1.5,recipes:['highball','americano','gimlet','daiquiri','whiskeysour'],
+  {id:'s1',goal:5,minStars:1.5,recipes:['highball','americano','gimlet','daiquiri','whiskeysour','neat','boilermaker'],
    name:{ko:'첫 손님',en:'First guests'},desc:{ko:'재료가 적은 쉬운 칵테일부터 시작해요.',en:'Start with easy drinks that need few ingredients.'}},
   {id:'s2',goal:7,minStars:1.8,recipes:['negroni','oldfashioned','manhattan','margarita','tommys','boulevardier','tomcollins','mojito'],
    name:{ko:'클래식의 밤',en:'Classics night'},desc:{ko:'바텐더라면 꼭 알아야 할 클래식 칵테일이에요.',en:'The classic cocktails every bartender should know.'}},
