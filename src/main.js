@@ -6,7 +6,7 @@ import {INGR,ING,RECIPES,GARNISH,GARNISH_NAME,GLASS_NAME,METHOD_NAME,CATS,serveO
 import {t,tr,getLang,setLang,onLang,applyDom} from './i18n.js';
 import {fmtVol,fmtRatio} from './units.js';
 import {makeGlass,makeGarnish,makeShaker,GL} from './glass.js';
-import {NIGHTS,CHARS as TALE_CHARS} from './story/night1.js';
+import {NIGHTS,CHARS as TALE_CHARS} from './story/nights.js';
 import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
@@ -1010,7 +1010,7 @@ resize();
 /* ───────────── loop ───────────── */
 /* ?debug exposes state on window.__courte; ?debug&dtmax=0.2 lets slow (software-GL) machines advance faster per frame. */
 const QS=new URLSearchParams(location.search),DEBUG=QS.has('debug'),DEBUG_SEED=(DEBUG&&QS.has('seed'))?(parseInt(QS.get('seed'),10)>>>0):null,DT_MAX=(DEBUG&&parseFloat(QS.get('dtmax')))||.05;
-if(DEBUG)window.__courte={get net(){return net;},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
+if(DEBUG)window.__courte={get net(){return net;},taleServe:st=>{guests.forEach(g=>{g.order=null;});taleAfterServe(st);},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
 let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
@@ -1294,7 +1294,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
-  Object.keys(taleProps).forEach(removeProp);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
+  Object.keys(taleProps).forEach(removeProp);clearPianist();S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1323,7 +1323,9 @@ function restyleGuest(g,look){
 }
 /* Close-up on the guest who is talking; null goes back to the room view. */
 function setTalkCam(g){
-  if(g){
+  if(g&&g.piano){                                   // the pianist is across the room: look at her from the front
+    talkView.pos.set(6.2,2.8,9.4);talkView.look.set(7.05,1.7,7.7);   // in front of her and high, to see her face over the piano lid       // from her side: the grand piano is in front of her, so a front view looks at its lid
+  }else if(g){
     const x=g.fig.position.x;
     talkView.pos.set(x*.62+.2,1.7,-.45);talkView.look.set(x,1.4,1.25);
   }
@@ -1336,7 +1338,7 @@ function removeProp(who){const p=taleProps[who];if(p){scene.remove(p.group);dele
 function addProp(who,g){
   removeProp(who);
   const group=makeProp(TALE_CHARS[who].prop);if(!group)return;
-  const dx=who==='taesik'?-.42:-.3;                 // clear of the guest's own drink and out of the close-up's line of sight
+  const dx=who==='taesik'?-.42:who==='kkangi'?-.4:-.3;                 // clear of the guest's own drink and out of the close-up's line of sight
   group.position.set(g.x+dx,COUNTER_TOP,.55);group.rotation.y=who==='seoyun'?Math.PI+.25:-.5;
   group.scale.multiplyScalar(.01);scene.add(group);
   taleProps[who]={group,t:0,full:group.scale.x*100};
@@ -1344,10 +1346,29 @@ function addProp(who,g){
 function updateProps(dt){
   Object.keys(taleProps).forEach(w=>{const p=taleProps[w];if(p.t>=1)return;p.t=Math.min(1,p.t+dt/.45);const e=ease(p.t),k=.01+.99*(1-Math.pow(1-e,3));p.group.scale.setScalar(p.full*k);});
 }
-const taleGuest=who=>guests[+TALE_CHARS[who].seat.slice(1)];
+/* Yunha plays the piano across the room: her own figure on the bench, not a counter guest. */
+const pianist={piano:true,fig:null,active:false,x:7.1,nameOv:null,order:null};
+let musicBefore=null;
+function seatPianist(look){
+  if(pianist.fig)scene.remove(pianist.fig);
+  const seat=SEATS.find(s=>s.kind==='piano'),fig=makeCharacter(look);
+  fig.position.set(seat.x,seat.y,seat.z);fig.rotation.y=seat.yaw;poseSit(fig,seat.lean);scene.add(fig);
+  pianist.fig=fig;pianist.active=true;
+}
+function clearPianist(){
+  if(pianist.fig){scene.remove(pianist.fig);pianist.fig=null;}
+  pianist.active=false;
+  if(musicBefore){Snd.setGenre(musicBefore);musicBefore=null;}
+}
+const taleGuest=who=>TALE_CHARS[who].seat==='piano'?pianist:guests[+TALE_CHARS[who].seat.slice(1)];
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
     const g=taleGuest(e.who);
+    if(g===pianist){
+      if(e.k==='enter'){seatPianist(TALE_CHARS[e.who].look);setFace(pianist.fig,'neutral');setTalkCam(pianist);if(e.music&&Snd.on&&!musicBefore){musicBefore=Snd.genre;Snd.setGenre(e.music);}}
+      else{setTalkCam(null);clearPianist();}
+      return;
+    }
     if(e.k==='enter'){g.active=true;restyleGuest(g,TALE_CHARS[e.who].look);g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);setFace(g.fig,'neutral');setTalkCam(g);addProp(e.who,g);}
     else{removeProp(e.who);setTalkCam(null);g.active=false;g.fig.visible=false;restyleGuest(g,null);g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
   });
@@ -1374,7 +1395,7 @@ function taleOrder(v){
 }
 function taleAfterServe(stars){if(!S.tale)return;taleServedEv(S.tale.st,S.tale.graph,stars);taleStep();}
 function taleStart(){
-  const night=NIGHTS[0];
+  const night=NIGHTS.find(n=>n.n===S.session.night)||NIGHTS[0];
   S.tale={st:taleNew(night.n,loadTale()),graph:night.graph,night};
   taleBegin(S.tale.st,night.graph,night.entry);
   player.place(.6,-1.5,0,Math.PI);player.update(0,time);

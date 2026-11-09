@@ -1,5 +1,5 @@
 import {t,tr,onLang} from './i18n.js';
-import {CHARS,FLAVOR} from './story/night1.js';
+import {CHARS,FLAVOR} from './story/chars.js';
 import {RECIPE_BY_ID} from './game/bartending.js';
 import {MAX_HEARTS} from './story/engine.js';
 

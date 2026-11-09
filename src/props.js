@@ -42,4 +42,14 @@ function makeNotebook(){
   g.scale.setScalar(SC*.8);
   return g;
 }
-export const makeProp=kind=>kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():null;
+/* A glossy black motorcycle helmet with a tinted visor. */
+function makeHelmet(){
+  const g=new THREE.Group();
+  const shell=new THREE.Mesh(new THREE.SphereGeometry(.1,22,16),M(0x141416,{roughness:.2,metalness:.3,envMapIntensity:1}));shell.scale.set(1,.9,1.12);shell.position.y=.09;g.add(shell);
+  const visor=new THREE.Mesh(new THREE.SphereGeometry(.102,20,10,-Math.PI*.42,Math.PI*.84,Math.PI*.3,Math.PI*.22),new THREE.MeshStandardMaterial({color:0x2a2f3a,roughness:.1,metalness:.6,envMapIntensity:1.4}));
+  visor.scale.set(1,.9,1.12);visor.position.y=.09;visor.rotation.y=Math.PI;g.add(visor);
+  const stripe=new THREE.Mesh(new THREE.TorusGeometry(.1,.006,6,24,Math.PI),M(0xb5261f,{roughness:.3}));stripe.rotation.set(Math.PI/2,0,Math.PI/2);stripe.position.y=.15;stripe.scale.set(1,1.12,1);g.add(stripe);
+  g.scale.setScalar(SC);
+  return g;
+}
+export const makeProp=kind=>kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;

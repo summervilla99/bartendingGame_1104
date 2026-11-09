@@ -1,8 +1,8 @@
 import {t,tr,getLang,setLang,onLang} from './i18n.js';
 import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,FAMILIES,MODES,STAGES,DIFFS,loadStory,isUnlocked,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
-import {NIGHTS} from './story/night1.js';
-import {loadTale} from './story/save.js';
+import {NIGHTS} from './story/nights.js';
+import {loadTale,isNightOpen} from './story/save.js';
 
 /* "Open the bar" screen: pick the hour, the menu family, the mode and the guide level. */
 export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
@@ -24,8 +24,8 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     }).join('');
     const tale=loadTale(),talePage=cfg.mode==='tale';
     const nights=Array.from({length:7},(_,i)=>{
-      const n=i+1,def=NIGHTS.find(x=>x.n===n),done=tale.done[n];
-      return '<div class="st-night'+(def?'':' soon')+'"><b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):'')+'</i></div>';
+      const n=i+1,def=NIGHTS.find(x=>x.n===n),done=tale.done[n],ok=!!def&&isNightOpen(n,tale);
+      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(ok?'':' soon'),'<b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):(def&&!ok?t('stage_lock'):''))+'</i>',!ok);
     }).join('');
     const modes=MODES.map(id=>{
       const lab=id==='lab';
@@ -82,7 +82,8 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     else if(el.id==='st-code'){onl.code=normalizeCode(el.value);el.value=onl.code;}
   });
   onLang(()=>{if(open)render();});
-  function show(){cfg=Object.assign({},getCfg());open=true;root.hidden=false;render();onPreview(cfg.mode==='tale'?TALE_TIME:cfg.time);const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});}
+  function nextNight(){const tl=loadTale();const n=NIGHTS.find(x=>!tl.done[x.n]&&isNightOpen(x.n,tl));return n?n.n:NIGHTS[NIGHTS.length-1].n;}
+  function show(){cfg=Object.assign({},getCfg());cfg.night=nextNight();open=true;root.hidden=false;render();onPreview(cfg.mode==='tale'?TALE_TIME:cfg.time);const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});}
   function hide(){open=false;root.hidden=true;}
   return {show,hide,isOpen:()=>open};
 }

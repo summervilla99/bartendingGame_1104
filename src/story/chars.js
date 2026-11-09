@@ -1,0 +1,24 @@
+/* Everyone in the tale: names, speaker colours, where they sit, how they look and what they bring. */
+export const CHARS={
+  me:{name:{ko:'하랑',en:'Harang'},seat:null},
+  bond:{name:{ko:'서윤 × 윤하의 인연',en:'Seoyun × Yunha bond'}},
+  kkangi:{name:{ko:'강태산',en:'Kang Taesan'},seat:'g1',tone:'#c9b27a',prop:'helmet',
+    look:{name:'깡이',skin:0xc9936f,top:0x1b1b1e,shirt:0xdcd7cc,pants:0x1c2230,hair:0x0d0b0b,slick:true,glasses:0x0b0b0c,earring:0xd8d8dc,necklace:0xd4af37,shoes:0xf0efe9,lip:0x6a2a26,w:1.08,h:1.01,sheen:true}},
+  yunha:{name:{ko:'윤하',en:'Yunha'},seat:'piano',tone:'#d9a3b8',
+    look:{name:'윤하',skin:0xeac6a8,top:0x2a1a30,pants:0x2a1a30,hair:0x6b3a28,long:true,dress:true,sheen:true,earring:0xd9b46a,lip:0xa03a48,w:.9,h:1.0,shoes:0x15101a}},
+  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
+    look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
+  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486',prop:'soju',
+    look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
+};
+/* One short flavour line per drink, shown on the recommendation buttons. */
+export const FLAVOR={
+  negroni:{ko:'쓰고 진한 클래식',en:'Bitter, bold classic'},americano:{ko:'쌉쌀하고 가벼운',en:'Bittersweet and light'},
+  manhattan:{ko:'묵직한 위스키 스터',en:'Weighty stirred whiskey'},daiquiri:{ko:'새콤달콤 럼',en:'Tart and sweet rum'},
+  moscowmule:{ko:'생강 톡 쏘는',en:'Spicy ginger fizz'},mojito:{ko:'민트 청량',en:'Minty and fresh'},
+  highball:{ko:'시원한 위스키 소다',en:'Cold whiskey and soda'},gimlet:{ko:'깔끔한 라임 진',en:'Crisp lime gin'},
+  oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
+  cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
+  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
+};
+
