@@ -1,6 +1,8 @@
 import {t,tr,getLang,setLang,onLang} from './i18n.js';
 import {TIMES,TIME_ORDER,FAM_ORDER,FAMILIES,MODES,STAGES,DIFFS,loadStory,isUnlocked,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
+import {NIGHTS} from './story/night1.js';
+import {loadTale} from './story/save.js';
 
 /* "Open the bar" screen: pick the hour, the menu family, the mode and the guide level. */
 export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
@@ -19,6 +21,11 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     const fams=FAM_ORDER.map(id=>{
       const n=poolFor({menu:id},recipes).length;
       return opt('menu',id,cfg.menu===id,'st-fam',t('fam_'+id)+'<em>'+n+'</em>'+(T.suggest===id?'<u>'+t('suggested')+'</u>':''));
+    }).join('');
+    const tale=loadTale(),talePage=cfg.mode==='tale';
+    const nights=Array.from({length:7},(_,i)=>{
+      const n=i+1,def=NIGHTS.find(x=>x.n===n),done=tale.done[n];
+      return '<div class="st-night'+(def?'':' soon')+'"><b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):'')+'</i></div>';
     }).join('');
     const modes=MODES.map(id=>{
       const lab=id==='lab';
@@ -46,9 +53,8 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
       +'<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div>'
       +'<h2>'+t('st_mode')+'</h2><div class="st-row st-modes">'+modes+'</div>'
-      +(cfg.mode==='story'?'<h2>'+t('st_stage')+'</h2><div class="st-row st-stages">'+stages+'</div>':'<h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>')
-      +'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t(cfg.mode==='practice'?'diff_note2':'diff_note3')+'</p>'
-      +onlHtml
+      +(talePage?'<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div><p class="st-note">'+t('tale_note')+'</p>':cfg.mode==='story'?'<h2>'+t('st_stage')+'</h2><div class="st-row st-stages">'+stages+'</div>':'<h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>')
+      +(talePage?'':'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t(cfg.mode==='practice'?'diff_note2':'diff_note3')+'</p>'+onlHtml)
       +'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button></div>';
   }
   root.addEventListener('click',e=>{
@@ -58,6 +64,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     if(b.id==='st-go'){
       const locked=roomLock&&roomLock();
       if(!locked&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
+      if(cfg.mode==='tale'&&!locked)onl.mode='solo';
       err='';hide();onStart(Object.assign({},cfg),locked?{mode:'keep',code:'',name:onl.name}:Object.assign({},onl));return;
     }
     if(b.dataset.k&&!b.disabled){

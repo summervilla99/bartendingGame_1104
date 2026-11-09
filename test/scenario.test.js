@@ -41,9 +41,10 @@ test('stages unlock in order',()=>{
 });
 test('difficulty sets the time limit; practice has none; bad values fall back',()=>{
   assert.deepEqual(DIFFS,{easy:60,mid:45,hard:30});
-  assert.equal(limitOf(cfg({diff:'easy'})),60);assert.equal(limitOf(cfg({diff:'mid'})),45);assert.equal(limitOf(cfg({diff:'hard'})),30);
-  assert.equal(limitOf(cfg({diff:'hard',mode:'practice'})),0);
-  assert.equal(limitOf(cfg({diff:'nonsense'})),60);
+  const sv=o=>cfg(Object.assign({mode:'service'},o));
+  assert.equal(limitOf(sv({diff:'easy'})),60);assert.equal(limitOf(sv({diff:'mid'})),45);assert.equal(limitOf(sv({diff:'hard'})),30);
+  assert.equal(limitOf(cfg({diff:'hard',mode:'practice'})),0);assert.equal(limitOf(cfg({diff:'hard',mode:'tale'})),0);
+  assert.equal(limitOf(sv({diff:'nonsense'})),60);
   assert.equal(loadSession().diff,'easy');
 });
 test('the solo bar is well filled in every hour',()=>{

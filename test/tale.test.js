@@ -1,0 +1,63 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {newState,begin,view,advance,pick,served,drainEvents,reactStars,MAX_HEARTS} from '../src/story/engine.js';
+import {NIGHT1,CHARS,FLAVOR} from '../src/story/night1.js';
+import {RECIPE_BY_ID} from '../src/game/bartending.js';
+
+const G=NIGHT1.graph;
+const bi=o=>o&&typeof o.ko==='string'&&o.ko.length>0&&typeof o.en==='string'&&o.en.length>0;
+
+test('every node reference exists and every text has ko and en', () => {
+  Object.values(G).forEach(n => {
+    const refs=[n.next,...(n.opts||[]).map(o=>o.next),...Object.values(n.react||{})].filter(Boolean);
+    refs.forEach(r => assert.ok(G[r], n.id+' -> '+r));
+    if(n.t==='say') assert.ok(bi(n.text), n.id);
+    (n.opts||[]).forEach(o => assert.ok(bi(o.text), n.id));
+    if(n.t==='recommend') assert.ok(bi(n.hint), n.id);
+    if(n.t==='say' && n.who!=='narr') assert.ok(CHARS[n.who], n.id+' who');
+  });
+});
+test('recommendation candidates are real recipes with a flavour line', () => {
+  Object.values(G).filter(n=>n.t==='recommend').forEach(n => {
+    assert.ok(n.cands.some(c=>c.match==='good'), n.id);
+    n.cands.forEach(c => { assert.ok(RECIPE_BY_ID[c.id], c.id); assert.ok(bi(FLAVOR[c.id]), c.id); assert.ok(['good','ok','miss'].includes(c.match)); });
+    assert.ok(n.react[2] && n.react[1] && n.react[3]);
+  });
+  assert.ok(RECIPE_BY_ID[G.o_ts.rec]);
+});
+test('every path reaches the close card', () => {
+  const seen=new Set(), stack=[NIGHT1.entry]; let closes=0;
+  while(stack.length){ const id=stack.pop(); if(seen.has(id)) continue; seen.add(id); const n=G[id];
+    if(n.t==='close') closes++;
+    [n.next,...(n.opts||[]).map(o=>o.next),...Object.values(n.react||{})].filter(Boolean).forEach(r=>stack.push(r)); }
+  assert.equal(closes,1);
+  assert.equal(seen.size, Object.keys(G).length, 'no orphan nodes');
+});
+test('a full playthrough: hearts, flags, events', () => {
+  const st=newState(1,null); begin(st,G,NIGHT1.entry);
+  let guard=0, enters=[];
+  while(view(st,G).kind!=='close' && guard++<100){
+    drainEvents(st).forEach(e=>enters.push(e.k+':'+e.who));
+    const v=view(st,G);
+    if(v.kind==='say') advance(st,G);
+    else if(v.kind==='choice') pick(st,G,0);
+    else if(v.kind==='recommend'){ pick(st,G,0); assert.equal(view(st,G).kind,'wait'); served(st,G,3); }
+    else if(v.kind==='wait') served(st,G,3);
+    else throw new Error('stuck '+v.kind);
+  }
+  assert.equal(view(st,G).kind,'close');
+  assert.deepEqual(enters,['enter:seoyun','leave:seoyun','enter:taesik','leave:taesik']);
+  assert.ok(st.hearts.seoyun>=2 && st.flags.seoyun_knows_master);
+  assert.ok(st.flags.seoyun_saw_sheet);
+});
+test('mismatch caps the praise; hearts are clamped', () => {
+  assert.equal(reactStars('miss',3),2); assert.equal(reactStars('good',3),3); assert.equal(reactStars('ok',1),1);
+  const st=newState(1,{hearts:{seoyun:MAX_HEARTS}}); begin(st,G,'sy_r3b');
+  assert.equal(st.hearts.seoyun,MAX_HEARTS); assert.equal(st.gain.seoyun,0);
+});
+test('the state is JSON-serialisable and restorable mid-scene', () => {
+  const st=newState(1,null); begin(st,G,'rec_sy'); pick(st,G,3);   // daiquiri = miss
+  const copy=JSON.parse(JSON.stringify(st));
+  assert.equal(view(copy,G).kind,'wait'); served(copy,G,3);
+  assert.equal(copy.node,'sy_r2');                                   // capped at 2 stars
+});

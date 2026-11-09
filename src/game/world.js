@@ -18,6 +18,7 @@ export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.or
 
 /* Called every frame. Returns {seatId, recipeId} when a guest orders, else null. */
 export function tickOrders(world,now){
+  if(world.session.mode==='tale')return null;               // the tale places its own orders
   if(now<world.nextOrderAt)return null;
   const T=TIMES[world.session.time],N=world.night;
   const more=(world.session.mode!=='service'&&world.session.mode!=='story')||N.ordered<goalOf(world.session);

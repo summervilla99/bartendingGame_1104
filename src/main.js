@@ -6,6 +6,10 @@ import {INGR,ING,RECIPES,GARNISH,GARNISH_NAME,GLASS_NAME,METHOD_NAME,CATS,serveO
 import {t,tr,getLang,setLang,onLang,applyDom} from './i18n.js';
 import {fmtVol,fmtRatio} from './units.js';
 import {makeGlass,makeGarnish,makeShaker,GL} from './glass.js';
+import {NIGHTS,CHARS as TALE_CHARS} from './story/night1.js';
+import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain} from './story/engine.js';
+import {loadTale,commitNight} from './story/save.js';
+import {createTaleUI} from './tale-ui.js';
 import {makeCharacter,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
 import {buildEnv} from './env.js';
@@ -62,9 +66,9 @@ function makeNpc(cfg,i,seat){
   else{fig.position.set(cfg.pos[0],-.46,cfg.pos[2]);fig.rotation.y=cfg.yaw;poseSit(fig,.25);}
   scene.add(fig);
   const p=fig.position;
-  const npc={cfg,x:p.x,fig,seat,active:true,order:null,orderAt:0,reaction:null,talk:null,talkIdx:0,drink:null,cheer:0,ph:i*1.7,
+  const npc={cfg,x:p.x,fig,seat,active:true,nameOv:null,noTalk:false,order:null,orderAt:0,reaction:null,talk:null,talkIdx:0,drink:null,cheer:0,ph:i*1.7,
     anchor:new THREE.Vector3(p.x,seat==='stool'?1.95:1.55,p.z),baseYaw:fig.rotation.y};
-  Object.defineProperty(npc,'name',{get:()=>tr(cfg.nm)});
+  Object.defineProperty(npc,'name',{get:()=>tr(npc.nameOv||cfg.nm)});
   return npc;
 }
 const guests=GUEST_CFG.map((c,i)=>makeNpc(c,i,'stool'));
@@ -234,7 +238,7 @@ function updateWalkUI(){
     const ns=$('#night-stat');ns.hidden=false;
     $('#night-lb').textContent='';
     const goalMode=S.session.mode==='service'||S.session.mode==='story';
-    const prog=goalMode?t('night_prog',{time:t('time_'+S.time.id),n:S.world.night.served,goal:goalOf(S.session)}):t('night_free',{time:t('time_'+S.time.id)});
+    const prog=S.tale?t('tale_night',{time:t('time_'+S.time.id),n:S.tale.night.n}):goalMode?t('night_prog',{time:t('time_'+S.time.id),n:S.world.night.served,goal:goalOf(S.session)}):t('night_free',{time:t('time_'+S.time.id)});
     $('#night-prog').textContent=prog+(S.world.combo>=2?'  ·  '+t('combo',{n:S.world.combo}):'');
   }
   el.orders.innerHTML=pendingGuests().map(g=>'<li>'+g.name+'<b>'+g.order.name+'</b>'+(g.rush?'<i class="rush">'+t('rush_tag')+'</i>':'')+'</li>').join('');
@@ -280,7 +284,7 @@ function updateBubbles(){
 function inBarZone(p){return p.x>BAR_ZONE.x0&&p.x<BAR_ZONE.x1&&p.z>BAR_ZONE.z0&&p.z<BAR_ZONE.z1;}
 function nearestNpc(){
   let best=null,bd=1.8;
-  npcs.forEach(g=>{if(!g.active)return;const d=Math.hypot(g.fig.position.x-player.pos.x,g.fig.position.z-player.pos.z);if(d<bd){bd=d;best=g;}});
+  npcs.forEach(g=>{if(!g.active||g.noTalk)return;const d=Math.hypot(g.fig.position.x-player.pos.x,g.fig.position.z-player.pos.z);if(d<bd){bd=d;best=g;}});
   return best;
 }
 function nearestSeat(){
@@ -632,7 +636,7 @@ function renderResult(){
   $('#r-title').textContent=rc.name;
   $('#r-stars').innerHTML=[0,1,2].map(i=>'<span class="'+(i<r.stars?'on':'')+'">★</span>').join('');
   $('#r-stars').setAttribute('aria-label',t('stars_aria',{n:r.stars}));
-  $('#r-say').textContent=tr(quip(r.stars,S.drink.orderNo*13+r.stars,S.drink.recipeId));
+  $('#r-say').textContent=S.tale?'':tr(quip(r.stars,S.drink.orderNo*13+r.stars,S.drink.recipeId));
   const esc=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const lines=Object.keys(rc.parts).map(id=>{
     const got=S.drink.poured[id]||0,tg=rc.parts[id],bad=Math.abs(got-tg)>tg*.12;
@@ -671,7 +675,7 @@ function finishService(){
   if(S.garnishObj&&S.garnishObj.parent)S.garnishObj.parent.remove(S.garnishObj);
   if(!net.active){
     spawnDrinkProp(g,{recipeId:S.drink.recipeId,ml:sv.ml,col:S.strainColor||blendColor()});
-    g.order=null;g.reaction={si:r.stars,until:time+7,q:quip(r.stars,S.drink.orderNo*13+r.stars,S.drink.recipeId)};releaseSeat(S.world,S.drink.seatId,time,r.stars);updateWalkUI();
+    g.order=null;g.reaction={si:r.stars,until:time+7,q:quip(r.stars,S.drink.orderNo*13+r.stars,S.drink.recipeId)};releaseSeat(S.world,S.drink.seatId,time,r.stars);if(S.tale)g.reaction=null;updateWalkUI();
   }
   S.vessel&&S.vessel.group.parent&&S.vessel.group.parent.remove(S.vessel.group);
   S.vessel=S.serv=null;S.garnishObj=null;
@@ -950,8 +954,9 @@ $('#btn-next-pour').addEventListener('click',afterPour);
 $('#btn-strain').addEventListener('click',goStrain);
 $('#btn-serve').addEventListener('click',serveDrink);
 function nightOver(){return worldNightOver(S.world);}
-$('#btn-r-leave').addEventListener('click',()=>{finishService();leaveBar();if(nightOver())showSummary();});
+$('#btn-r-leave').addEventListener('click',()=>{const rs=S.drink&&S.drink.result?S.drink.result.stars:0;finishService();leaveBar();if(S.tale){taleAfterServe(rs);return;}if(nightOver())showSummary();});
 $('#btn-r-next').addEventListener('click',()=>{
+  if(S.tale){$('#btn-r-leave').click();return;}
   finishService();el.result.hidden=true;
   if(net.active){leaveBar();const ng=pendingGuests()[0];if(ng&&!nightOver())beginBartending(ng);else if(nightOver())showSummary();return;}
   const g=pendingGuests()[0];
@@ -1269,7 +1274,7 @@ function adoptSession(cfg){
   S.session=cfg;S.time=TIMES[cfg.time];
   applyLook(cfg.time);
   room.setStools(layoutStools(cfg.chairs||0));
-  guests.forEach((g,i)=>{g.active=cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;});
+  guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;});
   proxies.forEach(g=>{g.order=null;g.claimBy=null;g.claimName='';g.servedRev=0;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}});
   loungers.forEach((g,i)=>{g.active=S.time.lounge.indexOf(i)>=0;});
   npcs.forEach(g=>{
@@ -1284,6 +1289,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
+  S.tale=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1292,11 +1298,52 @@ function applySession(cfg){
   updateWalkUI();
   if(net.active)broadcastWorld();
 }
+/* ───────────── tale: dialogue-driven story nights ───────────── */
+const taleUI=createTaleUI($('#tale'),{
+  onAdvance:()=>{taleAdvance(S.tale.st,S.tale.graph);taleStep();},
+  onPick:i=>{talePick(S.tale.st,S.tale.graph,i);taleStep();},
+  onClose:()=>{
+    commitNight(S.tale.st.night,S.tale.st);
+    taleUI.hide();playerFig.visible=true;S.tale=null;el.uiWalk.hidden=false;openStart();
+  }});
+const taleGuest=who=>guests[+TALE_CHARS[who].seat.slice(1)];
+function taleEvents(){
+  taleDrain(S.tale.st).forEach(e=>{
+    const g=taleGuest(e.who);
+    if(e.k==='enter'){g.active=true;g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);}
+    else{g.active=false;g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
+  });
+}
+function taleStep(){
+  const T=S.tale;if(!T)return;
+  taleEvents();
+  const v=taleView(T.st,T.graph);
+  if(v.kind==='wait')return taleOrder(v);
+  S.paused=true;player.st.enabled=false;el.uiWalk.hidden=true;el.act.hidden=true;S.actionKey='';playerFig.visible=false;taleUI.show(v);
+}
+/* The talk is over for now: put the order on the board and let the player walk to the counter. */
+function taleOrder(v){
+  taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=false;S.paused=false;player.st.enabled=true;
+  const g=taleGuest(v.who),rec=RECIPE_BY_ID[v.order.rec],seat=S.world.seats.find(s=>s.id===g.seatId);
+  seat.active=true;seat.order={recipeId:rec.id,at:time,rush:false};seat.reaction=null;S.world.night.ordered++;S.world.rev++;
+  g.order=rec;g.orderAt=time;g.rush=false;g.reaction=null;g.askedOrder=false;
+  if(g.drink){scene.remove(g.drink.group);g.drink=null;}
+  toast(t('tale_order',{name:g.name,drink:rec.name}),4200);
+  updateWalkUI();
+}
+function taleAfterServe(stars){if(!S.tale)return;taleServedEv(S.tale.st,S.tale.graph,stars);taleStep();}
+function taleStart(){
+  const night=NIGHTS[0];
+  S.tale={st:taleNew(night.n,loadTale()),graph:night.graph,night};
+  taleBegin(S.tale.st,night.graph,night.entry);
+  player.place(.6,-1.5,0,Math.PI);player.update(0,time);
+  updateWalkUI();taleStep();
+}
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
-  onStart:(cfg,onl)=>{applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
+  onStart:(cfg,onl)=>{if(cfg.mode==='tale'&&net.active){cfg=Object.assign({},cfg,{mode:'service'});toast(t('tale_online'),3600);}applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);if(cfg.mode==='tale'){taleStart();return;}if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
 function openStart(){
   if(S.mode!=='walk')return;
   if(net.active&&!isHost()){toast(t('host_only'));return;}

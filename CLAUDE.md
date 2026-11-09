@@ -193,3 +193,13 @@ src/
 - **음악**: `audio.js` 장르 3개(jazz/house/classical). 피아노 의자(좌석 `piano`)에 앉으면 `음악 고르기`로 바꾼다. 방에서는 `{k:'music'}` 요청 → 방장이 `session.music` 갱신 → 모두에게 반영(음악을 켠 사람만 들림). 방장은 설정 시트에서 시간대(분위기)와 음악을 바꿀 수 있다(`#row-mood`).
 - **화면 배율**(`zoom.js`): 두 손가락 핀치, 마우스 휠(Ctrl/Cmd+휠은 브라우저 기본 확대), 설정 슬라이더. 걷기는 카메라 거리, 바텐딩은 FOV 에 적용(`S.zoom` 0.6~1.8, 저장됨).
 - 아직 안 한 것: 시그니처(취향) 주문, 같이 건배 보너스, 인테리어/스킨 해금, 랩 모드.
+
+## 스토리 모드 (tale): 대화 + 주문 + 관계도
+
+- 모드 `tale`(기본). 기존 `story`(난이도 단계 코스)는 이름만 "연습 코스"로 바꿨다. 스토리는 **혼자 하기 전용**이고 방 안에서는 시작되지 않는다. 스토리에서는 랜덤 주문(`tickOrders`)과 제한시간이 없다(`limitOf` = 0).
+- 설계 문서: `docs/story/01-night1.md`(세계관, 7일 밤 개요, 서윤 × 윤하 메인 로맨스 아크, 1일 차 대본). 톤은 코미디 7 : 진지 3. 주인공 하랑(고정).
+- `src/story/` (순수, three/DOM/저장소 없음): `engine.js` 대사 그래프 실행기(`say`, `choice`, `recommend`, `order`, `close` + 자동 노드 `enter`, `leave`, `fx`; 노드와 선택지에 `hearts:{who:n}`, `flag`), `night1.js` 1일 차 데이터(`CHARS`, `FLAVOR`, 노드 목록, 모든 문장 `{ko,en}`), `save.js` 진행 저장(`courte.tale`: 완료한 밤, 하트, 플래그. 다시 하는 밤은 하트를 바꾸지 않는다).
+- 흐름: 대화 → `recommend`(분위기 주문: 후보 술을 골라 내준다, 후보마다 `good|ok|miss`) 또는 `order`(고정 주문) → 주문서가 걸리고 플레이어가 카운터에서 평소대로 만든다 → 서빙 뒤 별 점수로 반응 분기(`served`, `miss` 는 칭찬을 2성까지로 제한) → 다음 대화. 밤 끝에 `close` 카드(하트 변화 + 마스터의 노트).
+- 화면: `src/tale-ui.js`(하단 글라스 대화창, 타자 효과, 선택지는 숫자키/탭, 텍스트는 항상 `textContent`), 연결은 `main.js` 의 "tale" 블록(`taleStart/taleStep/taleOrder/taleAfterServe`). 대화 중에는 `S.paused` 와 플레이어 모델 숨김. 스토리 손님은 `CHARS[who].seat` 의 NPC 스툴에 앉고(`nameOv` 로 이름을 덮어씀, `noTalk`), 새 밤 데이터는 `NIGHTS` 에 추가한다.
+- 테스트 `test/tale.test.js`: 노드 참조/ko·en 문장/후보 레시피, 모든 경로가 `close` 에 도달, 전체 플레이, 하트 상한, 직렬화.
+- 아직 안 한 것: 2~7일 밤, 서윤 × 윤하 인연 게이지("저쪽 손님께서 보내셨습니다"), 손님별 외형(`makeCharacter` 파라미터화), 대화 클로즈업 카메라와 표정.
