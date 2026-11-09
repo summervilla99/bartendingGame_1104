@@ -29,7 +29,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     const tale=loadTale();
     const nights=Array.from({length:7},(_,i)=>{
       const n=i+1,def=NIGHTS.find(x=>x.n===n),done=tale.done[n],ok=!!def&&isNightOpen(n,tale);
-      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(ok?'':' soon'),'<b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):(def&&!ok?t('stage_lock'):''))+'</i>',!ok);
+      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(ok?'':' soon'),'<b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):(def&&!ok?t('night_lock'):''))+'</i>',!ok);
     }).join('');
     const kinds=KINDS.map(id=>opt('kind',id,kind===id,'st-mode','<b>'+t('kind_'+id)+'</b><span class="st-d">'+t('kind_'+id+'_d')+'</span>')).join('');
     const diffs=Object.keys(DIFFS).map(d=>opt('diff',d,cfg.diff===d,'st-guide',t('diff_'+d))).join('');

@@ -30,7 +30,7 @@ npm run build    # dist/
 바닥은 다크 헤링본, 벽은 다마스크 + 월스콧, 창은 밤 도시 + 벨벳 커튼, 홀 한쪽에 그랜드 피아노 스테이지.
 
 UI는 "미드나잇 글라스": 반투명 다크 유리면(`--glass-2` + blur) + 1px 헤어라인(`--line`) + 황동 포인트. 두꺼운 외곽선/하드 섀도우 스티커 스타일은 폐기했다. 색은 3D 방이 담당하고 UI는 조용하게 둔다.
-- 타이틀/칵테일 이름: 세리프(Cormorant Garamond + Noto Serif KR, 이탤릭 포함). 라벨/수치: DM Sans + Noto Sans KR, 작은 대문자 + 넓은 자간, 수치는 tabular-nums. Yellowtail 은 로고 전용. Black Han Sans 는 3D 병 라벨 캔버스에만 쓴다.
+- 타이틀/칵테일 이름: 세리프(Cormorant Garamond + **Gowun Batang**, 이탤릭 포함). 라벨/수치: DM Sans + **Pretendard**(jsDelivr 가변 동적 서브셋, 폴백 Noto Sans KR). 한글은 소문자 대문자처럼 자간을 벌리지 않고(`:root[lang=ko]` 규칙), `word-break:keep-all` 로 단어 단위 줄바꿈. 시작 화면 타이포 규칙은 `styles.css` 맨 아래 "typography pass" 블록, 작은 대문자 + 넓은 자간, 수치는 tabular-nums. Yellowtail 은 로고 전용. Black Han Sans 는 3D 병 라벨 캔버스에만 쓴다.
 - 주요 버튼 = 황동 그라디언트 알약(`.btn.primary`), 보조 = 유리 알약. 활성 상태 = 황동 1px 링 + 옅은 배경.
 - 모바일 우선: 상단은 로고 + 팁 + 설정 버튼(언어/음악은 `#settings` 팝오버. 단위 토글은 제거했고 ml · oz 를 항상 함께 표시), 바텐딩 조작은 하단 시트(`.bar-bottom`, 세로 화면에선 전체 폭), 단계는 얇은 스테퍼(`.steps`), 재료 칩은 가로 스크롤 + 스냅. 터치 타깃 44px 이상.
 - 방식 색: 셰이크 구리(`--copper`), 스터 세이지(`--sage`), 빌드 황동. 경고 `--tomato`.
