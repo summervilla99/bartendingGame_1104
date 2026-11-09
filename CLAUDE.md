@@ -51,6 +51,7 @@ src/
   session.js        세션 설정(시간대/메뉴 계열/모드/가이드) 정의, 저장, 레시피 풀 필터. 나중에 온라인 방 설정으로 그대로 쓴다
   start.js          "오늘 밤을 골라 주세요" 시작 화면(시간대 선택 시 뒤의 바가 실시간 미리보기)
   game/             순수 게임 규칙(three/DOM 없음, JSON 상태): rng.js 시드 난수, world.js 월드·주문·밤 정산·스냅샷, bartending.js 붓기/섞기/점수
+  net/              온라인 방: peers.js(메시지 검증/만료/보간, 순수), room.js(방 클라이언트, 코드 생성), transport.js(전송 추상화)
   data.js           재료 20종(INGR, cat=spirit|liqueur|mixer), 레시피 19종(RECIPES, house:true=하우스 오리지널), 가니시, 이름은 전부 {ko,en}
   i18n.js           ko/en 사전, t(key,vars), tr({ko,en}), setLang/onLang, data-i18n 속성 적용
   units.js          ml · oz 병기(fmtVol, fmtRatio, 5ml 미만은 대시). 토글 없음
@@ -136,3 +137,13 @@ src/
 - 잔 용량은 `data.js` 의 `VESSEL_CAP` 한 곳에서 정의하고 `glass.js` 가 그 값을 쓴다.
 - 테스트: `npm test`(Node, 의존성 없음). 레시피 데이터 검증(재료/잔 용량/방식 규칙/팁), 주문 결정성, 점수, 스냅샷 왕복을 검사한다. 새 레시피나 규칙을 바꾸면 반드시 통과시킬 것.
 - 재현용: `?debug&seed=7` 로 열면 그 밤의 난수 시드가 고정된다. `window.__courte.snapshot()` 으로 현재 상태 JSON 을 볼 수 있다.
+
+## 온라인 방 규칙 (3단계: 걷기 동기화까지)
+
+- 전송은 `net/transport.js` 인터페이스 `{join(code), send(msg), on(h)->unsub, leave()}` 하나뿐이다. 지금 구현은 `BroadcastChannel`(같은 브라우저의 다른 탭끼리, 서버 없음). Supabase Realtime(방마다 broadcast 채널) 은 같은 인터페이스의 두 번째 구현으로 추가한다. 방/동기화 로직은 전송 방식을 몰라야 한다.
+- 네트워크로 들어오는 메시지는 모두 신뢰하지 않는다. 반드시 `peers.parse` 를 거쳐 타입, 범위(방 안으로 clamp), 이름(길이/특수문자) 을 정리한 뒤 쓴다. 최대 8명, 5초 동안 조용하면 만료.
+- 메시지: `hello`(입장), `pos`(위치/방향/속도, 이동 중 ~10Hz, 정지 시 ~2Hz), `emote`(건배), `bye`. 방 클라이언트는 자기 시계(`now`) 하나만 쓴다.
+- 백그라운드 탭은 requestAnimationFrame 이 멈추므로 하트비트는 `setInterval` 로도 보낸다.
+- 방 코드 5자리(헷갈리는 글자 제외). 초대 링크는 `?room=CODE`. 닉네임/외형은 localStorage(`courte.name`, `courte.look`).
+- **아직 각자 진행하는 것**: NPC 손님, 주문, 제조, 점수. 월드 상태(`game/world.js`)를 방 전체가 공유하는 것이 4단계(주문 티켓/스테이션 동기화)다.
+- 테스트: `test/net.test.js`(메시지 검증, 만료, 두 클라이언트 BroadcastChannel 왕복). 실제 확인은 탭 두 개로 한다(`?debug` 에서 `window.__courte.net`).

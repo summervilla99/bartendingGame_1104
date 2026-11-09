@@ -20,12 +20,14 @@
   <header class="top">
     <div class="brand"><span class="neon">Courte Studio</span><span class="brand-sub">BAR &amp; LOUNGE</span><div class="night" id="night-stat" hidden><span id="night-lb"></span><b id="night-prog"></b></div></div>
     <div class="top-r">
+      <button class="stat roomchip" id="room-chip" type="button" hidden></button>
       <div class="stat"><span data-i18n="tips"></span><b id="tips">₩0</b></div>
       <button class="ibtn" id="btn-settings" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="settings_aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </div>
   </header>
   <div class="pop" id="settings" hidden>
     <div class="srow"><span data-i18n="set_lang"></span><button class="btn sm" id="btn-lang" type="button" data-i18n-aria="lang_aria"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>
+    <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></div>
     <div class="srow"><span data-i18n="set_music"></span><button class="btn sm" id="btn-music" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">♪</span><span class="lb" id="music-lb"></span></button></div>
   </div>
 

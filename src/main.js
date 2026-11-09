@@ -14,6 +14,9 @@ import {buildRoom,brass,COUNTER_TOP,STOOL_Z,BAR_ZONE,ROOM} from './room.js';
 import {makeBottle} from './bottles.js';
 import {TIMES,loadSession,saveSession,poolFor} from './session.js';
 import {createStart} from './start.js';
+import {createTransport} from './net/transport.js';
+import {createRoom,makeCode,normalizeCode} from './net/room.js';
+import {smooth as smoothPeer} from './net/peers.js';
 import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
 import {createPlayer} from './player.js';
@@ -681,7 +684,7 @@ function updateNpcs(dt,t){
 }
 function cheers(){
   if(S.mode!=='walk')return;
-  Snd.init();Snd.clink(1);player.st.cheer=1.2;
+  Snd.init();Snd.clink(1);player.st.cheer=1.2;net.emote();
   npcs.forEach((g,i)=>{if(g.active&&g.fig.position.distanceTo(player.pos)<5)setTimeout(()=>{g.cheer=1.2;},120+i*110);});
   setTimeout(()=>Snd.clink(.7),380);
   toast(t('toast_cheers'));
@@ -718,7 +721,7 @@ function refreshAll(){
   CATS.forEach(c=>{tabEls[c.id].textContent=t(c.key);});
   paintAllLabels();updateWalkUI();S.actionKey='';
   if(S.recipe&&S.mode==='bar'){updateTicket();if(S.stage&&S.stage!=='result')setStage(S.stage);if(S.mixKey)el.mixSay.textContent=t(S.mixKey);if(S.drink.result&&!el.result.hidden)renderResult();}
-  refreshChips();refreshMusic();
+  refreshRoomUI();refreshChips();refreshMusic();
 }
 onLang(refreshAll);
 window.addEventListener('keydown',e=>{
@@ -739,7 +742,7 @@ resize();
 /* ───────────── loop ───────────── */
 /* ?debug exposes state on window.__courte; ?debug&dtmax=0.2 lets slow (software-GL) machines advance faster per frame. */
 const QS=new URLSearchParams(location.search),DEBUG=QS.has('debug'),DEBUG_SEED=(DEBUG&&QS.has('seed'))?(parseInt(QS.get('seed'),10)>>>0):null,DT_MAX=(DEBUG&&parseFloat(QS.get('dtmax')))||.05;
-if(DEBUG)window.__courte={snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
+if(DEBUG)window.__courte={get net(){return net;},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
 let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
@@ -747,11 +750,78 @@ function frame(now){
   if(S.mode==='walk'){if(!S.paused)player.update(dt,time);player.view.off=portraitNow()?.12:0;}
   updateCamera(dt);room.animate(dt,time);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
-  updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();
+  updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
   finalPass.uniforms.time.value=time%50;
   composer.render(dt);
   if(firstFrame){firstFrame=false;requestAnimationFrame(()=>$('#loading').classList.add('gone'));}
 }
+/* ───────────── online room: walking sync (transport is local-tab for now, Supabase later) ───────────── */
+const NAME_KEY='courte.name',LOOK_KEY='courte.look';
+const net=createRoom(createTransport(),{now:()=>performance.now(),onChange:()=>refreshRoomUI()});
+const LOOKS=[
+  {skin:0xe2b291,top:0x1f3b52,shirt:0xe9dfcc,tie:0xc9a066,pants:0x1c1c20,hair:0x17100c},
+  {skin:0xc99372,top:0x5a1e1a,shirt:0xece2cf,pants:0x1e1a1c,hair:0x0e0806,hat:0x2b2522},
+  {skin:0xf0c8aa,top:0x2e4a3c,dress:true,sheen:true,hair:0x3b1f16,long:true,shoes:0x2a0d0d},
+  {skin:0xd9a885,top:0x3a2a4a,dress:true,sheen:true,hair:0x120a08,bun:true},
+  {skin:0xe5b99a,top:0x6a4a2a,shirt:0xf0e6d6,tie:0x5a1e1a,pants:0x2a221e,hair:0x2a1a10},
+  {skin:0xc89070,top:0x24262b,shirt:0xddd2bf,pants:0x161a24,hair:0x0e0a08,hat:0x4a3a2a},
+  {skin:0xeac2a4,top:0x7a2a3a,dress:true,sheen:true,hair:0x2a1a10,long:true},
+  {skin:0xb8805e,top:0x2b3a2a,shirt:0xe6e0d4,tie:0x9c7239,pants:0x1a1c18,hair:0x120c10}
+];
+const remotes=new Map(),tagV=new THREE.Vector3();
+function myLook(){
+  let v=NaN;try{v=parseInt(localStorage.getItem(LOOK_KEY),10);}catch(_){}
+  if(!(v>=0&&v<LOOKS.length)){v=Math.floor(Math.random()*LOOKS.length);try{localStorage.setItem(LOOK_KEY,String(v));}catch(_){}}
+  return v;
+}
+function setRoomParam(code){const u=new URL(location.href);if(code)u.searchParams.set('room',code);else u.searchParams.delete('room');history.replaceState(null,'',u);}
+function refreshRoomUI(){
+  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;
+  if(net.active){chip.textContent=net.code+' · '+net.count;chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
+}
+function connectRoom(onl){
+  if(onl.mode==='solo'){if(net.active){net.leave();setRoomParam(null);}return;}
+  if(net.active&&(onl.mode==='create'||normalizeCode(onl.code)===net.code))return;
+  const name=(onl.name||'').trim()||t('guest_default');
+  try{localStorage.setItem(NAME_KEY,name);}catch(_){}
+  const code=onl.mode==='create'?makeCode():normalizeCode(onl.code);
+  net.join(code,name,myLook());setRoomParam(code);
+  toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
+}
+const myState=()=>({x:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0});
+function syncRemotes(dt,t){
+  if(!net.active&&!remotes.size)return;
+  net.update(myState());
+  const nowT=performance.now(),rect=canvas.getBoundingClientRect(),showTags=S.mode==='walk'&&cam.t>=.7;
+  net.peers.forEach((p,id)=>{
+    let r=remotes.get(id);
+    if(!r){
+      const fig=makeCharacter(LOOKS[p.c]);scene.add(fig);
+      const tag=document.createElement('div');tag.className='nametag';el.bubbles.appendChild(tag);
+      r={fig,tag};remotes.set(id,r);
+    }
+    smoothPeer(p,dt);
+    r.fig.position.set(p.x,room.groundAt(p.x,p.z),p.z);r.fig.rotation.y=p.yaw;
+    poseWalk(r.fig,p.ph,Math.min(1,p.sp),t);
+    const l=p.emoteUntil>nowT?Math.sin(Math.min(1,(p.emoteUntil-nowT)/1200)*Math.PI):0;
+    if(l>0){const a=r.fig.userData.arms[1];a.sh.rotation.x=-2.5*l;a.el.rotation.x=-.6*l;}
+    if(r.tag.textContent!==p.name)r.tag.textContent=p.name;
+    tagV.set(p.x,r.fig.position.y+1.95,p.z).project(camera);
+    if(!showTags||tagV.z>1||Math.abs(tagV.x)>1.2){r.tag.style.display='none';}
+    else{r.tag.style.display='block';r.tag.style.transform='translate('+((tagV.x*.5+.5)*rect.width).toFixed(1)+'px,'+((-tagV.y*.5+.5)*rect.height).toFixed(1)+'px) translate(-50%,-100%)';}
+  });
+  remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();remotes.delete(id);}});
+}
+$('#room-chip').addEventListener('click',()=>{
+  if(!net.active)return;
+  const u=new URL(location.href);u.search='';u.searchParams.set('room',net.code);const url=u.toString();
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast(t('room_copied')),()=>toast(url,4000));
+});
+$('#btn-room-leave').addEventListener('click',()=>{net.leave();setRoomParam(null);toggleSettings(false);toast(t('room_left'));});
+addEventListener('pagehide',()=>net.leave());
+/* background tabs stop requestAnimationFrame: keep the heartbeat on a timer so others do not drop us */
+setInterval(()=>{if(net.active&&document.hidden)net.update(myState());},1000);
+
 /* ───────────── session: apply config, start screen, summary ───────────── */
 function applyLook(timeId){
   const L=TIMES[timeId].look;room.setTime(L);
@@ -773,7 +843,8 @@ function applySession(cfg){
 }
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
   onPreview:applyLook,
-  onStart:cfg=>{applySession(cfg);S.paused=false;player.st.enabled=true;}});
+  initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
+  onStart:(cfg,onl)=>{applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);}});
 function openStart(){
   if(S.mode!=='walk')return;
   S.paused=true;player.st.enabled=false;$('#summary').hidden=true;startUI.show();
