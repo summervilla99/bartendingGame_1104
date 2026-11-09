@@ -1363,6 +1363,7 @@ function clearPianist(){
 const taleGuest=who=>TALE_CHARS[who].seat==='piano'?pianist:guests[+TALE_CHARS[who].seat.slice(1)];
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
+    if(e.k==='music'){if(Snd.on){if(!musicBefore)musicBefore=Snd.genre;Snd.setGenre(e.genre);}return;}
     const g=taleGuest(e.who);
     if(g===pianist){
       if(e.k==='enter'){seatPianist(TALE_CHARS[e.who].look);setFace(pianist.fig,'neutral');setTalkCam(pianist);if(e.music&&Snd.on&&!musicBefore){musicBefore=Snd.genre;Snd.setGenre(e.music);}}

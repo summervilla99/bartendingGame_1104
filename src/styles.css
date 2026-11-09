@@ -367,3 +367,4 @@ button.st-night{text-align:left;cursor:pointer;color:inherit;font:inherit}
 button.st-night.on{border-color:var(--brass);background:rgba(201,160,102,.12)}
 button.st-night:disabled{cursor:default}
 .st-night i{grid-column:2}
+.st-kinds{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}

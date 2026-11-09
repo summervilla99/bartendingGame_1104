@@ -27,7 +27,7 @@ export const FAMILIES={
 export const FAM_ORDER=['all','sours','stirred','long','agave','gin','house'];
 
 /* Modes: story = solo scenario (stages), service = a free night with a goal, practice = no limits, lab = soon. */
-export const MODES=['tale','story','service','practice','lab'];
+export const MODES=['tale','practice','service'];     // story = the tale, practice = solo cocktail practice, service = a room with friends
 export const DEFAULT={time:'prime',menu:'all',mode:'tale',guide:'full',diff:'easy',stage:'s1'};
 
 /* Difficulty = how long a drink may take (seconds). Practice has no limit. */

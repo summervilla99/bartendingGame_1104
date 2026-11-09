@@ -23,6 +23,8 @@ NIGHTS.forEach(N => {
       if(n.t==='enter'){ [{who:n.who,seat:n.seat},...(n.also||[])].forEach(a => { const s=CHARS[a.who].seat; assert.equal(a.seat,s,n.id+' seat matches '+a.who); assert.ok(s==='piano'?SEATS.some(x=>x.kind==='piano'):/^g[0-3]$/.test(s), n.id+' seat'); }); }
       if(n.t==='over'){ assert.equal(G[n.retry].t,'enter', n.id+' retries from an entrance'); assert.ok(bi(n.title)&&bi(n.tip)); }
       if(n.t==='order') assert.ok(RECIPE_BY_ID[n.rec], n.id);
+      if(n.pre){ assert.ok(bi(n.pre.text)&&(n.pre.who==='narr'||CHARS[n.pre.who]), n.id+' pre'); }
+      if(n.t==='fx'&&n.music) assert.ok(['jazz','house','classical'].includes(n.music), n.id+' music');
     });
     Object.values(CHARS).filter(c=>c.look).forEach(c => assert.ok(c.look.skin!=null && c.look.top!=null));
   });
@@ -50,7 +52,7 @@ NIGHTS.forEach(N => {
     const st=newState(N.n,null); begin(st,G,N.entry);
     let guard=0; const log=[];
     while(view(st,G).kind!=='close' && guard++<200){
-      log.push(...drainEvents(st).map(e=>e.k+':'+e.who));
+      log.push(...drainEvents(st).filter(e=>e.k==='enter'||e.k==='leave').map(e=>e.k+':'+e.who));
       const v=view(st,G);
       if(v.kind==='say') advance(st,G);
       else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));

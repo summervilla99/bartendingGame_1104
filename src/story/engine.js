@@ -27,7 +27,7 @@ export function goto(st,graph,id){
       (n.also||[]).forEach(a=>st.events.push({k:'enter',who:a.who,seat:a.seat}));   // others who walk in together (and re-enter on a retry)
       id=n.next;continue;}
     if(n.t==='leave'){st.events.push({k:'leave',who:n.who});id=n.next;continue;}
-    if(n.t==='fx'){id=n.next;continue;}
+    if(n.t==='fx'){if(n.music)st.events.push({k:'music',genre:n.music});id=n.next;continue;}
     if(n.t==='if'){id=st.flags[n.when]?n.then:n.else;continue;}      // branch on something remembered from an earlier night
     if(n.t==='order')st.order={who:n.who,rec:n.rec,match:n.match||'good'};
     return;
@@ -38,6 +38,7 @@ export function begin(st,graph,entry){st.gain={};st.events=[];goto(st,graph,entr
 
 /* What the screen should show now. */
 export function view(st,graph){
+  if(st.node==='@pre')return {kind:'say',who:st.lead.pre.who,text:st.lead.pre.text,face:st.lead.pre.face||'neutral'};
   if(st.node==='@lead')return {kind:'say',who:st.lead.who,text:st.lead.text,face:st.lead.face};
   const n=graph[st.node];
   if(!n)return {kind:'end'};
@@ -54,6 +55,7 @@ export function view(st,graph){
 
 /* Tap on a say node. */
 export function advance(st,graph){
+  if(st.node==='@pre'){if(st.lead.text){st.node='@lead';return true;}goto(st,graph,st.lead.next);return true;}
   if(st.node==='@lead'){goto(st,graph,st.lead.next);return true;}
   const n=graph[st.node];
   if(!n||n.t!=='say')return false;
@@ -87,7 +89,10 @@ export function served(st,graph,stars){
     for(let s=eff;s>=0;s--)if(n.react[s]){key=n.react[s];break;}
     if(!key)for(let s=eff+1;s<=3;s++)if(n.react[s]){key=n.react[s];break;}
   }
-  if(o.lead){st.lead={who:o.who,text:o.lead,face:o.match==='good'?'smile':o.match==='ok'?'neutral':'angry',next:key};st.node='@lead';st.order=null;return true;}   // the guest first comments on this very drink
+  if(o.lead||n.pre){                                   // a line before the reaction (n.pre), then the guest comments on this very drink
+    st.lead={who:o.who,text:o.lead,face:o.match==='good'?'smile':o.match==='ok'?'neutral':'angry',pre:n.pre||null,next:key};
+    st.node=n.pre?'@pre':'@lead';st.order=null;return true;
+  }
   goto(st,graph,key);return true;
 }
 /* Events produced since the last call (enter/leave), for the renderer. */
