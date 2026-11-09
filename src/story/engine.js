@@ -28,7 +28,7 @@ export function goto(st,graph,id){
       id=n.next;continue;}
     if(n.t==='leave'){st.events.push({k:'leave',who:n.who});id=n.next;continue;}
     if(n.t==='fx'){if(n.music)st.events.push({k:'music',genre:n.music});id=n.next;continue;}
-    if(n.t==='if'){id=st.flags[n.when]?n.then:n.else;continue;}      // branch on something remembered from an earlier night
+    if(n.t==='if'){id=(n.when?st.flags[n.when]:(st.hearts[n.heart]||0)>=n.atLeast)?n.then:n.else;continue;}      // branch on something remembered from an earlier night
     if(n.t==='order')st.order={who:n.who,rec:n.rec,match:n.match||'good'};
     return;
   }

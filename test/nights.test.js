@@ -20,7 +20,7 @@ NIGHTS.forEach(N => {
       if(n.t==='say'){ assert.ok(bi(n.text), n.id); assert.ok(n.who==='narr'||CHARS[n.who], n.id+' who'); }
       (n.opts||[]).forEach(o => assert.ok(bi(o.text), n.id));
       if(n.t==='enter'||n.t==='leave') assert.ok(CHARS[n.who]&&CHARS[n.who].seat, n.id+' who has no seat');
-      if(n.t==='enter'){ [{who:n.who,seat:n.seat},...(n.also||[])].forEach(a => { const s=CHARS[a.who].seat; assert.equal(a.seat,s,n.id+' seat matches '+a.who); assert.ok(s==='piano'?SEATS.some(x=>x.kind==='piano'):/^g[0-3]$/.test(s), n.id+' seat'); }); }
+      if(n.t==='enter'){ [{who:n.who,seat:n.seat},...(n.also||[])].forEach(a => { const s=CHARS[a.who].seat; assert.equal(a.seat==='piano',s==='piano',n.id+' piano characters stay at the piano'); assert.ok(a.seat==='piano'?SEATS.some(x=>x.kind==='piano'):/^g[0-3]$/.test(a.seat), n.id+' seat'); }); }
       if(n.t==='over'){ assert.equal(G[n.retry].t,'enter', n.id+' retries from an entrance'); assert.ok(bi(n.title)&&bi(n.tip)); }
       if(n.t==='order') assert.ok(RECIPE_BY_ID[n.rec], n.id);
       if(n.pre){ assert.ok(bi(n.pre.text)&&(n.pre.who==='narr'||CHARS[n.pre.who]), n.id+' pre'); }
@@ -52,7 +52,7 @@ NIGHTS.forEach(N => {
     const st=newState(N.n,null); begin(st,G,N.entry);
     let guard=0; const log=[];
     while(view(st,G).kind!=='close' && guard++<200){
-      log.push(...drainEvents(st).filter(e=>e.k==='enter'||e.k==='leave').map(e=>e.k+':'+e.who));
+      drainEvents(st).filter(e=>e.k==='enter'||e.k==='leave').forEach(e=>log.push(e.k+':'+e.who+':'+(e.seat||'')));
       const v=view(st,G);
       if(v.kind==='say') advance(st,G);
       else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));
@@ -61,8 +61,11 @@ NIGHTS.forEach(N => {
       else throw new Error('stuck at '+st.node+' ('+v.kind+')');
     }
     assert.equal(view(st,G).kind,'close');
+    const seatOf=new Map();                  // who sits where: nobody shares a seat while both are at the bar
     const present=new Set();                 // entering twice is harmless (retry checkpoints); leaving needs someone present; the bar is empty at the end
-    log.forEach(e=>{const [k,w]=e.split(':'); if(k==='enter') present.add(w); else { assert.ok(present.has(w), w+' leaves without being there'); present.delete(w); }});
+    log.forEach(e=>{const [k,w,seat]=e.split(':');
+      if(k==='enter'){ for(const [o,s2] of seatOf) if(o!==w&&present.has(o)&&s2===seat) assert.fail(w+' takes '+seat+' while '+o+' sits there'); present.add(w); seatOf.set(w,seat); }
+      else { assert.ok(present.has(w), w+' leaves without being there'); present.delete(w); }});
     assert.equal(present.size,0,'still at the bar: '+[...present].join(','));
   });
   test('night '+N.n+': each wrong answer ends in a game over after the guest leaves', () => {
@@ -87,4 +90,28 @@ test('night 2 remembers the sheet music from night 1', () => {
     let g=0; while(g++<20&&view(st,NIGHTS[1].graph).kind==='say'){ set.add(st.node); advance(st,NIGHTS[1].graph); }
   });
   assert.ok(has.has('sy_sheet')); assert.ok(!no.has('sy_sheet'));
+});
+test('night 7 has three endings chosen by the bond', () => {
+  const N=NIGHTS[6],G=N.graph;
+  const run=bond=>{
+    const st=newState(7,{hearts:{bond},flags:{}}); begin(st,G,N.entry); let g=0;
+    while(view(st,G).kind!=='close'&&g++<200){ drainEvents(st); const v=view(st,G);
+      if(v.kind==='say') advance(st,G); else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));
+      else if(v.kind==='recommend'){ pick(st,G,G[st.node].cands.findIndex(c=>c.match==='good')); served(st,G,3); } else if(v.kind==='wait') served(st,G,3); }
+    return Object.keys(st.flags).filter(f=>f.startsWith('ending_'));
+  };
+  assert.deepEqual(run(5),['ending_love']); assert.deepEqual(run(4),['ending_love']);
+  assert.deepEqual(run(3),['ending_friend']); assert.deepEqual(run(2),['ending_friend']);
+  assert.deepEqual(run(1),['ending_apart']); assert.deepEqual(run(0),['ending_apart']);
+});
+test('the bond can reach the love ending by playing every right answer in nights 2, 4, 6', () => {
+  let hearts={}, flags={};
+  [2,4,5,6].forEach(n => {
+    const N=NIGHTS[n-1],G=N.graph,st=newState(n,{hearts,flags}); begin(st,G,N.entry); let g=0;
+    while(view(st,G).kind!=='close'&&g++<300){ drainEvents(st); const v=view(st,G);
+      if(v.kind==='say') advance(st,G); else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));
+      else if(v.kind==='recommend'){ pick(st,G,G[st.node].cands.findIndex(c=>c.match==='good')); served(st,G,3); } else if(v.kind==='wait') served(st,G,3); }
+    hearts=st.hearts; flags=st.flags;
+  });
+  assert.equal(hearts.bond,5);
 });

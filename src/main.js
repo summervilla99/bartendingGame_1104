@@ -1294,7 +1294,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
-  Object.keys(taleProps).forEach(removeProp);clearPianist();S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
+  Object.keys(taleProps).forEach(removeProp);clearPianist();Object.keys(taleSeat).forEach(k=>delete taleSeat[k]);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1360,9 +1360,11 @@ function clearPianist(){
   pianist.active=false;
   if(musicBefore){Snd.setGenre(musicBefore);musicBefore=null;}
 }
-const taleGuest=who=>TALE_CHARS[who].seat==='piano'?pianist:guests[+TALE_CHARS[who].seat.slice(1)];
+const taleSeat={};                 // where each story character currently sits (an entrance may override the default seat)
+const taleGuest=who=>{const s=taleSeat[who]||TALE_CHARS[who].seat;return s==='piano'?pianist:guests[+s.slice(1)];};
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
+    if(e.k==='enter')taleSeat[e.who]=e.seat||TALE_CHARS[e.who].seat;
     if(e.k==='music'){if(Snd.on){if(!musicBefore)musicBefore=Snd.genre;Snd.setGenre(e.genre);}return;}
     const g=taleGuest(e.who);
     if(g===pianist){

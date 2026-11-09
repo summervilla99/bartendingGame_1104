@@ -6,6 +6,8 @@ export const CHARS={
     look:{name:'깡이',skin:0xc9936f,top:0x1b1b1e,shirt:0xdcd7cc,pants:0x1c2230,hair:0x0d0b0b,slick:true,glasses:0x0b0b0c,earring:0xd8d8dc,necklace:0xd4af37,shoes:0xf0efe9,lip:0x6a2a26,w:1.08,h:1.01,sheen:true}},
   yoonjae:{name:{ko:'도윤재',en:'Do Yoonjae'},seat:'g2',tone:'#9fb4d9',prop:'watchbox',
     look:{name:'윤재',skin:0xeed1b8,top:0x1b2848,shirt:0xf5f2ea,tie:0x9a7a2e,pants:0x1b2848,hair:0x3a281e,slick:true,lapel:0x121c38,watch:true,sheen:true,shoes:0x1a1010,lip:0x7a3a34,w:.95,h:1.04}},
+  master:{name:{ko:'마스터',en:'The Master'},seat:'g1',tone:'#c9a066',prop:'key',
+    look:{name:'마스터',skin:0xe2bd9c,top:0x3b2b24,shirt:0xe9e0cc,tie:0x6b2a2a,pants:0x2a2420,hair:0xe6e2dc,bald:true,glasses:0x6a5a3a,lapel:0x2a1c16,watch:true,belly:true,shoes:0x1c1410,lip:0x7a3a34,w:1.02,h:.97}},
   yunha:{name:{ko:'윤하',en:'Yunha'},seat:'piano',tone:'#d9a3b8',
     look:{name:'윤하',skin:0xeac6a8,top:0x2a1a30,pants:0x2a1a30,hair:0x6b3a28,long:true,dress:true,sheen:true,earring:0xd9b46a,lip:0xa03a48,w:.9,h:1.0,shoes:0x15101a}},
   seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
@@ -22,6 +24,7 @@ export const FLAVOR={
   oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
   cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
   whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'},
+  courtenoir:{ko:'가게의 이름을 건 쌉쌀하고 진한 한 잔',en:'The house drink: dark and bittersweet'},
   whitenegroni:{ko:'맑고 쌉쌀한 화이트 네그로니',en:'Clear and bitter-floral'},tomcollins:{ko:'레몬과 소다로 길게',en:'Long, lemony and fizzy'}
 };
 

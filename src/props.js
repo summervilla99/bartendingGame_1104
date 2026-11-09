@@ -64,4 +64,14 @@ function makeWatchbox(){
   g.scale.setScalar(SC*.9);g.rotation.y=.2;
   return g;
 }
-export const makeProp=kind=>kind==='watchbox'?makeWatchbox():kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;
+/* A brass key on a ring: the key to the bar. */
+function makeKey(){
+  const g=new THREE.Group();
+  const brass=M(0xc9a066,{roughness:.25,metalness:.9,envMapIntensity:1.3});
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.03,.007,8,22),brass);ring.rotation.x=Math.PI/2;ring.position.set(0,.009,0);g.add(ring);
+  const shaft=new THREE.Mesh(new THREE.BoxGeometry(.012,.006,.1),brass);shaft.position.set(0,.009,.075);g.add(shaft);
+  [.1,.082].forEach((z,i)=>{const t=new THREE.Mesh(new THREE.BoxGeometry(.03,.006,.012),brass);t.position.set(.015,.009,z+.0);g.add(t);});
+  g.scale.setScalar(SC);g.rotation.y=.4;
+  return g;
+}
+export const makeProp=kind=>kind==='key'?makeKey():kind==='watchbox'?makeWatchbox():kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;
