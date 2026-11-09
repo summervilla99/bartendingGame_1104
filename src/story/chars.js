@@ -4,6 +4,8 @@ export const CHARS={
   bond:{name:{ko:'서윤 × 윤하의 인연',en:'Seoyun × Yunha bond'}},
   kkangi:{name:{ko:'강태산',en:'Kang Taesan'},seat:'g1',tone:'#c9b27a',prop:'helmet',
     look:{name:'깡이',skin:0xc9936f,top:0x1b1b1e,shirt:0xdcd7cc,pants:0x1c2230,hair:0x0d0b0b,slick:true,glasses:0x0b0b0c,earring:0xd8d8dc,necklace:0xd4af37,shoes:0xf0efe9,lip:0x6a2a26,w:1.08,h:1.01,sheen:true}},
+  yoonjae:{name:{ko:'도윤재',en:'Do Yoonjae'},seat:'g2',tone:'#9fb4d9',prop:'watchbox',
+    look:{name:'윤재',skin:0xeed1b8,top:0x1b2848,shirt:0xf5f2ea,tie:0x9a7a2e,pants:0x1b2848,hair:0x3a281e,slick:true,lapel:0x121c38,watch:true,sheen:true,shoes:0x1a1010,lip:0x7a3a34,w:.95,h:1.04}},
   yunha:{name:{ko:'윤하',en:'Yunha'},seat:'piano',tone:'#d9a3b8',
     look:{name:'윤하',skin:0xeac6a8,top:0x2a1a30,pants:0x2a1a30,hair:0x6b3a28,long:true,dress:true,sheen:true,earring:0xd9b46a,lip:0xa03a48,w:.9,h:1.0,shoes:0x15101a}},
   seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',prop:'notebook',

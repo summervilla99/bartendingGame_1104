@@ -23,7 +23,9 @@ export function goto(st,graph,id){
     const n=graph[id];
     if(!n)throw new Error('tale: missing node '+id);
     st.node=id;st.order=null;applyFx(st,n);
-    if(n.t==='enter'){st.check={node:id,hearts:Object.assign({},st.hearts),flags:Object.assign({},st.flags)};st.events.push({k:'enter',who:n.who,seat:n.seat,music:n.music||null});id=n.next;continue;}
+    if(n.t==='enter'){st.check={node:id,hearts:Object.assign({},st.hearts),flags:Object.assign({},st.flags)};st.events.push({k:'enter',who:n.who,seat:n.seat,music:n.music||null});
+      (n.also||[]).forEach(a=>st.events.push({k:'enter',who:a.who,seat:a.seat}));   // others who walk in together (and re-enter on a retry)
+      id=n.next;continue;}
     if(n.t==='leave'){st.events.push({k:'leave',who:n.who});id=n.next;continue;}
     if(n.t==='fx'){id=n.next;continue;}
     if(n.t==='if'){id=st.flags[n.when]?n.then:n.else;continue;}      // branch on something remembered from an earlier night

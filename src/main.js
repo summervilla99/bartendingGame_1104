@@ -1338,7 +1338,7 @@ function removeProp(who){const p=taleProps[who];if(p){scene.remove(p.group);dele
 function addProp(who,g){
   removeProp(who);
   const group=makeProp(TALE_CHARS[who].prop);if(!group)return;
-  const dx=who==='taesik'?-.42:who==='kkangi'?-.4:-.3;                 // clear of the guest's own drink and out of the close-up's line of sight
+  const dx=who==='taesik'?-.42:who==='kkangi'?-.4:who==='yoonjae'?.42:-.3;                 // clear of the guest's own drink and out of the close-up's line of sight
   group.position.set(g.x+dx,COUNTER_TOP,.55);group.rotation.y=who==='seoyun'?Math.PI+.25:-.5;
   group.scale.multiplyScalar(.01);scene.add(group);
   taleProps[who]={group,t:0,full:group.scale.x*100};

@@ -20,7 +20,7 @@ NIGHTS.forEach(N => {
       if(n.t==='say'){ assert.ok(bi(n.text), n.id); assert.ok(n.who==='narr'||CHARS[n.who], n.id+' who'); }
       (n.opts||[]).forEach(o => assert.ok(bi(o.text), n.id));
       if(n.t==='enter'||n.t==='leave') assert.ok(CHARS[n.who]&&CHARS[n.who].seat, n.id+' who has no seat');
-      if(n.t==='enter'){ const s=CHARS[n.who].seat; assert.ok(s==='piano'?SEATS.some(x=>x.kind==='piano'):/^g[0-3]$/.test(s), n.id+' seat'); }
+      if(n.t==='enter'){ [{who:n.who,seat:n.seat},...(n.also||[])].forEach(a => { const s=CHARS[a.who].seat; assert.equal(a.seat,s,n.id+' seat matches '+a.who); assert.ok(s==='piano'?SEATS.some(x=>x.kind==='piano'):/^g[0-3]$/.test(s), n.id+' seat'); }); }
       if(n.t==='over'){ assert.equal(G[n.retry].t,'enter', n.id+' retries from an entrance'); assert.ok(bi(n.title)&&bi(n.tip)); }
       if(n.t==='order') assert.ok(RECIPE_BY_ID[n.rec], n.id);
     });
@@ -59,8 +59,9 @@ NIGHTS.forEach(N => {
       else throw new Error('stuck at '+st.node+' ('+v.kind+')');
     }
     assert.equal(view(st,G).kind,'close');
-    const bal=new Map(); log.forEach(e=>{const [k,w]=e.split(':'); bal.set(w,(bal.get(w)||0)+(k==='enter'?1:-1));});
-    bal.forEach((v,w)=>assert.ok(v<=1&&v>=-1, w+' enter/leave balance '+v));
+    const present=new Set();                 // entering twice is harmless (retry checkpoints); leaving needs someone present; the bar is empty at the end
+    log.forEach(e=>{const [k,w]=e.split(':'); if(k==='enter') present.add(w); else { assert.ok(present.has(w), w+' leaves without being there'); present.delete(w); }});
+    assert.equal(present.size,0,'still at the bar: '+[...present].join(','));
   });
   test('night '+N.n+': each wrong answer ends in a game over after the guest leaves', () => {
     Object.values(G).filter(n=>n.t==='choice').forEach(c => {

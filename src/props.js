@@ -52,4 +52,16 @@ function makeHelmet(){
   g.scale.setScalar(SC);
   return g;
 }
-export const makeProp=kind=>kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;
+/* An open leather watch case with a gold watch lying in it. */
+function makeWatchbox(){
+  const g=new THREE.Group();
+  const leather=M(0x1a1412,{roughness:.5,envMapIntensity:.6}),velvet=M(0x5a1a24,{roughness:.9,envMapIntensity:.1}),gold=M(0xd4af37,{roughness:.22,metalness:.9,envMapIntensity:1.2});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(.2,.05,.14),leather);base.position.y=.025;g.add(base);
+  const cush=new THREE.Mesh(new THREE.BoxGeometry(.17,.012,.11),velvet);cush.position.y=.054;g.add(cush);
+  const lid=new THREE.Mesh(new THREE.BoxGeometry(.2,.012,.14),leather);lid.position.set(0,.09,-.085);lid.rotation.x=-1.25;g.add(lid);
+  const strap=new THREE.Mesh(new THREE.TorusGeometry(.03,.006,6,18),gold);strap.rotation.x=Math.PI/2;strap.position.set(0,.064,0);g.add(strap);
+  const face=new THREE.Mesh(new THREE.CylinderGeometry(.024,.024,.01,18),gold);face.position.set(0,.07,0);g.add(face);
+  g.scale.setScalar(SC*.9);g.rotation.y=.2;
+  return g;
+}
+export const makeProp=kind=>kind==='watchbox'?makeWatchbox():kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;
