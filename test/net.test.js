@@ -80,3 +80,16 @@ test('different rooms do not hear each other',async()=>{
     assert.equal(a.count,1);assert.equal(b.count,1);
   }finally{a.leave();b.leave();}
 });
+
+test('game messages travel between room clients and never reach the peer table',async()=>{
+  const a=createRoom(createLocalTransport()),b=createRoom(createLocalTransport());
+  const got=[];
+  try{
+    a.join('GAME1','Ann',0);b.join('GAME1','Ben',0);await sleep(80);
+    b.onGame(m=>got.push(m));
+    a.sendGame({k:'claim',seat:'g1'});await sleep(40);
+    assert.equal(got.length,1);assert.equal(got[0].k,'claim');assert.equal(got[0].id,a.me.id);
+    assert.equal(b.peers.size,1);
+    assert.deepEqual(b.ids().sort(),[a.me.id,b.me.id].sort());
+  }finally{a.leave();b.leave();}
+});

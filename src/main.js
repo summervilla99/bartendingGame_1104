@@ -17,6 +17,7 @@ import {createStart} from './start.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer} from './net/peers.js';
+import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor} from './game/shared.js';
 import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
 import {createPlayer} from './player.js';
@@ -123,6 +124,7 @@ layoutRail(true);
 let dirtyUI=true,time=0;
 /* Session: the serialisable night config (hour, menu family, mode, guide) + runtime pieces derived from it. */
 S.paused=true;S.session=null;S.time=TIMES.prime;S.world=null;S.drink=null;
+S.synced=true;S.claimSeat=null;S.claimInfo=null;S.summaryFor=null;S.lastBeat=0;S.syncWait=0;
 const VP=new THREE.Vector3(.25,COUNTER_TOP,-.05),SP=new THREE.Vector3(-.35,COUNTER_TOP,-.05);
 const BAR_STAND=new THREE.Vector3(0,0,-1.05);
 
@@ -204,7 +206,7 @@ setTab('spirit',true);
 
 const bubbleEls=npcs.map(()=>{const b=document.createElement('div');b.className='bubble';el.bubbles.appendChild(b);return b;});
 
-function pendingGuests(){return guests.filter(g=>g.order).sort((a,b)=>a.orderAt-b.orderAt);}
+function pendingGuests(){return guests.filter(g=>g.order&&!g.claimBy).sort((a,b)=>a.orderAt-b.orderAt);}
 function updateWalkUI(){
   el.tips.textContent=won(S.world?S.world.tips:0);
   if(S.session&&S.world){
@@ -219,6 +221,7 @@ function updateWalkUI(){
 const guestById=id=>guests[+id.slice(1)];
 function updateOrders(){
   if(S.paused)return;
+  if(net.active){if(isHost())hostTick();return;}
   const ev=tickOrders(S.world,time);
   if(!ev)return;
   const g=guestById(ev.seatId);
@@ -238,6 +241,7 @@ function updateBubbles(){
     if(!g.active){b.style.display='none';b.dataset.k='';return;}
     if(g.talk&&time<g.talk.until){key='t'+g.talk.idx+(g.talk.rec?g.talk.rec.id:'');cls='bubble talk';html='<small>'+g.name+'</small>'+talkText(g);}
     else if(g.reaction&&time<g.reaction.until){key='r'+g.reaction.si;cls='bubble react';html='<small>'+g.name+'</small>'+t('say'+g.reaction.si);}
+    else if(g.order&&g.claimName){key='c'+g.order.id+g.claimName;html='<small>'+g.name+'</small><b>'+g.order.name+'</b><em>'+t('bubble_making',{name:g.claimName})+'</em>';}
     else if(g.order){key='o'+g.order.id;html='<small>'+g.name+'</small>'+t('bubble_order',{name:'<b>'+g.order.name+'</b>'});}
     if(key)key+=getLang();
     if(!key||g.anchor.distanceTo(camera.position)>15){b.style.display='none';b.dataset.k='';return;}
@@ -259,7 +263,7 @@ function nearestNpc(){
 function updateAction(){
   let a=null;
   if(S.mode==='walk'&&!S.paused){
-    if(inBarZone(player.pos)){const n=pendingGuests().length;a=n?{type:'bar',label:t('act_bar',{n})}:{type:'wait',label:t('act_wait')};}
+    if(inBarZone(player.pos)){const n=pendingGuests().length,full=net.active&&S.world.stations.every(Boolean);a=full?{type:'wait',label:t('act_full')}:n?{type:'bar',label:t('act_bar',{n})}:{type:'wait',label:t('act_wait')};}
     else{const g=nearestNpc();if(g)a={type:'talk',g,label:t('act_talk',{name:g.name})};}
   }
   const key=a?a.type+a.label:'';
@@ -272,7 +276,7 @@ function updateAction(){
 function doAction(){
   const a=S.action;if(!a||S.mode!=='walk')return;
   Snd.init();
-  if(a.type==='bar'){const g=pendingGuests()[0];if(g)enterBar(g);}
+  if(a.type==='bar'){const g=pendingGuests()[0];if(g)beginBartending(g);}
   else if(a.type==='talk'){
     const g=a.g;let rec=null,idx=g.talkIdx;
     if(g.order&&!g.askedOrder){g.askedOrder=true;rec=g.order;}
@@ -284,7 +288,7 @@ function doAction(){
 /* ───────────── mode switching ───────────── */
 function enterBar(g){
   Snd.init();
-  S.mode='bar';S.guest=g;S.recipe=g.order;S.drink=startDrink(S.world,'g'+guests.indexOf(g));g.askedOrder=false;
+  S.mode='bar';S.guest=g;S.recipe=g.order;S.drink=startDrink(S.world,'g'+guests.indexOf(g),S.claimInfo?S.claimInfo.orderNo:undefined);g.askedOrder=false;
   player.st.enabled=false;player.st.drag=null;
   playerFig.position.copy(BAR_STAND);playerFig.rotation.y=0;poseWalk(playerFig,0,0,time);
   resetBar();
@@ -295,6 +299,8 @@ function enterBar(g){
   if(!S.hinted){S.hinted=true;toast(t('toast_hint'),3200);}
 }
 function leaveBar(){
+  if(S.claimSeat){sendAct({k:'unclaim',seat:S.claimSeat});S.claimSeat=null;}
+  S.claimInfo=null;
   stopPour();bottles.forEach(b=>{b.t=0;b.group.position.copy(b.home);b.group.rotation.set(0,0,0);});clearBarObjects();S.mode='walk';S.stage=null;S.drag=null;
   el.uiBar.hidden=true;el.uiWalk.hidden=false;el.result.hidden=true;
   resetArms(playerFig);
@@ -592,21 +598,31 @@ function renderResult(){
 function showResult(){
   const r=S.drink.result,g=S.guest;
   S.stage='result';
-  settleDrink(S.world,S.drink);
+  if(net.active){
+    const rawTip=r.tip;r.tip=tipFor(S.world.session,rawTip);S.drink.stage='result';
+    sendAct({k:'served',seat:S.drink.seatId,rec:S.drink.recipeId,stars:r.stars,final:r.final,tip:rawTip,ml:S.serv.ml,col:S.strainColor||blendColor()||[.5,.5,.5]});
+    S.claimSeat=null;
+  }else settleDrink(S.world,S.drink);
   renderResult();
-  $('#btn-r-next').disabled=pendingGuests().length<=1;
+  $('#btn-r-next').disabled=pendingGuests().filter(x=>x!==g).length<1;
   el.result.hidden=false;
   Snd.clink(1);
   g.cheer=1.2;
+}
+function spawnDrinkProp(g,d){
+  const rc=RECIPE_BY_ID[d.recipeId];
+  const prop=makeGlass(rc.glass);prop.group.scale.setScalar(.8);prop.group.position.set(g.x,COUNTER_TOP,.45);
+  prop.setLevel(d.ml);prop.setColor(d.col);if(iceFor(rc.glass))prop.setIce(iceFor(rc.glass));
+  scene.add(prop.group);if(g.drink)scene.remove(g.drink.group);g.drink=prop;
 }
 function finishService(){
   const g=S.guest,sv=S.serv,r=S.drink.result;
   scene.remove(sv.group);
   if(S.garnishObj&&S.garnishObj.parent)S.garnishObj.parent.remove(S.garnishObj);
-  const prop=makeGlass(S.recipe.glass);prop.group.scale.setScalar(.8);prop.group.position.set(g.x,COUNTER_TOP,.45);
-  prop.setLevel(sv.ml);prop.setColor(S.strainColor||blendColor());if(iceFor(S.recipe.glass))prop.setIce(iceFor(S.recipe.glass));
-  scene.add(prop.group);if(g.drink)scene.remove(g.drink.group);g.drink=prop;
-  g.order=null;g.reaction={si:r.stars,until:time+7};releaseSeat(S.world,S.drink.seatId,time,r.stars);updateWalkUI();
+  if(!net.active){
+    spawnDrinkProp(g,{recipeId:S.drink.recipeId,ml:sv.ml,col:S.strainColor||blendColor()});
+    g.order=null;g.reaction={si:r.stars,until:time+7};releaseSeat(S.world,S.drink.seatId,time,r.stars);updateWalkUI();
+  }
   S.vessel&&S.vessel.group.parent&&S.vessel.group.parent.remove(S.vessel.group);
   S.vessel=S.serv=null;S.garnishObj=null;
 }
@@ -705,6 +721,7 @@ function nightOver(){return worldNightOver(S.world);}
 $('#btn-r-leave').addEventListener('click',()=>{finishService();leaveBar();if(nightOver())showSummary();});
 $('#btn-r-next').addEventListener('click',()=>{
   finishService();el.result.hidden=true;
+  if(net.active){leaveBar();const ng=pendingGuests()[0];if(ng&&!nightOver())beginBartending(ng);else if(nightOver())showSummary();return;}
   const g=pendingGuests()[0];
   if(g&&!nightOver())enterBar(g);else{leaveBar();if(nightOver())showSummary();}
 });
@@ -777,20 +794,143 @@ function myLook(){
   return v;
 }
 function setRoomParam(code){const u=new URL(location.href);if(code)u.searchParams.set('room',code);else u.searchParams.delete('room');history.replaceState(null,'',u);}
+
+/* ───────────── shared night: the host runs the rules, everyone mirrors its snapshots ───────────── */
+const isHost=()=>!net.active||(!!S.world&&S.world.hostId===net.me.id);
+const nameOf=id=>id===net.me.id?net.me.name:((net.peers.get(id)||{}).name||'?');
+function broadcastWorld(){if(net.active&&isHost()&&S.world)net.sendGame({k:'world',w:S.world});}
+function commitWorld(){syncSeats(false);broadcastWorld();S.lastBeat=time;checkNightEnd();}
+function hostTick(){
+  if(!S.synced||!S.world)return;
+  let changed=false;
+  if(tickOrders(S.world,time))changed=true;
+  if(autoServe(S.world,time))changed=true;
+  if(changed)commitWorld();
+  else if(time-S.lastBeat>2.5){broadcastWorld();S.lastBeat=time;}
+}
+/* Make the guests, drinks and bubbles match the world. quiet = first snapshot (no cheering for old drinks). */
+function syncSeats(quiet){
+  if(!S.world)return;
+  S.world.seats.forEach((seat,i)=>{
+    const g=guests[i],want=seat.order?seat.order.recipeId:null,have=g.order?g.order.id:null;
+    if(want!==have){
+      if(want){g.order=RECIPE_BY_ID[want];g.orderAt=seat.order.at;if(g.drink){scene.remove(g.drink.group);g.drink=null;}g.reaction=null;}
+      else g.order=null;
+    }
+    g.claimBy=seat.claim?seat.claim.by:null;
+    g.claimName=seat.claim&&seat.claim.by!==net.me.id?nameOf(seat.claim.by):'';
+    const sv=seat.served;
+    if(sv&&sv.rev!==g.servedRev){
+      g.servedRev=sv.rev;
+      spawnDrinkProp(g,sv);
+      if(!quiet){g.reaction={si:sv.stars,until:time+7};g.cheer=1.2;}
+    }
+  });
+  updateWalkUI();
+}
+function checkNightEnd(){
+  if(!net.active||!S.world||S.summaryFor===S.world.seed)return;
+  if(worldNightOver(S.world)&&S.mode==='walk'&&!S.paused)showSummary();
+}
+function adoptWorld(w){
+  const first=!S.synced,newSession=!S.session||w.session.time!==S.session.time||w.session.menu!==S.session.menu||w.session.mode!==S.session.mode||w.session.guide!==S.session.guide;
+  const newNight=!S.world||w.seed!==S.world.seed;
+  S.world=w;S.synced=true;
+  if(first||newSession||newNight)adoptSession(w.session);
+  if(newNight&&!$('#summary').hidden){$('#summary').hidden=true;S.paused=false;player.st.enabled=true;}
+  syncSeats(first||newNight);
+  checkMyClaim(w);
+  refreshRoomUI();checkNightEnd();
+}
+/* Host: apply a request from a player (or itself). */
+function handleAct(from,m){
+  if(!isHost()||!S.synced)return;
+  const r0=S.world.rev;
+  if(m.k==='claim'){
+    const r=claimSeat(S.world,m.seat,from,time);
+    commitWorld();return r;
+  }
+  if(m.k==='unclaim')releaseClaim(S.world,m.seat,from);
+  else if(m.k==='served')applyServed(S.world,m.seat,from,m,time);
+  if(S.world.rev!==r0)commitWorld();
+}
+function sendAct(a){if(!net.active)return null;if(isHost())return handleAct(net.me.id,a)||null;net.sendGame(a);return null;}
+net.onGame(raw=>{
+  const m=parseGameMessage(raw);
+  if(!m)return;
+  if(m.k==='world'){
+    if(m.w.hostId!==m.id)return;
+    if(isHost()&&S.synced&&m.id>=net.me.id)return;          // two hosts: the lower id wins
+    if(acceptSnapshot(S.world,m.w,S.synced)||(isHost()&&m.id<net.me.id))adoptWorld(m.w);
+  }else if(m.k==='need'){if(isHost())broadcastWorld();}
+  else if(isHost())handleAct(m.id,m);
+});
+/* Ticket claiming is optimistic: step behind the counter at once, the host confirms (or overrules) a moment later.
+   A round trip to the server takes ~1 s, so waiting for the answer would feel stuck. */
+function checkMyClaim(w){
+  if(!S.claimSeat||!S.claimInfo)return;
+  const seat=w.seats.find(x=>x.id===S.claimSeat);
+  if(seat&&seat.claim&&seat.claim.by===net.me.id){
+    if(S.claimInfo.tentative){
+      S.claimInfo={station:seat.claim.station,orderNo:seat.claim.orderNo};
+      if(S.drink){S.drink.orderNo=seat.claim.orderNo;if(S.mode==='bar')updateTicket();}
+    }
+    return;
+  }
+  const taken=!!(seat&&seat.claim),gone=!seat||!seat.order,stale=S.claimInfo.tentative&&performance.now()-S.claimInfo.since>8000;
+  if(S.claimInfo.tentative&&!taken&&!gone&&!stale)return;      // host has not answered yet
+  S.claimSeat=null;
+  toast(t(taken||stale?'claim_fail':'claim_lost'));
+  if(S.mode==='bar')leaveBar();else S.claimInfo=null;
+}
+function beginBartending(g){
+  if(!net.active){enterBar(g);return;}
+  const seatId='g'+guests.indexOf(g);
+  S.claimSeat=seatId;S.claimInfo={station:0,orderNo:S.world.orderNo+1,tentative:true,since:performance.now()};
+  const r=sendAct({k:'claim',seat:seatId});
+  if(r&&!r.ok){S.claimSeat=null;S.claimInfo=null;toast(t(r.reason==='full'?'act_full':'claim_fail'));return;}   // the host answered right away
+  if(r&&r.ok)S.claimInfo={station:r.station,orderNo:r.orderNo};
+  enterBar(g);
+}
+/* Once a second: ask for the world until synced, take over when the host is gone, free tickets of players who left. */
+function becomeHost(){
+  S.world.hostId=net.me.id;S.world.rev++;S.synced=true;
+  expireClaims(S.world,net.ids());
+  commitWorld();refreshRoomUI();toast(t('room_host_you'),3000);
+}
+setInterval(()=>{
+  if(!net.active||!S.world)return;
+  const ids=net.ids();
+  checkMyClaim(S.world);
+  if(!S.synced){
+    net.sendGame({k:'need'});
+    if(++S.syncWait>=6&&electHost(ids)===net.me.id)becomeHost();
+    return;
+  }
+  if(hostMissing(S.world,ids)&&electHost(ids)===net.me.id){becomeHost();return;}
+  if(isHost()){
+    if(expireClaims(S.world,ids))commitWorld();
+    if(document.hidden)broadcastWorld();
+  }
+},1000);
 function refreshRoomUI(){
   const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');
-  if(net.active){chip.textContent=net.code+' · '+net.count;chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
+  if(net.active){chip.textContent=net.code+' · '+net.count+(isHost()?' ★':'');chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
 }
 function connectRoom(onl){
+  if(onl.mode==='keep')return;
   if(onl.mode==='solo'){if(net.active){net.leave();setRoomParam(null);}return;}
   if(net.active&&(onl.mode==='create'||normalizeCode(onl.code)===net.code))return;
   const name=(onl.name||'').trim()||t('guest_default');
   try{localStorage.setItem(NAME_KEY,name);}catch(_){}
   const code=onl.mode==='create'?makeCode():normalizeCode(onl.code);
   net.join(code,name,myLook());setRoomParam(code);
+  if(onl.mode==='create'){S.world.hostId=net.me.id;S.world.rev++;S.synced=true;commitWorld();refreshRoomUI();}
+  else{S.synced=false;S.syncWait=0;S.world.hostId=null;net.sendGame({k:'need'});}
   toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
 }
-const myState=()=>({x:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0});
+const STATION_X=[-.9,.9];
+const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0});
 function syncRemotes(dt,t){
   if(!net.active&&!remotes.size)return;
   net.update(myState());
@@ -819,7 +959,7 @@ $('#room-chip').addEventListener('click',()=>{
   const u=new URL(location.href);u.search='';u.searchParams.set('room',net.code);const url=u.toString();
   (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast(t('room_copied')),()=>toast(url,4000));
 });
-$('#btn-room-leave').addEventListener('click',()=>{net.leave();setRoomParam(null);toggleSettings(false);toast(t('room_left'));});
+$('#btn-room-leave').addEventListener('click',()=>{if(S.mode==='bar')leaveBar();net.leave();setRoomParam(null);toggleSettings(false);toast(t('room_left'));});
 addEventListener('pagehide',()=>net.leave());
 /* background tabs stop requestAnimationFrame: keep the heartbeat on a timer so others do not drop us */
 setInterval(()=>{if(net.active&&document.hidden)net.update(myState());},1000);
@@ -829,26 +969,38 @@ function applyLook(timeId){
   const L=TIMES[timeId].look;room.setTime(L);
   scene.background.setHex(L.bg);scene.fog.color.setHex(L.fog[0]);scene.fog.density=L.fog[1];
 }
-function applySession(cfg){
-  saveSession(cfg);S.session=cfg;S.time=TIMES[cfg.time];S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;
+/* Look, guests and classes for a session config (also used when a room's host sets the night). */
+function adoptSession(cfg){
+  S.session=cfg;S.time=TIMES[cfg.time];
   applyLook(cfg.time);
   guests.forEach((g,i)=>{g.active=S.time.guests.indexOf(i)>=0;});
   loungers.forEach((g,i)=>{g.active=S.time.lounge.indexOf(i)>=0;});
   npcs.forEach(g=>{
-    g.fig.visible=g.active;g.order=null;g.reaction=null;g.talk=null;g.askedOrder=false;
+    g.fig.visible=g.active;g.order=null;g.reaction=null;g.talk=null;g.askedOrder=false;g.claimBy=null;g.claimName='';g.servedRev=0;
     if(g.drink){scene.remove(g.drink.group);g.drink=null;}
   });
   $('#app').classList.toggle('instinct',cfg.guide==='instinct');
   $('#app').classList.toggle('practice',cfg.mode==='practice');
   S.actionKey='';
+}
+function applySession(cfg){
+  saveSession(cfg);
+  const old=S.world;S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
+  if(old)S.world.rev=old.rev+1;
+  if(net.active){S.world.hostId=net.me.id;}
+  S.synced=true;
+  adoptSession(cfg);
   updateWalkUI();
+  if(net.active)broadcastWorld();
 }
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
   onPreview:applyLook,
+  roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
   onStart:(cfg,onl)=>{applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);}});
 function openStart(){
   if(S.mode!=='walk')return;
+  if(net.active&&!isHost()){toast(t('host_only'));return;}
   S.paused=true;player.st.enabled=false;$('#summary').hidden=true;startUI.show();
 }
 $('#btn-night').addEventListener('click',openStart);
@@ -860,7 +1012,9 @@ document.addEventListener('pointerdown',e=>{if(!setPop.hidden&&!setPop.contains(
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!setPop.hidden)toggleSettings(false);});
 function showSummary(){
   const N=S.world.night,sm=nightSummary(S.world),avg=sm.avg,lv=sm.level;
-  S.paused=true;player.st.enabled=false;
+  S.paused=true;player.st.enabled=false;S.summaryFor=S.world.seed;
+  const guestOnly=net.active&&!isHost();
+  $('#btn-sum-again').disabled=guestOnly;$('#btn-sum-new').disabled=guestOnly;
   $('#sum-when').textContent=t('time_'+S.time.id)+' · '+S.time.clock;
   $('#sum-title').textContent=t('sum_title');
   $('#sum-stars').innerHTML=[0,1,2].map(i=>'<span class="'+(i<Math.round(avg)?'on':'')+'">★</span>').join('');

@@ -4,14 +4,14 @@ import {nextRandom,randRange,pickFrom} from './rng.js';
 
 /* The serialisable state of one night. Everything the rules need is here (or in the active drink); the renderer only reads it.
    world = {v, seed, rng, session, nextOrderAt, orderNo, tips, night:{served,ordered,stars,tips,best}, seats:[{id,active,order,last,reaction}]} */
-export const VERSION=1;
-export const SEAT_COUNT=4;
+export const VERSION=2;
+export const SEAT_COUNT=4,STATION_COUNT=2;
 
 export function createWorld(session,seed,now){
   const T=TIMES[session.time],s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
-  return {v:VERSION,seed:s,rng:s,session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
+  return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
     night:{served:0,ordered:0,stars:0,tips:0,best:null},
-    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:T.guests.indexOf(i)>=0,order:null,last:null,reaction:null}))};
+    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:T.guests.indexOf(i)>=0,order:null,last:null,reaction:null,claim:null,served:null}))};
 }
 
 export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.order.at-b.order.at);
@@ -26,7 +26,7 @@ export function tickOrders(world,now){
   if(more&&free.length&&pendingSeats(world).length<T.maxPending){
     const seat=pickFrom(world,free),pool=poolFor(world.session,RECIPES);
     let r;do{r=pickFrom(world,pool);}while(r.id===seat.last&&pool.length>1);
-    seat.order={recipeId:r.id,at:now};seat.last=r.id;seat.reaction=null;N.ordered++;
+    seat.order={recipeId:r.id,at:now};seat.last=r.id;seat.reaction=null;seat.served=null;N.ordered++;world.rev++;
     ev={seatId:seat.id,recipeId:r.id};
   }
   world.nextOrderAt=now+randRange(world,T.every[0],T.every[1]);
@@ -37,7 +37,7 @@ export function tickOrders(world,now){
 export function releaseSeat(world,seatId,now,stars){
   const seat=world.seats.find(s=>s.id===seatId);
   if(!seat)return;
-  seat.order=null;seat.reaction={stars,until:now+7};
+  seat.order=null;seat.reaction={stars,until:now+7};world.rev++;
   world.nextOrderAt=Math.min(world.nextOrderAt,now+randRange(world,2.5,5));
 }
 
@@ -56,7 +56,9 @@ export function restore(snap){
   if(!snap||snap.v!==VERSION||!snap.world||!TIMES[snap.world.session&&snap.world.session.time])return null;
   const ok=id=>RECIPES.some(r=>r.id===id);
   const w=snap.world;
+  if(!Array.isArray(w.seats)||w.seats.length!==SEAT_COUNT)return null;
   if(w.seats.some(s=>s.order&&!ok(s.order.recipeId)))return null;
+  if(!Array.isArray(w.stations)||w.stations.length!==STATION_COUNT||typeof w.rev!=='number')return null;
   if(snap.drink&&!ok(snap.drink.recipeId))return null;
   return {world:w,drink:snap.drink||null};
 }

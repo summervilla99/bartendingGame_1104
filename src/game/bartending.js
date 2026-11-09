@@ -9,12 +9,12 @@ export const SHAKE_STROKES=14,STIR_TURNS=3;
 /* What the ingredients are poured into: the serving glass (build), a steel tin (shake) or a mixing glass (stir). */
 export const pourVesselOf=r=>r.method==='build'?r.glass:r.method==='shake'?'tin':'mixing';
 
-export function startDrink(world,seatId){
+export function startDrink(world,seatId,orderNo){
   const seat=world.seats.find(s=>s.id===seatId);
   if(!seat||!seat.order)return null;
   const r=RECIPE_BY_ID[seat.order.recipeId];
-  world.orderNo++;
-  return {recipeId:r.id,seatId,orderNo:world.orderNo,stage:'pour',poured:{},total:0,cap:VESSEL_CAP[pourVesselOf(r)],
+  if(orderNo==null)world.orderNo++;
+  return {recipeId:r.id,seatId,orderNo:orderNo==null?world.orderNo:orderNo,stage:'pour',poured:{},total:0,cap:VESSEL_CAP[pourVesselOf(r)],
     mixProg:0,mixCount:0,stirAcc:0,mixDone:false,garnish:null,result:null};
 }
 

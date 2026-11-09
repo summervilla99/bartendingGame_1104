@@ -11,6 +11,7 @@ export function createRoom(transport,opts){
   const me={id:'p'+Math.random().toString(36).slice(2,10),name:'',c:0};
   const peers=createPeers();
   const iv=transport.intervals||{moving:100,idle:500};
+  const gameHandlers=new Set();
   let code=null,unsub=null,lastSent=0,state={x:0,z:0,yaw:0,sp:0};
 
   const send=(t,extra)=>transport.send(Object.assign({t,id:me.id,name:me.name,c:me.c,x:state.x,z:state.z,yaw:state.yaw,sp:state.sp},extra));
@@ -21,6 +22,7 @@ export function createRoom(transport,opts){
     transport.join(code);
     unsub=transport.on(raw=>{
       if(!raw||raw.id===me.id)return;
+      if(raw.t==='g'){gameHandlers.forEach(h=>h(raw));return;}
       if(applyMessage(peers,raw,now()))onChange();
       if(raw.t==='hello')send('pos');
     });
@@ -43,6 +45,10 @@ export function createRoom(transport,opts){
     if(expire(peers,t).length)onChange();
   }
   function emote(){if(code)send('emote',{e:'cheers'});}
+  /* Game channel: opaque payloads for the shared night (validated by game/shared.js, not here). */
+  function sendGame(payload){if(code)transport.send(Object.assign({},payload,{t:'g',id:me.id}));}
+  function onGame(h){gameHandlers.add(h);return()=>gameHandlers.delete(h);}
+  const ids=()=>code?[me.id].concat([...peers.keys()]):[];
 
-  return {me,peers,join,leave,update,emote,get code(){return code;},get active(){return code!==null;},get count(){return peers.size+(code?1:0);}};
+  return {me,peers,join,leave,update,emote,sendGame,onGame,ids,get code(){return code;},get active(){return code!==null;},get count(){return peers.size+(code?1:0);}};
 }

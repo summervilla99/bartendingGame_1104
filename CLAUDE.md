@@ -50,7 +50,7 @@ src/
   glass.js          잔 11종(mixing/rocks/tumbler/fashioned/coupe/margarita/nick/highball/collins/mug/martini), 액체 수위, 얼음, 가니시(오렌지/라임/레몬/민트/체리), 셰이커
   session.js        세션 설정(시간대/메뉴 계열/모드/가이드) 정의, 저장, 레시피 풀 필터. 나중에 온라인 방 설정으로 그대로 쓴다
   start.js          "오늘 밤을 골라 주세요" 시작 화면(시간대 선택 시 뒤의 바가 실시간 미리보기)
-  game/             순수 게임 규칙(three/DOM 없음, JSON 상태): rng.js 시드 난수, world.js 월드·주문·밤 정산·스냅샷, bartending.js 붓기/섞기/점수
+  game/             순수 게임 규칙(three/DOM 없음, JSON 상태): rng.js 시드 난수, world.js 월드·주문·밤 정산·스냅샷, bartending.js 붓기/섞기/점수, shared.js 방 공유 규칙(티켓 잡기·서빙 적용·NPC 바텐더·방장 선출·메시지 검증)
   net/              온라인 방: peers.js(메시지 검증/만료/보간, 순수), room.js(방 클라이언트, 코드 생성), transport.js(전송 추상화)
   data.js           재료 20종(INGR, cat=spirit|liqueur|mixer), 레시피 19종(RECIPES, house:true=하우스 오리지널), 가니시, 이름은 전부 {ko,en}
   i18n.js           ko/en 사전, t(key,vars), tr({ko,en}), setLang/onLang, data-i18n 속성 적용
@@ -146,5 +146,15 @@ src/
 - 백그라운드 탭은 requestAnimationFrame 이 멈추므로 하트비트는 `setInterval` 로도 보낸다.
 - 방 코드 5자리(헷갈리는 글자 제외). 초대 링크는 `?room=CODE`. 닉네임/외형은 localStorage(`courte.name`, `courte.look`).
 - **키 규칙**: 클라이언트에는 **publishable(anon) 키만** 쓴다. secret / service_role 키는 코드, `.env*`, 커밋, 대화 어디에도 두지 않는다(서버 기능이 필요하면 Edge Function 비밀로 보관). `.env.local` 은 git 에서 제외, `.env.example` 만 커밋.
-- **아직 각자 진행하는 것**: NPC 손님, 주문, 제조, 점수. 월드 상태(`game/world.js`)를 방 전체가 공유하는 것이 4단계(주문 티켓/스테이션 동기화)다.
 - 테스트: `test/net.test.js`(메시지 검증, 만료, 두 클라이언트 BroadcastChannel 왕복). 실서버 확인은 `SUPABASE_URL=… SUPABASE_KEY=<publishable> npm test`(`test/supabase.live.test.js`, 변수가 없으면 건너뜀). 실제 확인은 탭 두 개로 한다(`?debug` 에서 `window.__courte.net`).
+
+## 공유된 밤 (4단계: 방 안의 주문/티켓/바텐더)
+
+- **방장 권위**: `world.hostId` 의 클라이언트(방 만든 사람)만 `tickOrders`/`autoServe` 를 돌리고 월드 스냅샷(`{k:'world', w}`)을 방에 뿌린다(변경 즉시 + 2.5초 하트비트). 나머지는 월드 사본을 받아 그리기만 하고, 요청(`claim`, `unclaim`, `served`)만 방장에게 보낸다. 방장은 자기 요청도 같은 `handleAct` 로 처리한다.
+- **스냅샷 반영**: `world.rev` 가 커진 것만 받는다(`acceptSnapshot`). 새로 들어온 사람은 `need` 를 보내 첫 스냅샷을 받고 그때 방장의 세션(시간대/메뉴/모드)을 따른다. 손님 NPC, 주문 말풍선, 서빙된 잔은 `syncSeats` 가 월드를 보고 맞춘다(월드가 진실, `g.order` 는 사본).
+- **티켓과 자리**: 티켓 하나는 바텐더 한 명, 바텐더 한 명은 티켓 하나, 동시에 2명(`stations`). **낙관적 진입**: 잡는 순간 바로 바텐딩 화면에 들어가고(`S.claimInfo.tentative`), 방장 확인(자리/주문번호)이나 거절(`claim_fail`/`claim_lost`)이 나중에 온다. 서버 왕복이 ~1초라 기다리지 않는다.
+- **서빙**: 바텐더 클라이언트가 점수를 계산해 `served`(기본 팁, 별, 잔 양, 색)를 보낸다. 방장이 검증(`parseGameMessage`, 자기가 잡은 티켓인지, 레시피 일치)하고 시간대 배율을 곱해 밤 집계에 반영한다.
+- **NPC 바텐더**: 30초 안에 아무도 안 잡은 주문은 방장이 2성·팁 0 으로 서빙하고, 그 주문은 밤 주문 수에서 뺀다(목표 달성이 가능하도록).
+- **방장 교체**: 방장이 방에서 사라지면(`hostMissing`) 남은 사람 중 id 가 가장 작은 사람이 `becomeHost`. 사라진 사람의 티켓은 `expireClaims` 로 풀린다. 두 방장이 생기면 id 가 작은 쪽이 이긴다.
+- **새로운 밤/정산**: 방장만 시작한다(`host_only`). 밤이 끝나면(`nightOver`) 모두에게 정산 카드가 뜨고, 방장이 "한 번 더"를 누르면 새 시드의 월드가 퍼져서 모두의 카드가 닫힌다.
+- **확인 방법**: 탭 두 개(`?debug&dtmax=0.2`)로 방 만들기 → 참가 → 한쪽이 티켓 잡기/서빙 → 다른 쪽 집계 확인. **브라우저 패널이 숨겨져 있으면 requestAnimationFrame 이 멈춰 게임 시간이 안 흐른다**(방장 타이머 기반 로직도 멈춤).

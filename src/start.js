@@ -3,7 +3,7 @@ import {TIMES,TIME_ORDER,FAM_ORDER,FAMILIES,MODES,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
 
 /* "Open the bar" screen: pick the hour, the menu family, the mode and the guide level. */
-export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline}){
+export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
   let cfg=null,open=false,err='';
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:''},initialOnline||{});
@@ -27,8 +27,9 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     }).join('');
     const guides=['full','instinct'].map(id=>opt('guide',id,cfg.guide===id,'st-guide',t('guide_'+id))).join('');
     const onlModes=['solo','create','join'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
-    let onlHtml='<h2>'+t('st_online')+'</h2><div class="st-row st-onl">'+onlModes+'</div>';
-    if(onl.mode!=='solo'){
+    const lock=roomLock?roomLock():null;
+    let onlHtml='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+onlModes+'</div>');
+    if(!lock&&onl.mode!=='solo'){
       onlHtml+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
         +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
         +'</div><p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
@@ -48,8 +49,9 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     const b=e.target.closest('button');if(!b)return;
     if(b.id==='st-lang'){setLang(getLang()==='ko'?'en':'ko');return;}
     if(b.id==='st-go'){
-      if(onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
-      err='';hide();onStart(Object.assign({},cfg),Object.assign({},onl));return;
+      const locked=roomLock&&roomLock();
+      if(!locked&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
+      err='';hide();onStart(Object.assign({},cfg),locked?{mode:'keep',code:'',name:onl.name}:Object.assign({},onl));return;
     }
     if(b.dataset.k&&!b.disabled){
       const card=root.querySelector('.st-card'),y=card?card.scrollTop:0;
