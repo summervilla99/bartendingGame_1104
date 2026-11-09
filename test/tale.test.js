@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newState,begin,view,advance,pick,served,drainEvents,reactStars,MAX_HEARTS} from '../src/story/engine.js';
+import {newState,begin,view,advance,pick,served,drainEvents,reactStars,retry,MAX_HEARTS} from '../src/story/engine.js';
 import {NIGHT1,CHARS,FLAVOR} from '../src/story/night1.js';
 import {RECIPE_BY_ID} from '../src/game/bartending.js';
 
@@ -23,7 +23,6 @@ test('recommendation candidates are real recipes with a flavour line', () => {
     n.cands.forEach(c => { assert.ok(RECIPE_BY_ID[c.id], c.id); assert.ok(bi(FLAVOR[c.id]), c.id); assert.ok(['good','ok','miss'].includes(c.match)); });
     assert.ok(n.react[2] && n.react[1] && n.react[3]);
   });
-  assert.ok(RECIPE_BY_ID[G.o_ts.rec]);
 });
 test('every path reaches the close card', () => {
   const seen=new Set(), stack=[NIGHT1.entry]; let closes=0;
@@ -31,6 +30,7 @@ test('every path reaches the close card', () => {
     if(n.t==='close') closes++;
     [n.next,...(n.opts||[]).map(o=>o.next),...Object.values(n.react||{})].filter(Boolean).forEach(r=>stack.push(r)); }
   assert.equal(closes,1);
+  Object.values(G).filter(n=>n.t==='over').forEach(n=>assert.equal(G[n.retry].t,'enter','retry goes back to a guest entrance'));
   assert.equal(seen.size, Object.keys(G).length, 'no orphan nodes');
 });
 test('a full playthrough: hearts, flags, events', () => {
@@ -40,7 +40,7 @@ test('a full playthrough: hearts, flags, events', () => {
     drainEvents(st).forEach(e=>enters.push(e.k+':'+e.who));
     const v=view(st,G);
     if(v.kind==='say') advance(st,G);
-    else if(v.kind==='choice') pick(st,G,0);
+    else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));
     else if(v.kind==='recommend'){ pick(st,G,0); assert.equal(view(st,G).kind,'wait'); served(st,G,3); }
     else if(v.kind==='wait') served(st,G,3);
     else throw new Error('stuck '+v.kind);
@@ -60,4 +60,30 @@ test('the state is JSON-serialisable and restorable mid-scene', () => {
   const copy=JSON.parse(JSON.stringify(st));
   assert.equal(view(copy,G).kind,'wait'); served(copy,G,3);
   assert.equal(copy.node,'sy_r2');                                   // capped at 2 stars
+});
+test('each choice has exactly one right answer; the others make the guest leave and end the run', () => {
+  Object.values(G).filter(n=>n.t==='choice').forEach(n => {
+    assert.equal(n.opts.length,3,n.id);
+    assert.equal(n.opts.filter(o=>o.right).length,1,n.id);
+  });
+  const st=newState(1,null); begin(st,G,NIGHT1.entry);
+  while(st.node!=='c1') advance(st,G);
+  drainEvents(st);
+  [0,2].forEach(i => {
+    const s2=JSON.parse(JSON.stringify(st));
+    pick(s2,G,i); assert.equal(view(s2,G).kind,'say');
+    let g=0; while(view(s2,G).kind==='say'&&g++<10) advance(s2,G);
+    assert.equal(view(s2,G).kind,'over');
+    assert.ok(drainEvents(s2).some(e=>e.k==='leave'&&e.who==='seoyun'));
+    retry(s2,G); assert.equal(s2.node,'sy1'); assert.equal(view(s2,G).kind,'say');
+  });
+});
+test('retry restores hearts from before the guest', () => {
+  const st=newState(1,{hearts:{taesik:1}}); begin(st,G,'e_ts');
+  while(st.node!=='c2') advance(st,G);
+  pick(st,G,2); advance(st,G);                       // right answer: +1 heart
+  assert.equal(st.hearts.taesik,2);
+  begin(st,G,'c3'); pick(st,G,0); while(view(st,G).kind==='say') advance(st,G);
+  assert.equal(view(st,G).kind,'over'); retry(st,G);
+  assert.equal(st.hearts.taesik,1); assert.equal(st.node,'ts1');
 });

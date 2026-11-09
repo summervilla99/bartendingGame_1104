@@ -23,7 +23,7 @@ export function goto(st,graph,id){
     const n=graph[id];
     if(!n)throw new Error('tale: missing node '+id);
     st.node=id;st.order=null;applyFx(st,n);
-    if(n.t==='enter'){st.events.push({k:'enter',who:n.who,seat:n.seat});id=n.next;continue;}
+    if(n.t==='enter'){st.check={node:id,hearts:Object.assign({},st.hearts),flags:Object.assign({},st.flags)};st.events.push({k:'enter',who:n.who,seat:n.seat});id=n.next;continue;}
     if(n.t==='leave'){st.events.push({k:'leave',who:n.who});id=n.next;continue;}
     if(n.t==='fx'){id=n.next;continue;}
     if(n.t==='order')st.order={who:n.who,rec:n.rec,match:n.match||'good'};
@@ -43,6 +43,7 @@ export function view(st,graph){
     if(st.order)return {kind:'wait',order:st.order,who:n.who};
     return {kind:'recommend',who:n.who,hint:n.hint,cands:n.cands.map(c=>c.id)};
   }
+  if(n.t==='over')return {kind:'over',title:n.title,tip:n.tip};
   if(n.t==='close')return {kind:'close',title:n.title,note:n.note,gain:Object.assign({},st.gain),hearts:Object.assign({},st.hearts)};
   return {kind:'end'};
 }
@@ -80,3 +81,9 @@ export function served(st,graph,stars){
 }
 /* Events produced since the last call (enter/leave), for the renderer. */
 export function drainEvents(st){const e=st.events;st.events=[];return e;}
+/* After a guest walked out: start that guest's scene again with the hearts and memories they had before it. */
+export function retry(st,graph){
+  if(!st.check)return false;
+  st.hearts=Object.assign({},st.check.hearts);st.flags=Object.assign({},st.check.flags);st.gain={};
+  goto(st,graph,st.check.node);return true;
+}

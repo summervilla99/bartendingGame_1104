@@ -7,7 +7,7 @@ import {t,tr,getLang,setLang,onLang,applyDom} from './i18n.js';
 import {fmtVol,fmtRatio} from './units.js';
 import {makeGlass,makeGarnish,makeShaker,GL} from './glass.js';
 import {NIGHTS,CHARS as TALE_CHARS} from './story/night1.js';
-import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain} from './story/engine.js';
+import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
 import {makeCharacter,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
@@ -658,7 +658,8 @@ function showResult(){
     S.claimSeat=null;
   }else settleDrink(S.world,S.drink);
   renderResult();
-  $('#btn-r-next').disabled=pendingGuests().filter(x=>x!==g).length<1;
+  $('#btn-r-next').disabled=S.tale?false:pendingGuests().filter(x=>x!==g).length<1;
+  $('#btn-r-next').textContent=S.tale?t('tale_next'):t('r_next');$('#btn-r-leave').hidden=!!S.tale;
   el.result.hidden=false;
   Snd.clink(1);
   g.cheer=1.2;
@@ -1305,7 +1306,9 @@ const taleUI=createTaleUI($('#tale'),{
   onClose:()=>{
     commitNight(S.tale.st.night,S.tale.st);
     taleUI.hide();playerFig.visible=true;S.tale=null;el.uiWalk.hidden=false;openStart();
-  }});
+  },
+  onRetry:()=>{taleRetry(S.tale.st,S.tale.graph);taleStep();},
+  onExit:()=>{taleUI.hide();playerFig.visible=true;S.tale=null;el.uiWalk.hidden=false;openStart();}});
 const taleGuest=who=>guests[+TALE_CHARS[who].seat.slice(1)];
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{

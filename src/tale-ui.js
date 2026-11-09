@@ -4,7 +4,7 @@ import {RECIPE_BY_ID} from './game/bartending.js';
 import {MAX_HEARTS} from './story/engine.js';
 
 /* Dialogue panel for the tale: speaker, typed-out text, choices, recommendation list, closing card. Text goes in with textContent only. */
-export function createTaleUI(root,{onAdvance,onPick,onClose}){
+export function createTaleUI(root,{onAdvance,onPick,onClose,onRetry,onExit}){
   let cur=null,open=false,timer=0,full='',typed=true;
   const box=root.querySelector('.tl-box'),whoEl=root.querySelector('#tl-who'),textEl=root.querySelector('#tl-text'),optsEl=root.querySelector('#tl-opts'),nextEl=root.querySelector('#tl-next');
   const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
@@ -30,6 +30,13 @@ export function createTaleUI(root,{onAdvance,onPick,onClose}){
       stop();typed=true;textEl.textContent=t('tale_recommend',{hint:tr(v.hint)});nextEl.hidden=true;
       whoEl.hidden=false;whoEl.textContent=tr(CHARS[v.who].name);whoEl.style.setProperty('--tone',CHARS[v.who].tone||'#c9a066');
       v.cands.forEach((id,i)=>{const b=el('button','tl-opt rec');b.type='button';b.dataset.i=i;b.append(el('kbd','',String(i+1)),el('span','',RECIPE_BY_ID[id].name),el('em','',FLAVOR[id]?tr(FLAVOR[id]):''));optsEl.append(b);});
+    }else if(v.kind==='over'){
+      stop();typed=true;nextEl.hidden=true;box.classList.add('close');
+      textEl.textContent='';
+      textEl.append(el('b','tl-ctitle',tr(v.title)),el('p','tl-note',tr(v.tip)));
+      const r=el('button','btn primary',t('tale_retry'));r.type='button';r.dataset.retry='1';
+      const x=el('button','btn sm',t('tale_exit'));x.type='button';x.dataset.exit='1';
+      optsEl.append(r,x);
     }else if(v.kind==='close'){
       stop();typed=true;nextEl.hidden=true;box.classList.add('close');
       textEl.textContent='';
@@ -48,6 +55,8 @@ export function createTaleUI(root,{onAdvance,onPick,onClose}){
     if(!open)return;
     const b=e.target.closest('button');
     if(b&&b.dataset.close){onClose();return;}
+    if(b&&b.dataset.retry){onRetry();return;}
+    if(b&&b.dataset.exit){onExit();return;}
     if(b&&b.dataset.i!=null){onPick(+b.dataset.i);return;}
     if(cur&&cur.kind==='say'){if(!finishTyping())onAdvance();}
   });
