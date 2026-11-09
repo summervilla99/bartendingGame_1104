@@ -2,7 +2,8 @@
    No DOM, no three.js, no timers, so it runs the same in the browser, in Node tests and later on a server. */
 import {SEAT_MAX} from '../game/seats.js';
 export const STALE_MS=5000,MAX_PEERS=8,LOOK_COUNT=8,NAME_MAX=16,CHAT_MAX=100,CHAT_GAP_MS=600,CHAT_SHOW_MS=6000;
-export const EMOTES=['cheers','wave','clap','bow'];
+export const EMOTES=['cheers','wave','clap','bow','dance','jump'];
+export const EMOTE_MS={cheers:1600,wave:1600,clap:1600,bow:1600,dance:5000,jump:800};
 const BOUNDS={x0:-9.7,x1:9.7,z0:-3,z1:11.7};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const num=v=>typeof v==='number'&&isFinite(v);
@@ -43,7 +44,7 @@ export function applyMessage(peers,raw,now){
     peers.set(m.id,p);
   }
   p.last=now;
-  if(m.t==='emote'){p.emoteUntil=now+1600;p.emote=m.e;return true;}
+  if(m.t==='emote'){p.emoteUntil=now+EMOTE_MS[m.e];p.emote=m.e;return true;}
   if(m.t==='chat'){
     if(now-p.lastChat<CHAT_GAP_MS)return false;               // flood guard
     p.lastChat=now;p.chatSeq++;p.chat={text:m.text,until:now+CHAT_SHOW_MS};return true;

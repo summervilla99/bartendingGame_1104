@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TIMES,DEFAULT} from '../src/session.js';
 import {createWorld,tickOrders,restore,snapshot} from '../src/game/world.js';
-import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,NPC_SERVE_AFTER,MAX_TIP} from '../src/game/shared.js';
+import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,NPC_SERVE_AFTER,MAX_TIP,FIRE_COOLDOWN,FIRE_GRACE} from '../src/game/shared.js';
+import {RECIPES} from '../src/data.js';
 
 const cfg=(o)=>Object.assign({},DEFAULT,{time:'prime',mode:'practice'},o||{});
 /* a world with orders on the first three counter seats */
@@ -118,4 +119,70 @@ test('a night played across a snapshot hand-over (host leaves, another takes ove
   assert.ok(res&&b.night.served===1);
   for(let t=31;t<200;t+=.05){const ev=tickOrders(b,t);if(ev)b.night.ordered;}
   assert.ok(b.night.ordered>=1);
+});
+
+/* ── friends mode: seated customers, time limit ── */
+const room=(o)=>{const w=createWorld(cfg(Object.assign({chairs:4,limit:30},o||{})),3,0);w.hostId='p-host';return w;};
+test('in a room only the leftmost NPC guest is active; solo keeps the usual guests',()=>{
+  const r=room();
+  assert.deepEqual(r.seats.map(s=>s.active),[true,false,false,false,false,false,false,false]);
+  const solo=createWorld(cfg(),3,0);
+  assert.deepEqual(solo.seats.map(s=>s.active),[false,true,true,true,false,false,false,false].map((_,i)=>TIMES.prime.guests.indexOf(i)>=0&&i<4));
+});
+test('a seated player orders; one order at a time, only from the menu, never in solo',()=>{
+  const w=room(),pool=RECIPES.filter(r=>['negroni','mojito'].includes(r.id));
+  const a=placeOrder(w,'p-aaaa','negroni',-1.5,5,pool);
+  assert.deepEqual([a.ok,a.seatId],[true,'g4']);
+  assert.equal(w.seats[4].customer,'p-aaaa');assert.equal(w.seats[4].stoolX,-1.5);assert.equal(w.night.ordered,1);
+  assert.equal(placeOrder(w,'p-aaaa','mojito',-1.5,6,pool).reason,'busy');
+  assert.equal(placeOrder(w,'p-bbbb','daiquiri',0,6,pool).reason,'menu');
+  for(const id of ['p-b','p-c','p-d'])assert.equal(placeOrder(w,id+'xx','mojito',0,7,pool).ok,true);
+  assert.equal(placeOrder(w,'p-eeee','mojito',0,8,pool).reason,'full');
+  assert.equal(placeOrder(world(),'p-aaaa','negroni',0,0,pool).reason,'solo');
+});
+test('a customer order is made, served to that stool, and frees the customer seat',()=>{
+  const w=room(),pool=RECIPES;
+  placeOrder(w,'p-cust','mojito',1.2,10,pool);
+  claimSeat(w,'g4','p-barman',11);
+  const res=applyServed(w,'g4','p-barman',{rec:'mojito',stars:3,final:.95,tip:10000,ml:150,col:[.5,.5,.5]},20);
+  assert.ok(res&&w.night.served===1);
+  const s=w.seats[4];
+  assert.equal(s.order,null);assert.equal(s.customer,null);
+  assert.equal(s.served.x,1.2);assert.equal(s.served.to,'p-cust');
+  assert.equal(placeOrder(w,'p-cust','negroni',1.2,25,pool).ok,true);   // can order again
+});
+test('a customer who leaves voids their order',()=>{
+  const w=room();
+  placeOrder(w,'p-cust','mojito',1.2,10,RECIPES);claimSeat(w,'g4','p-bar',11);
+  assert.equal(w.night.ordered,1);
+  assert.ok(expireClaims(w,['p-host','p-bar'])>0);
+  assert.equal(w.seats[4].order,null);assert.equal(w.seats[4].claim,null);assert.equal(w.night.ordered,0);
+  assert.deepEqual(w.stations,[null,null]);
+});
+test('too slow: the bartender is fired, locked out for a while, and the order is free again',()=>{
+  const w=room({limit:30});
+  w.seats[0].order={recipeId:'negroni',at:0};
+  claimSeat(w,'g0','p-slow',100);
+  let r=fireLate(w,100+30+FIRE_GRACE);
+  assert.equal(r.changed,false);
+  r=fireLate(w,100+30+FIRE_GRACE+.1);
+  assert.deepEqual(r.fired,['p-slow']);
+  assert.equal(w.seats[0].claim,null);assert.ok(w.seats[0].order);assert.deepEqual(w.stations,[null,null]);
+  assert.equal(claimSeat(w,'g0','p-slow',140).reason,'fired');
+  assert.equal(claimSeat(w,'g0','p-other',140).ok,true);
+  releaseClaim(w,'g0','p-other');
+  r=fireLate(w,100+30+FIRE_GRACE+.1+FIRE_COOLDOWN+1);
+  assert.equal(r.changed,true);assert.deepEqual(w.fired,{});
+  assert.equal(claimSeat(w,'g0','p-slow',200).ok,true);
+});
+test('no time limit when the limit is 0 (solo)',()=>{
+  const w=createWorld(cfg(),1,0);w.seats[1].order={recipeId:'negroni',at:0};claimSeat(w,'g1','p-a',0);
+  assert.equal(fireLate(w,9999).fired.length,0);assert.ok(w.seats[1].claim);
+});
+test('order messages are validated',()=>{
+  const m=o=>Object.assign({t:'g',id:'p-aaaa'},o);
+  assert.equal(parseGameMessage(m({k:'order',rec:'mojito'})).rec,'mojito');
+  assert.equal(parseGameMessage(m({k:'order',rec:'nope'})),null);
+  assert.equal(parseGameMessage(m({k:'claim',seat:'g7'})).seat,'g7');
+  assert.equal(parseGameMessage(m({k:'claim',seat:'g8'})),null);
 });

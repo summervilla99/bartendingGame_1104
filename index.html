@@ -37,6 +37,7 @@
     <div class="joy" id="joy" aria-hidden="true"><i></i></div>
     <div class="dock">
       <button class="btn lg primary prompt" id="btn-act" type="button" hidden><kbd>E</kbd><span id="act-label"></span></button>
+      <button class="btn sm" id="btn-order" type="button" data-i18n="order_btn" hidden></button>
       <button class="btn sm" id="btn-emote" type="button" data-i18n="emote_btn"></button>
       <button class="btn sm" id="btn-chat" type="button" data-i18n="chat_btn" hidden></button>
       <p class="hint" id="walk-hint" data-i18n-html="hint_kb"></p>
@@ -55,9 +56,10 @@
         <p class="tk-extra" id="tk-extra" hidden></p>
       </div>
     </details>
-    <button class="btn sm leave" id="btn-leave" type="button" data-i18n="leave"></button>
+    <button class="ibtn leave" id="btn-leave" type="button" data-i18n-aria="leave"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 
     <div class="bar-bottom">
+      <div class="bar-timer" id="bar-timer" hidden><span class="tl" data-i18n="timer_lb"></span><div class="tr"><i></i></div><span class="ts"></span></div>
       <ol class="steps" id="steps">
         <li data-step="pour" data-i18n="step_pour"></li><li data-step="mix" data-i18n="step_mix"></li><li data-step="garnish" data-i18n="step_garnish"></li><li data-step="serve" data-i18n="step_serve"></li>
       </ol>
@@ -119,6 +121,8 @@
     <button class="btn sm" type="button" data-e="wave" data-i18n="emo_wave"></button>
     <button class="btn sm" type="button" data-e="clap" data-i18n="emo_clap"></button>
     <button class="btn sm" type="button" data-e="bow" data-i18n="emo_bow"></button>
+    <button class="btn sm" type="button" data-e="dance" data-i18n="emo_dance"></button>
+    <button class="btn sm" type="button" data-e="jump" data-i18n="emo_jump"></button>
   </div>
   <div class="chatfeed" id="chatfeed" aria-live="polite"></div>
   <form class="chatbar glass" id="chat-form" hidden autocomplete="off">
@@ -134,6 +138,13 @@
         <button class="btn sm" id="btn-photo-share" type="button" data-i18n="photo_share" hidden></button>
         <button class="btn primary" id="btn-photo-save" type="button" data-i18n="photo_save"></button>
       </div>
+    </div>
+  </div>
+  <div class="result" id="order-menu" hidden>
+    <div class="rcard ordercard" role="dialog">
+      <h2 data-i18n="order_title"></h2>
+      <div class="order-list" id="order-list"></div>
+      <div class="row"><button class="btn sm" id="order-close" type="button" data-i18n="photo_close"></button></div>
     </div>
   </div>
   <div id="flash"></div>

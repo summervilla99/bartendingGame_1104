@@ -173,3 +173,13 @@ src/
 
 - Vercel 프로젝트 `courte-studio`, 주소 https://courte-studio.vercel.app . 배포는 `vercel deploy --prod`. 환경 변수는 Vercel 프로젝트에 `VITE_SUPABASE_URL`/`VITE_SUPABASE_KEY`(publishable 만)가 있다. GitHub 저장소 자동 배포 연동은 아직 안 했다(사용자 승인 필요).
 - 배포 전 `npm run build` 와 `npm test` 를 통과시킬 것. 배포 뒤에는 배포 주소에서 방을 하나 만들어 Supabase 연결(방 칩이 흐려지지 않음)을 확인한다.
+
+## 친구 모드 바 (의자 수, 손님 주문, 제한시간)
+
+- 방을 만들 때 **바 의자 수(2~6)** 와 **난이도(하 60초 / 중 45초 / 상 30초)** 를 정한다(`session.chairs`, `session.limit`). 혼자 하기는 `chairs:0, limit:0`(예전 그대로: 스툴 6개, NPC 손님 여러 명, 제한시간 없음). 이 값들은 세션에 들어 있어 스냅샷으로 참가자에게 퍼진다.
+- 의자 수대로 스툴이 옮겨지고(`layoutStools` → `room.setStools`), **맨 왼쪽 스툴에 NPC 손님 1명(g0)** 만 앉는다. 나머지는 플레이어 자리(`isFree`).
+- **손님 주문**: 스툴에 앉으면 `주문하기` 버튼 → 메뉴(`poolFor(session)`)에서 고른다 → `order` 요청 → 방장이 `placeOrder` 로 손님 자리(g4~g7, `seat.customer`, `stoolX`)에 주문을 만든다. 한 사람이 동시에 하나만. 서빙되면 그 스툴 앞에 잔이 놓이고 손님에게 안내가 뜬다. 손님이 방을 나가면 주문은 무효(`expireClaims`).
+- **제한시간/해고**: 티켓을 잡은 시각(`claim.at`)부터 `limit`초(+3초 여유)가 지나면 방장이 `fireLate` 로 해고한다: 자리 해제, `world.fired[id]` 30초(`FIRE_COOLDOWN`) 동안 다시 못 잡는다. 바텐더 클라이언트도 로컬 카운트다운(`#bar-timer`)이 0이 되면 스스로 나가고 안내를 띄운다. 주문은 남아 다른 사람/NPC 바텐더가 이어받는다.
+- 바텐딩 화면의 **X** 는 티켓을 놓고 바 안쪽(`BAR_ZONE`)에 그대로 서 있게 한다(걷기 모드: 행동, 채팅, 춤 가능).
+- 행동(`EMOTES`): 건배 / 손 흔들기 / 박수 / 인사 / 춤추기(5초) / 점프. 숫자키 1~6, 점프는 Space. 길이는 `EMOTE_MS`.
+- 가이드(눈금 숨김) 선택은 없앴다. 눈금은 항상 보인다(`session.guide` 는 항상 `full`).

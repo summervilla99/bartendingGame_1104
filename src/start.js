@@ -6,7 +6,7 @@ import {normalizeCode,CODE_LEN} from './net/room.js';
 export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
   let cfg=null,open=false,err='';
   /* online choice lives outside the session config (it is per player, not part of the night) */
-  const onl=Object.assign({mode:'solo',code:'',name:''},initialOnline||{});
+  const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4,diff:'easy'},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const opt=(k,v,on,cls,inner,dis)=>'<button type="button" class="st-opt '+(cls||'')+(on?' on':'')+'" data-k="'+k+'" data-v="'+v+'"'+(dis?' disabled':'')+' aria-pressed="'+(on?'true':'false')+'">'+inner+'</button>';
   function render(){
@@ -25,14 +25,16 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
       return opt('mode',id,cfg.mode===id,'st-mode',
         '<b>'+t('mode_'+id)+'</b><span class="st-d">'+t('mode_'+id+'_d',{n:T.goal})+'</span>'+(lab?'<u>'+t('soon')+'</u>':''),lab);
     }).join('');
-    const guides=['full','instinct'].map(id=>opt('guide',id,cfg.guide===id,'st-guide',t('guide_'+id))).join('');
     const onlModes=['solo','create','join'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
     const lock=roomLock?roomLock():null;
     let onlHtml='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+onlModes+'</div>');
     if(!lock&&onl.mode!=='solo'){
       onlHtml+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
         +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
-        +'</div><p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
+        +'</div>'
+        +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div>'
+          +'<div class="st-field"><span>'+t('st_diff')+'</span><div class="st-row st-diffs">'+['easy','mid','hard'].map(d=>opt('diff',d,onl.diff===d,'st-guide',t('diff_'+d))).join('')+'</div></div></div><p class="st-note">'+t('diff_note')+'</p>':'')
+        +'<p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
     }
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
       +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
@@ -40,7 +42,6 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
       +'<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div>'
       +'<h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>'
       +'<h2>'+t('st_mode')+'</h2><div class="st-row st-modes">'+modes+'</div>'
-      +'<h2>'+t('st_guide')+'</h2><div class="st-row st-guides">'+guides+'</div>'
       +onlHtml
       +'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button></div>';
   }
@@ -56,6 +57,8 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline
     if(b.dataset.k&&!b.disabled){
       const card=root.querySelector('.st-card'),y=card?card.scrollTop:0;
       if(b.dataset.k==='online'){onl.mode=b.dataset.v;err='';}
+      else if(b.dataset.k==='chairs')onl.chairs=+b.dataset.v;
+      else if(b.dataset.k==='diff')onl.diff=b.dataset.v;
       else{cfg[b.dataset.k]=b.dataset.v;if(b.dataset.k==='time')onPreview(cfg.time);}
       render();const c2=root.querySelector('.st-card');if(c2)c2.scrollTop=y;
     }

@@ -35,7 +35,7 @@ export function loadSession(){
   if(!TIMES[s.time])s.time=DEFAULT.time;
   if(!(s.menu in FAMILIES))s.menu=DEFAULT.menu;
   if(s.mode!=='service'&&s.mode!=='practice')s.mode=DEFAULT.mode;
-  if(s.guide!=='full'&&s.guide!=='instinct')s.guide=DEFAULT.guide;
+  s.guide='full';                                   // measures are always shown
   return s;
 }
 export function saveSession(c){try{localStorage.setItem(KEY,JSON.stringify(c));}catch(_){}}

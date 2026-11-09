@@ -10,7 +10,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 test('parse rejects malformed or hostile messages',()=>{
   for(const bad of [null,undefined,'x',42,{},{t:'pos'},{t:'pos',id:'ab',x:0,z:0,yaw:0},{t:'nope',id:'p-aaaa'},
-    pos({x:NaN}),pos({z:Infinity}),pos({yaw:'1'}),{t:'emote',id:'p-aaaa',e:'dance'},pos({id:'x'.repeat(40)})])
+    pos({x:NaN}),pos({z:Infinity}),pos({yaw:'1'}),{t:'emote',id:'p-aaaa',e:'teleport'},pos({id:'x'.repeat(40)})])
     assert.equal(parse(bad),null,JSON.stringify(bad));
 });
 test('parse clamps positions into the room, cleans names and wraps the look index',()=>{
@@ -113,7 +113,7 @@ test('chat: cleaned, bounded, ignored from strangers and rate limited',()=>{
 });
 test('emotes and seats are validated',()=>{
   for(const e of EMOTES)assert.equal(parse({t:'emote',id:'p-aaaa',e}).e,e);
-  assert.equal(parse({t:'emote',id:'p-aaaa',e:'dance'}),null);
+  assert.equal(parse({t:'emote',id:'p-aaaa',e:'teleport'}),null);
   assert.equal(parse(pos({st:1})).st,1);
   assert.equal(parse(pos({st:SEAT_MAX})).st,SEAT_MAX);
   for(const bad of [0,-1,SEAT_MAX+1,1.5,'3',null,NaN])assert.equal(parse(pos({st:bad})).st,0);

@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SEATS,SEAT_MAX,seatByWireId,PHOTO_SPOTS,COUNTER_STOOL_X,NPC_STOOL_X} from '../src/game/seats.js';
+import {SEATS,SEAT_MAX,seatByWireId,PHOTO_SPOTS,layoutStools,stoolXs,isFree,STOOL_MAX} from '../src/game/seats.js';
 
 const inRoom=(x,z)=>x>-10&&x<10&&z>-3&&z<12;
+const active=()=>SEATS.filter(s=>s.active);
 
 test('seats are unique, inside the room and addressable by wire id',()=>{
+  layoutStools(0);
   assert.equal(new Set(SEATS.map(s=>s.id)).size,SEATS.length);
   assert.equal(SEAT_MAX,SEATS.length);
   SEATS.forEach((s,i)=>{
@@ -14,17 +16,36 @@ test('seats are unique, inside the room and addressable by wire id',()=>{
   });
   assert.equal(seatByWireId(0),null);assert.equal(seatByWireId(SEAT_MAX+1),null);assert.equal(seatByWireId(1.5),null);
 });
-test('players only get the counter stools the guests are not using',()=>{
-  const stools=SEATS.filter(s=>s.kind==='stool').map(s=>s.x).sort((a,b)=>a-b);
-  assert.deepEqual(stools,COUNTER_STOOL_X.filter(x=>NPC_STOOL_X.indexOf(x)<0));
-  assert.deepEqual(stools,[-2.6,3.7]);
+test('solo layout: players only get the stools the guests are not using',()=>{
+  layoutStools(0);
+  const free=SEATS.filter(s=>s.kind==='stool'&&isFree(s)).map(s=>s.x).sort((a,b)=>a-b);
+  assert.deepEqual(free,[-2.6,3.7]);
 });
-test('no two seats overlap and every stand-up spot is clear of other seats',()=>{
-  for(const a of SEATS)for(const b of SEATS){
-    if(a===b)continue;
-    assert.ok(Math.hypot(a.x-b.x,a.z-b.z)>.6,a.id+' too close to '+b.id);
-    assert.ok(Math.hypot(a.stand.x-b.x,a.stand.z-b.z)>.5,a.id+' stand-up spot sits on '+b.id);
+test('room layout: N stools spread evenly, the leftmost is the NPC guest, the rest are for players',()=>{
+  for(let n=2;n<=STOOL_MAX;n++){
+    const xs=layoutStools(n),stools=SEATS.slice(0,STOOL_MAX);
+    assert.equal(xs.length,n);
+    assert.equal(stools.filter(s=>s.active).length,n);
+    assert.equal(stools[0].x,-3.7);assert.equal(stools[0].npc,true);
+    assert.equal(stools.filter(s=>isFree(s)).length,n-1);
+    assert.equal(xs[n-1],3.7);
+    for(let i=1;i<n;i++)assert.ok(xs[i]-xs[i-1]>=1.4,'stools too close at n='+n);
+    stools.filter(s=>!s.active).forEach(s=>assert.equal(isFree(s),false));
   }
+  assert.deepEqual(stoolXs(2),[-3.7,3.7]);assert.deepEqual(stoolXs(3),[-3.7,0,3.7]);
+  assert.equal(stoolXs(99).length,STOOL_MAX);assert.equal(stoolXs(1).length,2);
+  layoutStools(0);
+});
+test('no two active seats overlap and every stand-up spot is clear of other seats',()=>{
+  for(const n of [0,2,3,4,5,6]){
+    layoutStools(n);
+    for(const a of active())for(const b of active()){
+      if(a===b)continue;
+      assert.ok(Math.hypot(a.x-b.x,a.z-b.z)>.6,n+': '+a.id+' too close to '+b.id);
+      assert.ok(Math.hypot(a.stand.x-b.x,a.stand.z-b.z)>.5,n+': '+a.id+' stand-up spot sits on '+b.id);
+    }
+  }
+  layoutStools(0);
 });
 test('photo spots are inside the room and apart from each other',()=>{
   assert.equal(new Set(PHOTO_SPOTS.map(p=>p.id)).size,PHOTO_SPOTS.length);

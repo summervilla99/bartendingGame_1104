@@ -296,3 +296,23 @@ button{font:inherit;color:inherit}
   .emotes{left:auto;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(max(34px,env(safe-area-inset-bottom,0px)) + 170px);transform:none;flex-direction:column;border-radius:20px}
   .chatfeed{bottom:calc(max(34px,env(safe-area-inset-bottom,0px)) + 130px)}
 }
+
+/* friends mode: order menu, bartender time limit */
+.ordercard{width:min(440px,100%);max-height:88dvh;overflow:auto}
+.ordercard h2{font-size:28px;margin-bottom:6px}
+.order-list{display:grid;gap:8px;margin:12px 0 14px;text-align:left}
+.oc{appearance:none;cursor:pointer;text-align:left;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:12px 14px;border-radius:16px;color:var(--text);background:var(--glass-3);border:1px solid var(--line);transition:background .15s,border-color .15s,transform .1s}
+.oc:hover{background:rgba(255,255,255,.1)}
+.oc:active{transform:scale(.98)}
+.oc b{font:600 19px/1.15 var(--f-serif)}
+.oc small{grid-column:1/-1;font:500 11px var(--f-ui);letter-spacing:.06em;color:var(--text-3)}
+.bar-timer{display:flex;align-items:center;gap:10px;padding:2px 2px 0;font:700 12px var(--f-ui);color:var(--text-2)}
+.bar-timer .tl{font:600 9.5px var(--f-ui);letter-spacing:.18em;text-transform:uppercase;color:var(--text-3)}
+.bar-timer .tr{flex:1;height:6px;border-radius:6px;background:var(--paper-dim);overflow:hidden}
+.bar-timer .tr i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--brass-d),var(--amber));transition:width .25s linear}
+.bar-timer .ts{min-width:2.4em;text-align:right;font-variant-numeric:tabular-nums}
+.bar-timer.low{color:var(--tomato)}
+.bar-timer.low .tr i{background:var(--tomato)}
+.st-chairs,.st-diffs{display:flex;flex-wrap:wrap;gap:8px}
+.st-chairs .st-opt,.st-diffs .st-opt{min-width:44px;text-align:center}
+.emotes{flex-wrap:wrap;justify-content:center;max-width:min(92vw,520px);border-radius:24px}

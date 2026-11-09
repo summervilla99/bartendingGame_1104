@@ -6,7 +6,7 @@ import {randRange} from './rng.js';
 
 /* Shared-night rules for a room. The host runs these on its copy of the world and broadcasts snapshots; everyone else only
    sends requests (claim / unclaim / served). Pure and JSON-only, so it is the same code a server would run. */
-export const NPC_SERVE_AFTER=30,MAX_TIP=3*3000+1000,SEAT_RE=/^g[0-3]$/;
+export const NPC_SERVE_AFTER=30,MAX_TIP=3*3000+1000,SEAT_RE=/^g[0-7]$/,FIRE_COOLDOWN=30,FIRE_GRACE=3;
 
 export const tipFor=(session,rawTip)=>Math.round(rawTip*TIMES[session.time].tipMult);
 const seatOf=(world,id)=>world.seats.find(s=>s.id===id);
@@ -15,6 +15,7 @@ const seatOf=(world,id)=>world.seats.find(s=>s.id===id);
 export function claimSeat(world,seatId,by,now){
   const seat=seatOf(world,seatId);
   if(!seat||!seat.order)return {ok:false,reason:'none'};
+  if(world.fired[by])return {ok:false,reason:'fired'};
   if(seat.claim)return seat.claim.by===by?{ok:true,station:seat.claim.station,orderNo:seat.claim.orderNo}:{ok:false,reason:'taken'};
   if(world.stations.indexOf(by)>=0)return {ok:false,reason:'busy'};
   const st=world.stations.indexOf(null);
@@ -32,7 +33,13 @@ export function releaseClaim(world,seatId,by){
 /* Free tickets and stations held by players who are no longer in the room. */
 export function expireClaims(world,activeIds){
   let n=0;
-  world.seats.forEach(s=>{if(s.claim&&activeIds.indexOf(s.claim.by)<0){world.stations[s.claim.station]=null;s.claim=null;n++;}});
+  world.seats.forEach(s=>{
+    if(s.claim&&activeIds.indexOf(s.claim.by)<0){world.stations[s.claim.station]=null;s.claim=null;n++;}
+    if(s.customer&&activeIds.indexOf(s.customer)<0){          // a seated customer left: their order is void
+      if(s.claim){world.stations[s.claim.station]=null;s.claim=null;}
+      s.order=null;s.customer=null;world.night.ordered=Math.max(0,world.night.ordered-1);n++;
+    }
+  });
   world.stations.forEach((u,i)=>{if(u&&activeIds.indexOf(u)<0){world.stations[i]=null;n++;}});
   if(n)world.rev++;
   return n;
@@ -41,8 +48,36 @@ export function expireClaims(world,activeIds){
 function finishSeat(world,seat,served,now){
   if(seat.claim)world.stations[seat.claim.station]=null;
   seat.claim=null;seat.order=null;seat.reaction={stars:served.stars,until:now+7};
-  world.rev++;seat.served=Object.assign({rev:world.rev},served);
+  world.rev++;seat.served=Object.assign({rev:world.rev,x:seat.stoolX||0,to:seat.customer||null},served);
+  seat.customer=null;
   world.nextOrderAt=Math.min(world.nextOrderAt,now+randRange(world,2.5,5));
+}
+
+/* A seated player orders from the menu. Takes the first free customer seat (g4-g7). */
+export function placeOrder(world,from,rec,stoolX,now,pool){
+  if(!(world.session.chairs>0))return {ok:false,reason:'solo'};
+  if(!pool.some(r=>r.id===rec))return {ok:false,reason:'menu'};
+  if(world.seats.some(s=>s.customer===from))return {ok:false,reason:'busy'};
+  const seat=world.seats.find((s,i)=>i>=4&&!s.order&&!s.customer);
+  if(!seat)return {ok:false,reason:'full'};
+  seat.customer=from;seat.stoolX=stoolX;seat.order={recipeId:rec,at:now};seat.reaction=null;seat.served=null;
+  world.night.ordered++;world.rev++;
+  return {ok:true,seatId:seat.id};
+}
+
+/* Time limit: a bartender who takes too long loses the job for FIRE_COOLDOWN seconds. Also clears expired cooldowns.
+   Returns {fired:[ids], changed}. */
+export function fireLate(world,now){
+  const limit=world.session.limit,fired=[];let changed=false;
+  if(limit>0)world.seats.forEach(seat=>{
+    if(seat.claim&&now-seat.claim.at>limit+FIRE_GRACE){
+      const by=seat.claim.by;world.stations[seat.claim.station]=null;seat.claim=null;
+      world.fired[by]=now+FIRE_COOLDOWN;fired.push(by);changed=true;
+    }
+  });
+  Object.keys(world.fired).forEach(id=>{if(now>world.fired[id]){delete world.fired[id];changed=true;}});
+  if(changed)world.rev++;
+  return {fired,changed};
 }
 
 /* The bartender finished a drink. Returns {tip} (hour bonus applied) or null when the request is invalid. */
@@ -88,6 +123,7 @@ export function parseGameMessage(raw){
   if(!raw||raw.t!=='g'||typeof raw.id!=='string')return null;
   const k=raw.k,out={k,id:raw.id};
   if(k==='need')return out;
+  if(k==='order'){if(!RECIPE_BY_ID[raw.rec])return null;out.rec=raw.rec;return out;}
   if(k==='claim'||k==='unclaim'){if(!SEAT_RE.test(raw.seat))return null;out.seat=raw.seat;return out;}
   if(k==='served'){
     if(!SEAT_RE.test(raw.seat)||!RECIPE_BY_ID[raw.rec])return null;

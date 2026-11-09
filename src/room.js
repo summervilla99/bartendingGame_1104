@@ -133,7 +133,7 @@ function remapUV(geo,w,h,x0,y0){
 
 export function buildRoom(scene){
   const colliders=[];
-  const col=(x0,x1,z0,z1,y0,y1)=>colliders.push({min:new THREE.Vector3(x0,y0||0,z0),max:new THREE.Vector3(x1,y1==null?2.2:y1,z1)});
+  const col=(x0,x1,z0,z1,y0,y1)=>{const c={min:new THREE.Vector3(x0,y0||0,z0),max:new THREE.Vector3(x1,y1==null?2.2:y1,z1)};colliders.push(c);return c;};
   const add=(m,p)=>{(p||scene).add(m);return m;};
   const box=(w,h,d,mat,x,y,z,p)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return add(m,p);};
   const cyl=(rt,rb,h,mat,x,y,z,p,seg)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||20),mat);m.position.set(x,y,z);return add(m,p);};
@@ -338,6 +338,7 @@ export function buildRoom(scene){
   /* bar stools: oxblood leather with low back */
   const seatGeo=lathe([[0,0],[.25,0],[.27,.04],[.265,.09],[.22,.115],[0,.12]],28);
   const backGeo=new THREE.CylinderGeometry(.27,.27,.22,24,1,true,-Math.PI*.42,Math.PI*.84);
+  const stools=[];
   STOOL_X.forEach(x=>{
     const g=grp(x,0,STOOL_Z);
     cyl(.24,.27,.03,brass,0,.015,0,g,28);
@@ -348,7 +349,7 @@ export function buildRoom(scene){
     const bk=new THREE.Mesh(backGeo,leather);bk.position.y=.92;bk.material.side=THREE.DoubleSide;g.add(bk);
     const bt=new THREE.Mesh(new THREE.TorusGeometry(.27,.012,6,24,Math.PI*.84),brass);bt.rotation.set(Math.PI/2,0,Math.PI*.08);bt.position.y=1.03;g.add(bt);
     shadows(g,true,true);
-    col(x-.3,x+.3,STOOL_Z-.3,STOOL_Z+.32,0,1.1);
+    stools.push({g,c:col(x-.3,x+.3,STOOL_Z-.3,STOOL_Z+.32,0,1.1)});
   });
 
   /* pendant domes over the counter */
@@ -504,5 +505,13 @@ export function buildRoom(scene){
     glassMat.color.setRGB(look.win[0],look.win[1],look.win[2]);
     if(curSky!==look.sky){curSky=look.sky;const c=city.image;paintCity(c.getContext('2d'),c.width,c.height,look.sky);city.needsUpdate=true;}
   }
-  return {colliders,animate,groundAt,drawNeon,setTime};
+  /* Bar stools follow the room's chair count: move, show or hide them (and their collision boxes). */
+  function setStools(xs){
+    stools.forEach((st,i)=>{
+      const on=i<xs.length;st.g.visible=on;
+      if(on){st.g.position.x=xs[i];st.c.min.x=xs[i]-.3;st.c.max.x=xs[i]+.3;st.c.min.z=STOOL_Z-.3;st.c.max.z=STOOL_Z+.32;}
+      else{st.c.min.x=st.c.max.x=1e4;}
+    });
+  }
+  return {colliders,animate,groundAt,drawNeon,setTime,setStools};
 }

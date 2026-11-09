@@ -5,13 +5,13 @@ import {nextRandom,randRange,pickFrom} from './rng.js';
 /* The serialisable state of one night. Everything the rules need is here (or in the active drink); the renderer only reads it.
    world = {v, seed, rng, session, nextOrderAt, orderNo, tips, night:{served,ordered,stars,tips,best}, seats:[{id,active,order,last,reaction}]} */
 export const VERSION=2;
-export const SEAT_COUNT=4,STATION_COUNT=2;
+export const SEAT_COUNT=8,STATION_COUNT=2;   // g0-g3: NPC guests, g4-g7: seated players who ordered
 
 export function createWorld(session,seed,now){
   const T=TIMES[session.time],s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
-  return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
+  return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,fired:{},stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
     night:{served:0,ordered:0,stars:0,tips:0,best:null},
-    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:T.guests.indexOf(i)>=0,order:null,last:null,reaction:null,claim:null,served:null}))};
+    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:i<4&&(session.chairs>0?i===0:T.guests.indexOf(i)>=0),order:null,last:null,reaction:null,claim:null,served:null,customer:null,stoolX:0}))};
 }
 
 export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.order.at-b.order.at);
@@ -58,7 +58,7 @@ export function restore(snap){
   const w=snap.world;
   if(!Array.isArray(w.seats)||w.seats.length!==SEAT_COUNT)return null;
   if(w.seats.some(s=>s.order&&!ok(s.order.recipeId)))return null;
-  if(!Array.isArray(w.stations)||w.stations.length!==STATION_COUNT||typeof w.rev!=='number')return null;
+  if(!Array.isArray(w.stations)||w.stations.length!==STATION_COUNT||typeof w.rev!=='number'||typeof w.fired!=='object'||!w.fired)return null;
   if(snap.drink&&!ok(snap.drink.recipeId))return null;
   return {world:w,drink:snap.drink||null};
 }
