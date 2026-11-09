@@ -392,9 +392,9 @@ body{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
 .st-card h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent)}
 :root[lang=ko] .st-card h2{font-size:12.5px;letter-spacing:.04em;text-transform:none}
 .st-opt{padding:14px 16px}
-.st-opt b{font:700 19px/1.25 var(--f-ui);letter-spacing:-.015em}
+.st-opt b{font:700 21px/1.25 var(--f-serif);letter-spacing:-.01em}      /* the card titles use the same soft serif as the screen title */
 :root[lang=en] .st-opt b{font:italic 600 23px/1.1 var(--f-serif);letter-spacing:0}
-.st-kinds .st-opt b{font-size:21px}
+.st-kinds .st-opt b{font-size:23px}
 :root[lang=en] .st-kinds .st-opt b{font-size:25px}
 .st-opt .st-d{margin-top:6px;font-size:12.5px;line-height:1.6;letter-spacing:-.005em;color:var(--text-2);font-weight:400}
 .st-opt i{font-variant-numeric:tabular-nums;letter-spacing:.14em}
