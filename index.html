@@ -28,6 +28,9 @@
   <div class="pop" id="settings" hidden>
     <div class="srow"><span data-i18n="set_lang"></span><button class="btn sm" id="btn-lang" type="button" data-i18n-aria="lang_aria"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>
     <div class="srow"><span data-i18n="set_night"></span><button class="btn sm" id="btn-night" type="button" data-i18n="night_btn"></button></div>
+    <div class="srow"><span data-i18n="set_zoom"></span><input id="zoom-range" type="range" min="60" max="180" step="5" value="100" aria-label="zoom"></div>
+    <div class="srow" id="row-genre"><span data-i18n="set_genre"></span><span class="segs" id="genre-seg"><button class="btn sm" type="button" data-g="jazz" data-i18n="mus_jazz"></button><button class="btn sm" type="button" data-g="house" data-i18n="mus_house"></button><button class="btn sm" type="button" data-g="classical" data-i18n="mus_classical"></button></span></div>
+    <div class="srow" id="row-mood" hidden><span data-i18n="set_mood"></span><span class="segs" id="mood-seg"><button class="btn sm" type="button" data-t="golden" data-i18n="time_golden"></button><button class="btn sm" type="button" data-t="prime" data-i18n="time_prime"></button><button class="btn sm" type="button" data-t="last" data-i18n="time_last"></button></span></div>
     <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></div>
     <div class="srow"><span data-i18n="set_music"></span><button class="btn sm" id="btn-music" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">♪</span><span class="lb" id="music-lb"></span></button></div>
   </div>
@@ -38,7 +41,10 @@
     <div class="dock">
       <button class="btn lg primary prompt" id="btn-act" type="button" hidden><kbd>E</kbd><span id="act-label"></span></button>
       <button class="btn sm" id="btn-order" type="button" data-i18n="order_btn" hidden></button>
+      <button class="btn sm" id="btn-music-pick" type="button" data-i18n="music_pick" hidden></button>
       <button class="btn sm" id="btn-emote" type="button" data-i18n="emote_btn"></button>
+      <button class="btn sm" id="btn-dance" type="button" data-i18n="emo_dance"></button>
+      <button class="btn sm" id="btn-jump" type="button" data-i18n="emo_jump"></button>
       <button class="btn sm" id="btn-chat" type="button" data-i18n="chat_btn" hidden></button>
       <p class="hint" id="walk-hint" data-i18n-html="hint_kb"></p>
     </div>
@@ -109,6 +115,7 @@
       <div class="r-tip"><span data-i18n="tip"></span><b id="sum-tip">₩0</b></div>
       <div class="row">
         <button class="btn sm" id="btn-sum-new" type="button" data-i18n="sum_new"></button>
+        <button class="btn primary" id="btn-sum-next" type="button" data-i18n="sum_next" hidden></button>
         <button class="btn primary" id="btn-sum-again" type="button" data-i18n="sum_again"></button>
       </div>
     </div>
@@ -121,8 +128,6 @@
     <button class="btn sm" type="button" data-e="wave" data-i18n="emo_wave"></button>
     <button class="btn sm" type="button" data-e="clap" data-i18n="emo_clap"></button>
     <button class="btn sm" type="button" data-e="bow" data-i18n="emo_bow"></button>
-    <button class="btn sm" type="button" data-e="dance" data-i18n="emo_dance"></button>
-    <button class="btn sm" type="button" data-e="jump" data-i18n="emo_jump"></button>
   </div>
   <div class="chatfeed" id="chatfeed" aria-live="polite"></div>
   <form class="chatbar glass" id="chat-form" hidden autocomplete="off">
@@ -145,6 +150,18 @@
       <h2 data-i18n="order_title"></h2>
       <div class="order-list" id="order-list"></div>
       <div class="row"><button class="btn sm" id="order-close" type="button" data-i18n="photo_close"></button></div>
+    </div>
+  </div>
+  <div class="result" id="music-menu" hidden>
+    <div class="rcard ordercard" role="dialog">
+      <h2 data-i18n="music_title"></h2>
+      <div class="order-list" id="music-list">
+        <button class="oc" type="button" data-g="jazz"><b data-i18n="mus_jazz"></b></button>
+        <button class="oc" type="button" data-g="house"><b data-i18n="mus_house"></b></button>
+        <button class="oc" type="button" data-g="classical"><b data-i18n="mus_classical"></b></button>
+        <button class="oc" type="button" data-g="off"><b data-i18n="mus_off"></b></button>
+      </div>
+      <div class="row"><button class="btn sm" id="music-close" type="button" data-i18n="photo_close"></button></div>
     </div>
   </div>
   <div id="flash"></div>

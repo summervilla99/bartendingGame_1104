@@ -316,3 +316,13 @@ button{font:inherit;color:inherit}
 .st-chairs,.st-diffs{display:flex;flex-wrap:wrap;gap:8px}
 .st-chairs .st-opt,.st-diffs .st-opt{min-width:44px;text-align:center}
 .emotes{flex-wrap:wrap;justify-content:center;max-width:min(92vw,520px);border-radius:24px}
+
+/* zoom slider, music/mood rows, story stages */
+#zoom-range{width:130px;accent-color:var(--brass)}
+.segs{display:inline-flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.segs .btn.on{background:rgba(201,160,102,.25);border-color:rgba(201,160,102,.75);color:var(--text)}
+.st-modes{grid-template-columns:repeat(2,1fr)}
+.st-stages{grid-template-columns:repeat(3,1fr)}
+.st-stage b{font-size:19px}
+.rush{margin-left:6px;font:italic 600 11px var(--f-serif);color:var(--tomato)}
+@media (max-width:640px){.st-stages,.st-modes{grid-template-columns:1fr}}

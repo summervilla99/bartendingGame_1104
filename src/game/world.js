@@ -1,5 +1,5 @@
 import {RECIPES} from '../data.js';
-import {TIMES,poolFor} from '../session.js';
+import {TIMES,poolFor,goalOf} from '../session.js';
 import {nextRandom,randRange,pickFrom} from './rng.js';
 
 /* The serialisable state of one night. Everything the rules need is here (or in the active drink); the renderer only reads it.
@@ -9,7 +9,7 @@ export const SEAT_COUNT=8,STATION_COUNT=2;   // g0-g3: NPC guests, g4-g7: seated
 
 export function createWorld(session,seed,now){
   const T=TIMES[session.time],s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
-  return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,fired:{},stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
+  return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,fired:{},combo:0,regulars:{},stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
     night:{served:0,ordered:0,stars:0,tips:0,best:null},
     seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:i<4&&(session.chairs>0?i===0:T.guests.indexOf(i)>=0),order:null,last:null,reaction:null,claim:null,served:null,customer:null,stoolX:0}))};
 }
@@ -20,14 +20,15 @@ export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.or
 export function tickOrders(world,now){
   if(now<world.nextOrderAt)return null;
   const T=TIMES[world.session.time],N=world.night;
-  const more=world.session.mode!=='service'||N.ordered<T.goal;
+  const more=(world.session.mode!=='service'&&world.session.mode!=='story')||N.ordered<goalOf(world.session);
   const free=world.seats.filter(s=>s.active&&!s.order&&(!s.reaction||now>s.reaction.until));
   let ev=null;
   if(more&&free.length&&pendingSeats(world).length<T.maxPending){
     const seat=pickFrom(world,free),pool=poolFor(world.session,RECIPES);
     let r;do{r=pickFrom(world,pool);}while(r.id===seat.last&&pool.length>1);
-    seat.order={recipeId:r.id,at:now};seat.last=r.id;seat.reaction=null;seat.served=null;N.ordered++;world.rev++;
-    ev={seatId:seat.id,recipeId:r.id};
+    const rush=N.ordered>=2&&nextRandom(world)<.2;
+    seat.order={recipeId:r.id,at:now,rush};seat.last=r.id;seat.reaction=null;seat.served=null;N.ordered++;world.rev++;
+    ev={seatId:seat.id,recipeId:r.id,rush};
   }
   world.nextOrderAt=now+randRange(world,T.every[0],T.every[1]);
   return ev;
@@ -41,7 +42,7 @@ export function releaseSeat(world,seatId,now,stars){
   world.nextOrderAt=Math.min(world.nextOrderAt,now+randRange(world,2.5,5));
 }
 
-export const nightOver=world=>world.session.mode==='service'&&world.night.served>=TIMES[world.session.time].goal;
+export const nightOver=world=>(world.session.mode==='service'||world.session.mode==='story')&&world.night.served>=goalOf(world.session);
 
 export function nightSummary(world){
   const N=world.night,avg=N.served?N.stars/N.served:0;

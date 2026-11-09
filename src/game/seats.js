@@ -13,6 +13,7 @@ SEATS.push(mk('armchair','chair',-6.2,8.2,Math.PI/2,-.46,.25,-5.1,8.2,{ko:'라�
   SEATS.push(mk('benchL'+z,'bench',-9.5,z,Math.PI/2,-.46,.25,-8.3,z,{ko:'소파 자리',en:'Sofa seat'}));
   SEATS.push(mk('benchR'+z,'bench',9.5,z,-Math.PI/2,-.46,.25,8.3,z,{ko:'소파 자리',en:'Sofa seat'}));
 });
+SEATS.push(mk('piano','piano',7.1,7.7,-.6,.18,.6,7.7,6.7,{ko:'피아노 의자',en:'Piano bench'}));
 export const SEAT_MAX=SEATS.length;
 export const seatByWireId=n=>(Number.isInteger(n)&&n>=1&&n<=SEAT_MAX)?SEATS[n-1]:null;
 

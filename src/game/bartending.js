@@ -1,5 +1,6 @@
 import {ING,RECIPES,VESSEL_CAP} from '../data.js';
 import {TIMES} from '../session.js';
+import {bonusOf,recordServe} from './bonus.js';
 
 /* Pure drink-making rules. No three.js, no DOM: state is plain JSON so a server can run the same functions.
    drink = {recipeId, seatId, orderNo, stage, poured:{ing:ml}, total, cap, mixProg, mixCount, stirAcc, mixDone, garnish, result} */
@@ -61,7 +62,10 @@ export function serveDrink(drink){
 /* Result card shown: apply the hour's tip bonus and add to the night totals. */
 export function settleDrink(world,drink){
   const r=drink.result,N=world.night;
-  r.tip=Math.round(r.tip*TIMES[world.session.time].tipMult);
+  const seat=world.seats.find(s=>s.id===drink.seatId),rush=!!(seat&&seat.order&&seat.order.rush);
+  r.bonus=bonusOf(world,drink.seatId,r.stars,rush);r.rush=rush;
+  r.tip=Math.round(r.tip*TIMES[world.session.time].tipMult*r.bonus);
+  recordServe(world,drink.seatId,r.stars);
   N.served++;N.stars+=r.stars;N.tips+=r.tip;world.tips+=r.tip;
   if(!N.best||r.final>N.best.final)N.best={final:r.final,stars:r.stars,recipeId:drink.recipeId};
   drink.stage='result';

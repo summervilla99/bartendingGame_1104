@@ -3,9 +3,11 @@ import {TIMES} from '../session.js';
 import {RECIPE_BY_ID} from './bartending.js';
 import {restore,VERSION} from './world.js';
 import {randRange} from './rng.js';
+import {bonusOf,recordServe,breakCombo,patienceOf} from './bonus.js';
 
 /* Shared-night rules for a room. The host runs these on its copy of the world and broadcasts snapshots; everyone else only
    sends requests (claim / unclaim / served). Pure and JSON-only, so it is the same code a server would run. */
+export const MUSIC=['jazz','house','classical','off'];
 export const NPC_SERVE_AFTER=30,MAX_TIP=3*3000+1000,SEAT_RE=/^g[0-7]$/,FIRE_COOLDOWN=30,FIRE_GRACE=3;
 
 export const tipFor=(session,rawTip)=>Math.round(rawTip*TIMES[session.time].tipMult);
@@ -70,9 +72,9 @@ export function placeOrder(world,from,rec,stoolX,now,pool){
 export function fireLate(world,now){
   const limit=world.session.limit,fired=[];let changed=false;
   if(limit>0)world.seats.forEach(seat=>{
-    if(seat.claim&&now-seat.claim.at>limit+FIRE_GRACE){
+    if(seat.claim&&now-seat.claim.at>patienceOf(limit,seat.order&&seat.order.rush)+FIRE_GRACE){
       const by=seat.claim.by;world.stations[seat.claim.station]=null;seat.claim=null;
-      world.fired[by]=now+FIRE_COOLDOWN;fired.push(by);changed=true;
+      world.fired[by]=now+FIRE_COOLDOWN;fired.push(by);changed=true;breakCombo(world);
     }
   });
   Object.keys(world.fired).forEach(id=>{if(now>world.fired[id]){delete world.fired[id];changed=true;}});
@@ -84,7 +86,8 @@ export function fireLate(world,now){
 export function applyServed(world,seatId,by,p,now){
   const seat=seatOf(world,seatId);
   if(!seat||!seat.order||!seat.claim||seat.claim.by!==by||p.rec!==seat.order.recipeId)return null;
-  const tip=tipFor(world.session,p.tip),N=world.night;
+  const rush=!!seat.order.rush,tip=Math.round(tipFor(world.session,p.tip)*bonusOf(world,seatId,p.stars,rush)),N=world.night;
+  recordServe(world,seatId,p.stars);
   N.served++;N.stars+=p.stars;N.tips+=tip;world.tips+=tip;
   if(!N.best||p.final>N.best.final)N.best={final:p.final,stars:p.stars,recipeId:p.rec};
   finishSeat(world,seat,{stars:p.stars,recipeId:p.rec,ml:p.ml,col:p.col,by},now);
@@ -123,6 +126,7 @@ export function parseGameMessage(raw){
   if(!raw||raw.t!=='g'||typeof raw.id!=='string')return null;
   const k=raw.k,out={k,id:raw.id};
   if(k==='need')return out;
+  if(k==='music'){if(MUSIC.indexOf(raw.genre)<0)return null;out.genre=raw.genre;return out;}
   if(k==='order'){if(!RECIPE_BY_ID[raw.rec])return null;out.rec=raw.rec;return out;}
   if(k==='claim'||k==='unclaim'){if(!SEAT_RE.test(raw.seat))return null;out.seat=raw.seat;return out;}
   if(k==='served'){

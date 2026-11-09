@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {clamp,lerp} from './util.js';
 import {poseWalk} from './figures.js';
+import {gesture} from './zoom.js';
 
 const RADIUS=.28,WALK=2.1,RUN=3.9,CAM_DIST=2.9,SHOULDER=.42,PIVOT_Y=1.58;
 
@@ -18,7 +19,7 @@ function rayBox(o,d,b){
 export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
   const pos=new THREE.Vector3(0,0,8.6);
   const vel=new THREE.Vector2();
-  const st={camYaw:0,pitch:.26,yaw:Math.PI,ph:0,amt:0,enabled:true,drag:null,locked:false,intent:0};
+  const st={camYaw:0,pitch:.26,yaw:Math.PI,ph:0,amt:0,enabled:true,drag:null,locked:false,intent:0,zoom:1};
   const keys=new Set();
   const joy={x:0,y:0,id:null};
   const view={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:55,off:0};
@@ -31,7 +32,7 @@ export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
 
   canvas.addEventListener('pointerdown',e=>{if(!st.enabled)return;st.drag={x:e.clientX,y:e.clientY,id:e.pointerId};try{canvas.setPointerCapture(e.pointerId);}catch(_){}});
   canvas.addEventListener('pointermove',e=>{
-    const d=st.drag;if(!d||d.id!==e.pointerId||!st.enabled)return;
+    const d=st.drag;if(!d||d.id!==e.pointerId||!st.enabled||gesture.pinching)return;
     st.camYaw-=(e.clientX-d.x)*.0055;st.pitch=clamp(st.pitch+(e.clientY-d.y)*.004,-.12,.85);d.x=e.clientX;d.y=e.clientY;
   });
   const endDrag=e=>{if(st.drag&&st.drag.id===e.pointerId)st.drag=null;};
@@ -97,7 +98,7 @@ export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
     let sh=SHOULDER;
     for(const b of colliders){const h=rayBox(tmpO,right,b);if(h<sh+.15)sh=Math.max(0,h-.15);}
     tmpO.addScaledVector(right,sh);
-    let dist=CAM_DIST;
+    let dist=CAM_DIST/(st.zoom||1);
     for(const b of colliders){const h=rayBox(tmpO,tmpD,b);if(h<dist)dist=h;}
     if(tmpD.y>0)dist=Math.min(dist,(ceiling-.15-tmpO.y)/tmpD.y);
     dist=Math.max(.35,dist-.22);

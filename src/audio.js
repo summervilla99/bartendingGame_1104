@@ -31,15 +31,21 @@ export const Snd=(function(){
     const g=ctx.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     s.connect(f);f.connect(g);g.connect(dest||master);s.start(t,Math.random()*1.5);s.stop(t+dur+.02);
   }
-  const BPM=76,SL=60/BPM/3;
+  /* genres: each has a step length (seconds) and a play(step,time) that schedules one step */
+  function kick(t){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';
+    o.frequency.setValueAtTime(155,t);o.frequency.exponentialRampToValueAtTime(42,t+.13);
+    g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.connect(g);g.connect(musicG);o.start(t);o.stop(t+.25);
+  }
   const CH=[
     {notes:[53,57,60,64],scale:[2,4,5,7,9,11,0],bass:[38,41,45,44]},
     {notes:[53,59,62,64],scale:[7,9,11,0,2,4,5],bass:[43,47,50,49]},
     {notes:[52,55,59,62],scale:[0,2,4,5,7,9,11],bass:[36,40,43,45]},
     {notes:[55,61,65,67],scale:[9,11,1,2,4,5,7],bass:[45,49,52,51]}
   ];
-  function play(s,t){
-    const bar=Math.floor(s/12)%4,slot=s%12,c=CH[bar];
+  const JAZZ_SL=60/76/3;
+  function playJazz(s,t){
+    const SL=JAZZ_SL,bar=Math.floor(s/12)%4,slot=s%12,c=CH[bar];
     if([0,3,5,6,9,11].indexOf(slot)>=0)hit(t,slot%3===2?.05:.11,6500,(slot===0||slot===6)?.05:.034,musicG);
     if(slot===3||slot===9)hit(t,.05,3000,.04,musicG);
     if(slot%3===0)tone(mtof(c.bass[slot/3]),t,SL*3*.95,'triangle',.24,musicG,520);
@@ -51,10 +57,30 @@ export const Snd=(function(){
     }
     if(Math.random()<.03)hit(t,.012,1000,.08,musicG);
   }
-  function sched(){if(!ctx)return;while(next<ctx.currentTime+.4){play(step,next);next+=SL;step++;}}
+  const HOUSE_SL=60/122/4,HB=[45,45,48,43];
+  function playHouse(s,t){
+    const slot=s%16,bar=Math.floor(s/16)%4;
+    if(slot%4===0)kick(t);
+    if(slot===4||slot===12)hit(t,.12,1800,.09,musicG);
+    if(slot%4===2)hit(t,.08,7000,.06,musicG);else if(slot%2===1)hit(t,.025,8500,.022,musicG);
+    if(slot%4===2)tone(mtof(HB[bar]),t,HOUSE_SL*3.4,'sawtooth',.14,musicG,420);
+    if(slot===3||slot===11)[57,60,64,67].forEach(n=>tone(mtof(n),t,HOUSE_SL*2.4,'square',.018,musicG,1700));
+  }
+  const CLASSIC_SL=60/66/2,CP=[[57,60,64],[53,57,60],[48,52,55],[55,59,62]];
+  function playClassical(s,t){
+    const slot=s%8,bar=Math.floor(s/8)%4,c=CP[bar],pat=[0,1,2,1,0,1,2,1],n=c[pat[slot]]+(slot>=4?12:0);
+    tone(mtof(n),t,CLASSIC_SL*3.4,'triangle',.085,musicG,3200);tone(mtof(n+12),t,CLASSIC_SL*1.6,'sine',.018,musicG);
+    if(slot===0)tone(mtof(c[0]-12),t,CLASSIC_SL*7,'sine',.16,musicG,600);
+    if(slot===6&&Math.random()<.5)tone(mtof(c[2]+19),t,CLASSIC_SL*2.5,'sine',.045,musicG,2800);
+  }
+  const GEN={jazz:{sl:JAZZ_SL,play:playJazz},house:{sl:HOUSE_SL,play:playHouse},classical:{sl:CLASSIC_SL,play:playClassical}};
+  let genre='jazz';
+  function sched(){if(!ctx)return;const g=GEN[genre];while(next<ctx.currentTime+.4){g.play(step,next);next+=g.sl;step++;}}
   return {
     init,
     get on(){return musicOn;},
+    get genre(){return genre;},
+    setGenre(g){if(!GEN[g])return;genre=g;step=0;if(ctx)next=ctx.currentTime+.1;},
     music(on){
       init();if(!ctx)return false;musicOn=on;
       if(on){next=ctx.currentTime+.1;step=0;musicG.gain.setTargetAtTime(.55,ctx.currentTime,.4);clearInterval(timer);timer=setInterval(sched,100);}
