@@ -2,8 +2,10 @@
    Every text is {ko,en}. who: narr (narration) | me | a character id from CHARS. */
 export const CHARS={
   me:{name:{ko:'하랑',en:'Harang'},seat:null},
-  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0'},
-  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486'}
+  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',
+    look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
+  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486',
+    look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
 };
 /* One short flavour line per drink, shown on the recommendation buttons. */
 export const FLAVOR={
@@ -132,8 +134,11 @@ const NODES=[
    note:{ko:'마스터의 노트 1페이지 — “손님의 첫 마디는 거짓말이 많다. ‘아무거나’는 ‘이해받고 싶다’이고, ‘소주 있어요?’는 ‘여기 편해요?’다.”',
          en:'Master’s notebook, page 1 — “A guest’s first words are often a lie. ‘Anything’ means ‘understand me’. ‘Do you have soju?’ means ‘is it comfortable here?’”'}}
 ];
+/* Expressions per line (anything not listed is neutral). */
+const FACE={sy_a1:'neutral',sy_x1:'angry',sy_x2:'surprised',sy_m:'sad',sy_r3:'smile',sy_r3b:'smile',sy_r2:'smile',sy_r1:'sad',sy_f:'smile',
+  ts1:'neutral',ts_x1:'sad',ts_x2:'surprised',ts_m:'angry',ts_b1:'smile',ts_r3:'smile',ts_r2:'smile',ts_r1:'sad',ts_p2:'sad',ts_y1:'sad',ts_y2:'angry',ts_c1:'smile',ts_h:'sad'};
 export const GRAPH={};
-NODES.forEach(n=>{GRAPH[n.id]=n;});
+NODES.forEach(n=>{GRAPH[n.id]=n;if(FACE[n.id])n.face=FACE[n.id];});
 export const NIGHT1={n:1,entry:'o1',graph:GRAPH,title:{ko:'첫째 밤',en:'The First Night'},
   desc:{ko:'서윤과 태식, 두 명의 첫 손님.',en:'Seoyun and Taesik: your first two guests.'}};
 export const NIGHTS=[NIGHT1];

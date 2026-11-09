@@ -13,8 +13,11 @@ const footGeo=new THREE.BoxGeometry(.09,.06,.22);
 const handGeo=new THREE.SphereGeometry(.043,10,8);
 const headGeo=new THREE.SphereGeometry(.105,18,14);
 const hairGeo=new THREE.SphereGeometry(.116,18,14,0,Math.PI*2,0,Math.PI*.6);
-const eyeGeo=new THREE.SphereGeometry(.011,8,6);
+const eyeGeo=new THREE.SphereGeometry(.0135,10,8);
 const eyeMat=M(0x120806,{roughness:.3});
+const browGeo=new THREE.BoxGeometry(.034,.006,.006),mouthGeo=new THREE.TorusGeometry(.024,.0055,6,16,Math.PI);
+const hairBandGeo=new THREE.SphereGeometry(.118,22,6,Math.PI*.85,Math.PI*1.3,Math.PI*.4,Math.PI*.24);   // sides and back only, never the forehead
+const lensGeo=new THREE.TorusGeometry(.03,.0032,6,18);
 
 function limb(parent,geo,mat,len,y){
   const j=new THREE.Group();j.position.y=y||0;parent.add(j);
@@ -41,17 +44,39 @@ export function makeCharacter(cfg){
   if(cfg.dress){const sk=new THREE.Mesh(skirtGeo,top);sk.scale.z=.8;pelvis.add(sk);}
 
   const torso=new THREE.Group();torso.position.y=HIP_Y-.03;g.add(torso);
-  const body=new THREE.Mesh(torsoGeo,top);body.scale.z=.68;torso.add(body);
+  const bw=cfg.w||1;
+  const body=new THREE.Mesh(torsoGeo,top);body.scale.set(bw,1,.68);torso.add(body);
+  if(cfg.belly){const b=new THREE.Mesh(new THREE.SphereGeometry(.17,16,12),top);b.scale.set(1.05*bw,.8,.8);b.position.set(0,.18,.07);torso.add(b);}
   if(cfg.shirt!=null){
     const sh=new THREE.Mesh(new THREE.PlaneGeometry(.085,.2),M(cfg.shirt,{roughness:.8}));sh.position.set(0,.43,.122);sh.rotation.x=-.12;torso.add(sh);
-    if(cfg.tie!=null){const t=new THREE.Mesh(new THREE.PlaneGeometry(.03,.16),M(cfg.tie,{roughness:.5}));t.position.set(0,.41,.126);t.rotation.x=-.12;torso.add(t);}
+    if(cfg.tie!=null){const t=new THREE.Mesh(new THREE.PlaneGeometry(.03,.16),M(cfg.tie,{roughness:.5}));t.position.set(0,cfg.loose?.38:.41,.126);t.rotation.x=-.12;torso.add(t);}
   }
+  if(cfg.lapel!=null){                                   // blazer lapels: a V on the chest
+    const lm=M(cfg.lapel,{roughness:.6});
+    [-1,1].forEach(s=>{const l=new THREE.Mesh(new THREE.PlaneGeometry(.05,.22),lm);l.position.set(s*.05,.4,.13);l.rotation.set(-.1,0,-s*.3);torso.add(l);});
+  }
+  if(cfg.necklace!=null){const n=new THREE.Mesh(new THREE.TorusGeometry(.05,.0035,6,18),M(cfg.necklace,{roughness:.3,metalness:.8}));n.rotation.x=Math.PI/2+.25;n.position.set(0,.56,.02);torso.add(n);}
   const neck=new THREE.Mesh(new THREE.CylinderGeometry(.045,.05,.09,10),skin);neck.position.y=.6;torso.add(neck);
 
   const head=new THREE.Group();head.position.y=.72;torso.add(head);
   const hm=new THREE.Mesh(headGeo,skin);hm.scale.set(.95,1.08,1);head.add(hm);
   [-1,1].forEach(s=>{const e=new THREE.Mesh(eyeGeo,eyeMat);e.position.set(s*.038,.01,.096);head.add(e);});
-  const hair=new THREE.Mesh(hairGeo,hairM);hair.position.set(0,.012,-.012);hair.rotation.x=-.35;head.add(hair);
+  if(cfg.bald){                                           // thinning: hair only in a band round the sides and back
+    const hb=new THREE.Mesh(hairBandGeo,hairM);hb.position.set(0,.012,-.012);hb.rotation.x=-.1;head.add(hb);
+  }else{
+    const hair=new THREE.Mesh(hairGeo,hairM);hair.position.set(0,.012,-.012);hair.rotation.x=cfg.slick?-.72:cfg.bob?-.62:-.35;if(cfg.slick)hair.position.z=-.03;head.add(hair);
+  }
+  if(cfg.bob){const l=new THREE.Mesh(new THREE.CylinderGeometry(.118,.112,.17,16,1,true,Math.PI*.3,Math.PI*1.4),hairM);l.position.set(0,-.04,-.012);l.material.side=THREE.DoubleSide;head.add(l);}
+  if(cfg.glasses!=null){
+    const gm=M(cfg.glasses,{roughness:.3,metalness:.7});
+    [-1,1].forEach(s=>{const l=new THREE.Mesh(lensGeo,gm);l.position.set(s*.04,.012,.1);head.add(l);});
+    const br=new THREE.Mesh(new THREE.BoxGeometry(.02,.003,.003),gm);br.position.set(0,.02,.103);head.add(br);
+  }
+  if(cfg.earring!=null){const em=M(cfg.earring,{roughness:.2,metalness:.5});[-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.009,8,6),em);e.position.set(s*.1,-.025,.0);head.add(e);});}
+  /* a face that can change: brows and a mouth (see setFace) */
+  const browM=M(cfg.hair,{roughness:.6}),mouthM=M(cfg.lip||0x6a2a26,{roughness:.5});
+  const brows=[-1,1].map(s=>{const b=new THREE.Mesh(browGeo,browM);b.position.set(s*.038,.042,.1);b.userData.s=s;head.add(b);return b;});
+  const mouth=new THREE.Mesh(mouthGeo,mouthM);mouth.position.set(0,-.03,.098);head.add(mouth);
   if(cfg.long){const l=new THREE.Mesh(new THREE.CylinderGeometry(.11,.095,.3,14,1,true,Math.PI*.35,Math.PI*1.3),hairM);l.position.set(0,-.12,-.01);l.material.side=THREE.DoubleSide;head.add(l);}
   if(cfg.bun){const b=new THREE.Mesh(new THREE.SphereGeometry(.055,12,10),hairM);b.position.set(0,.08,-.1);head.add(b);}
   if(cfg.hat!=null){
@@ -62,14 +87,16 @@ export function makeCharacter(cfg){
   }
 
   const arms=[-1,1].map(s=>{
-    const sh=limb(torso,upperGeo,top,.3,.5);sh.position.x=s*.2;sh.rotation.z=s*.06;
+    const sh=limb(torso,upperGeo,top,.3,.5);sh.position.x=s*.2*bw;sh.rotation.z=s*.06;
     const el=limb(sh,foreGeo,top,.27,-.3);
     const hand=new THREE.Mesh(handGeo,skin);hand.position.y=-.29;el.add(hand);
+    if(cfg.watch&&s>0){const w=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.02,12),M(0xb8b8bc,{roughness:.25,metalness:.8}));w.position.y=-.23;el.add(w);}
     return {sh,el};
   });
 
   g.traverse(o=>{if(o.isMesh){o.castShadow=true;}});
-  g.userData={pelvis,torso,head,legs,arms,walkPh:0};
+  if(cfg.h)g.scale.y=cfg.h;
+  g.userData={pelvis,torso,head,legs,arms,brows,mouth,walkPh:0};
   return g;
 }
 
@@ -149,3 +176,18 @@ export const LOUNGE_CFG=[
    talk:{ko:['스타트업 하고 있어요. 여기서 좋은 사람들 많이 만났죠.','칵테일 하나 추천해 줄래요? 아직 잘 몰라서요.'],
          en:['I run a startup. I\'ve met a lot of good people here.','Could you recommend a cocktail? I\'m still learning.']}}
 ];
+
+/* Facial expression: neutral | smile | surprised | sad | angry. */
+const FACES={
+  neutral:{a:0,by:0,my:-.034,rz:Math.PI,sx:.9,sy:.22},
+  smile:{a:0,by:.004,my:-.028,rz:Math.PI,sx:1.1,sy:1},
+  surprised:{a:0,by:.016,my:-.045,rz:0,sx:.55,sy:1.7},
+  sad:{a:-.35,by:.004,my:-.052,rz:0,sx:.8,sy:.8},
+  angry:{a:.42,by:-.006,my:-.052,rz:0,sx:1,sy:.9}
+};
+export function setFace(fig,name){
+  const u=fig.userData,f=FACES[name]||FACES.neutral;
+  if(!u.brows)return;
+  u.brows.forEach(b=>{b.rotation.z=f.a*b.userData.s;b.position.y=.042+f.by;});
+  u.mouth.rotation.z=f.rz;u.mouth.position.y=f.my;u.mouth.scale.set(f.sx,f.sy,1);
+}

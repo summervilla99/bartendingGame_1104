@@ -10,7 +10,7 @@ import {NIGHTS,CHARS as TALE_CHARS} from './story/night1.js';
 import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
-import {makeCharacter,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
+import {makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
 import {buildEnv} from './env.js';
 import {createComposer} from './composer.js';
@@ -66,7 +66,7 @@ function makeNpc(cfg,i,seat){
   else{fig.position.set(cfg.pos[0],-.46,cfg.pos[2]);fig.rotation.y=cfg.yaw;poseSit(fig,.25);}
   scene.add(fig);
   const p=fig.position;
-  const npc={cfg,x:p.x,fig,seat,active:true,nameOv:null,noTalk:false,order:null,orderAt:0,reaction:null,talk:null,talkIdx:0,drink:null,cheer:0,ph:i*1.7,
+  const npc={cfg,baseCfg:cfg,styled:false,x:p.x,fig,seat,active:true,nameOv:null,noTalk:false,order:null,orderAt:0,reaction:null,talk:null,talkIdx:0,drink:null,cheer:0,ph:i*1.7,
     anchor:new THREE.Vector3(p.x,seat==='stool'?1.95:1.55,p.z),baseYaw:fig.rotation.y};
   Object.defineProperty(npc,'name',{get:()=>tr(npc.nameOv||cfg.nm)});
   return npc;
@@ -149,8 +149,9 @@ const PRE={bar:{pos:new THREE.Vector3(0,2.5,-2.15),look:new THREE.Vector3(0,1.12
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let camFov=55,camOff=0;
 const cam={from:null,t:1,dur:1.1};
 const mouse={x:0,y:0},par={x:0,y:0};
+const talkView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:24,off:.17};
 const photoView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:42,off:0};
-function camTarget(){if(S.photo)return photoView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
+function camTarget(){if(S.photo)return photoView;if(S.talkCam&&S.mode==='walk')return talkView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
 function goCam(){cam.from={pos:camPos.clone(),look:camLook.clone(),fov:camFov,off:camOff};cam.t=0;cam.dur=reduceMotion?.01:1.1;}
 function fovFor(v0){
   const a=W/H,hf=2*Math.atan(Math.tan(v0*Math.PI/360)*(16/9));
@@ -1276,7 +1277,7 @@ function adoptSession(cfg){
   S.session=cfg;S.time=TIMES[cfg.time];
   applyLook(cfg.time);
   room.setStools(layoutStools(cfg.chairs||0));
-  guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;});
+  guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
   proxies.forEach(g=>{g.order=null;g.claimBy=null;g.claimName='';g.servedRev=0;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}});
   loungers.forEach((g,i)=>{g.active=S.time.lounge.indexOf(i)>=0;});
   npcs.forEach(g=>{
@@ -1291,7 +1292,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
-  S.tale=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
+  S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1310,12 +1311,29 @@ const taleUI=createTaleUI($('#tale'),{
   },
   onRetry:()=>{taleRetry(S.tale.st,S.tale.graph);taleStep();},
   onExit:()=>{taleUI.hide();playerFig.visible=true;S.tale=null;el.uiWalk.hidden=false;openStart();}});
+/* Swap a counter guest's figure for a story character's look (or back to the original). */
+function restyleGuest(g,look){
+  if(!look&&!g.styled)return;
+  const old=g.fig,pos=old.position.clone(),rot=old.rotation.y;
+  scene.remove(old);
+  const fig=makeCharacter(look||g.baseCfg);fig.position.copy(pos);fig.rotation.y=rot;poseSit(fig,.95);fig.visible=g.active;
+  scene.add(fig);g.fig=fig;g.styled=!!look;
+}
+/* Close-up on the guest who is talking; null goes back to the room view. */
+function setTalkCam(g){
+  if(g){
+    const x=g.fig.position.x;
+    talkView.pos.set(x*.62+.2,1.74,-.3);talkView.look.set(x,1.53,1.25);
+  }
+  if(S.talkCam===g)return;
+  S.talkCam=g||null;goCam();
+}
 const taleGuest=who=>guests[+TALE_CHARS[who].seat.slice(1)];
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
     const g=taleGuest(e.who);
-    if(e.k==='enter'){g.active=true;g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);}
-    else{g.active=false;g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
+    if(e.k==='enter'){g.active=true;restyleGuest(g,TALE_CHARS[e.who].look);g.fig.visible=true;g.nameOv=TALE_CHARS[e.who].name;g.noTalk=true;g.cheer=.6;Snd.clink(.35);setFace(g.fig,'neutral');setTalkCam(g);}
+    else{setTalkCam(null);g.active=false;g.fig.visible=false;restyleGuest(g,null);g.fig.visible=false;g.order=null;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}}
   });
 }
 function taleStep(){
@@ -1323,11 +1341,14 @@ function taleStep(){
   taleEvents();
   const v=taleView(T.st,T.graph);
   if(v.kind==='wait')return taleOrder(v);
-  S.paused=true;player.st.enabled=false;el.uiWalk.hidden=true;el.act.hidden=true;S.actionKey='';playerFig.visible=false;taleUI.show(v);
+  S.paused=true;player.st.enabled=false;el.uiWalk.hidden=true;el.act.hidden=true;S.actionKey='';playerFig.visible=false;
+  if(v.kind==='say'&&TALE_CHARS[v.who]&&TALE_CHARS[v.who].seat){const g=taleGuest(v.who);if(g.active){setTalkCam(g);setFace(g.fig,v.face);}}
+  else if(v.kind==='over'||v.kind==='close')setTalkCam(null);
+  taleUI.show(v);
 }
 /* The talk is over for now: put the order on the board and let the player walk to the counter. */
 function taleOrder(v){
-  taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=false;S.paused=false;player.st.enabled=true;
+  taleUI.hide();setTalkCam(null);playerFig.visible=true;el.uiWalk.hidden=false;S.paused=false;player.st.enabled=true;
   const g=taleGuest(v.who),rec=RECIPE_BY_ID[v.order.rec],seat=S.world.seats.find(s=>s.id===g.seatId);
   seat.active=true;seat.order={recipeId:rec.id,at:time,rush:false};seat.reaction=null;S.world.night.ordered++;S.world.rev++;
   g.order=rec;g.orderAt=time;g.rush=false;g.reaction=null;g.askedOrder=false;

@@ -35,10 +35,10 @@ export function begin(st,graph,entry){st.gain={};st.events=[];goto(st,graph,entr
 
 /* What the screen should show now. */
 export function view(st,graph){
-  if(st.node==='@lead')return {kind:'say',who:st.lead.who,text:st.lead.text};
+  if(st.node==='@lead')return {kind:'say',who:st.lead.who,text:st.lead.text,face:st.lead.face};
   const n=graph[st.node];
   if(!n)return {kind:'end'};
-  if(n.t==='say')return {kind:'say',who:n.who,text:n.text};
+  if(n.t==='say')return {kind:'say',who:n.who,text:n.text,face:n.face||'neutral'};
   if(n.t==='choice')return {kind:'choice',opts:n.opts.map(o=>({text:o.text}))};
   if(n.t==='recommend'||n.t==='order'){
     if(st.order)return {kind:'wait',order:st.order,who:n.who};
@@ -84,7 +84,7 @@ export function served(st,graph,stars){
     for(let s=eff;s>=0;s--)if(n.react[s]){key=n.react[s];break;}
     if(!key)for(let s=eff+1;s<=3;s++)if(n.react[s]){key=n.react[s];break;}
   }
-  if(o.lead){st.lead={who:o.who,text:o.lead,next:key};st.node='@lead';st.order=null;return true;}   // the guest first comments on this very drink
+  if(o.lead){st.lead={who:o.who,text:o.lead,face:o.match==='good'?'smile':o.match==='ok'?'neutral':'angry',next:key};st.node='@lead';st.order=null;return true;}   // the guest first comments on this very drink
   goto(st,graph,key);return true;
 }
 /* Events produced since the last call (enter/leave), for the renderer. */
