@@ -417,8 +417,12 @@ function updateTicket(){
     li.querySelector('.in').textContent=ING[id].name;
     el.tkLines.appendChild(li);
   });
-  refreshTicket();
+  refreshTicket();ticketFade();
 }
+/* fade the ticket's bottom edge only while there is more to scroll to */
+function ticketFade(){const tk=el.ticket;tk.classList.toggle('fade',tk.open&&tk.scrollHeight>tk.clientHeight+2&&tk.scrollTop+tk.clientHeight<tk.scrollHeight-2);}
+el.ticket.addEventListener('toggle',ticketFade);el.ticket.addEventListener('scroll',ticketFade);
+window.addEventListener('resize',ticketFade);
 function refreshTicket(){
   const r=S.recipe;if(!r)return;
   [...el.tkLines.children].forEach(li=>{
