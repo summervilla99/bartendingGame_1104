@@ -17,7 +17,7 @@ export const TIME_ORDER=['golden','prime','last'];
 export const FAMILIES={
   all:null,
   sours:['daiquiri','margarita','tommys','gimlet','whiskeysour','cosmopolitan','amberhour','velvetrose','espressomartini'],
-  stirred:['negroni','oldfashioned','manhattan','boulevardier','whitenegroni','mezcalnegroni','courtenoir'],
+  stirred:['negroni','faust','oldfashioned','manhattan','boulevardier','whitenegroni','mezcalnegroni','courtenoir'],
   long:['highball','paloma','tomcollins','mojito','moscowmule','americano'],
   agave:['margarita','tommys','paloma','mezcalnegroni','amberhour'],
   gin:['negroni','gimlet','tomcollins','whitenegroni','velvetrose'],
@@ -35,9 +35,9 @@ export const limitOf=cfg=>(cfg.mode==='practice'||cfg.mode==='tale')?0:(DIFFS[cf
 
 /* Scenario: easiest drinks first, then the classics, then the complicated ones. */
 export const STAGES=[
-  {id:'s1',goal:5,minStars:1.5,recipes:['highball','americano','gimlet','daiquiri','whiskeysour','neat','boilermaker'],
+  {id:'s1',goal:5,minStars:1.5,recipes:['highball','americano','gimlet','daiquiri','whiskeysour','neat'],
    name:{ko:'첫 손님',en:'First guests'},desc:{ko:'재료가 적은 쉬운 칵테일부터 시작해요.',en:'Start with easy drinks that need few ingredients.'}},
-  {id:'s2',goal:7,minStars:1.8,recipes:['negroni','oldfashioned','manhattan','margarita','tommys','boulevardier','tomcollins','mojito'],
+  {id:'s2',goal:7,minStars:1.8,recipes:['negroni','faust','oldfashioned','manhattan','margarita','tommys','boulevardier','tomcollins','mojito'],
    name:{ko:'클래식의 밤',en:'Classics night'},desc:{ko:'바텐더라면 꼭 알아야 할 클래식 칵테일이에요.',en:'The classic cocktails every bartender should know.'}},
   {id:'s3',goal:8,minStars:2,recipes:['paloma','cosmopolitan','moscowmule','espressomartini','whitenegroni','mezcalnegroni','courtenoir','amberhour','velvetrose'],
    name:{ko:'마스터의 시험',en:"The master's test"},desc:{ko:'재료가 많고 까다로운 칵테일에 도전해요.',en:'Complex drinks with many ingredients.'}}

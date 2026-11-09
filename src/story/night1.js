@@ -13,7 +13,7 @@ export const FLAVOR={
   highball:{ko:'시원한 위스키 소다',en:'Cold whiskey and soda'},gimlet:{ko:'깔끔한 라임 진',en:'Crisp lime gin'},
   oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
   cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
-  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},boilermaker:{ko:'맥주에 위스키 한 샷',en:'A shot of whiskey in beer'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
+  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
 };
 
 const say=(id,who,ko,en,next,x)=>Object.assign({id,t:'say',who,text:{ko,en},next},x||{});
@@ -94,7 +94,7 @@ const NODES=[
     cand('neat','good','캬— 이거지! 위스키는 이렇게 그냥 마셔야 맛이야.','Ahh— that’s it! Whiskey is best straight.'),
     cand('highball','ok','음, 시원하긴 한데 좀 싱겁네. 이것도 나쁘진 않아.','Refreshing, but a bit weak. Not bad though.'),
     cand('mojito','miss','풀이 들어갔네? 쌈 싸 먹으라는 거야?','There’s grass in it? Am I supposed to wrap meat in it?'),
-    cand('boilermaker','good','오! 이거 소맥이잖아! 위스키 폭탄이라니, 말 되네!','Oh! This is somaek! A whiskey bomb? Now we’re talking!'),
+    cand('faust','good','어휴, 달달하게 시작하더니 뒤통수를 치네! 소주보다 센데?','Whoa, starts sweet and then smacks you! Stronger than soju!'),
     cand('oldfashioned','ok','달콤한 위스키네. 소주 마시던 입엔 좀 달다.','Sweetish whiskey. A little sweet for a soju mouth.'),
     cand('espressomartini','miss','커피? 이 시간에 마시면 잠은 다 잤네.','Coffee? At this hour I’ll never sleep.'),
     cand('velvetrose','miss','장미? 나 이런 분위기 아니야. 향수 마시는 줄 알았네.','Rose? Not my style. Feels like drinking perfume.')],

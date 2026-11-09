@@ -53,7 +53,7 @@ src/
   game/seats.js     앉을 자리(스툴/의자/소파)와 포토 스팟 데이터(순수)
   game/             순수 게임 규칙(three/DOM 없음, JSON 상태): rng.js 시드 난수, world.js 월드·주문·밤 정산·스냅샷, bartending.js 붓기/섞기/점수, shared.js 방 공유 규칙(티켓 잡기·서빙 적용·NPC 바텐더·방장 선출·메시지 검증)
   net/              온라인 방(채팅·이모트·앉기 상태 포함): peers.js(메시지 검증/만료/보간, 순수), room.js(방 클라이언트, 코드 생성), transport.js(전송 추상화)
-  data.js           재료 21종(INGR, cat=spirit|liqueur|mixer; 맥주는 증류주 탭에 있다), 레시피 21종(RECIPES, house:true=하우스 오리지널, noIce:true=얼음 없이 서빙: 위스키 니트·폭탄주), 가니시, 이름은 전부 {ko,en}
+  data.js           재료 22종(INGR, cat=spirit|liqueur|mixer), 레시피 21종(RECIPES, house:true=하우스 오리지널, noIce:true=얼음 없이 서빙: 위스키 니트), 가니시, 이름은 전부 {ko,en}
   i18n.js           ko/en 사전, t(key,vars), tr({ko,en}), setLang/onLang, data-i18n 속성 적용
   units.js          ml · oz 병기(fmtVol, fmtRatio, 5ml 미만은 대시). 토글 없음
   audio.js          WebAudio

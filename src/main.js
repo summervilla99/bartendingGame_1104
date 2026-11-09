@@ -554,7 +554,7 @@ canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercan
 window.addEventListener('pointerup',()=>{stopPour();});
 
 function iceFor(glass){const d=GL[glass];return d?(d.bigIce?1:(d.ice||0)):0;}
-const iceOf=r=>r.noIce?0:iceFor(r.glass);        // neat whiskey and beer drinks take no ice
+const iceOf=r=>r.noIce?0:iceFor(r.glass);        // neat whiskey takes no ice
 function goStrain(){
   if(S.stage!=='mix')return;
   setStage('strain');S.strainT=0;S.strainStream=false;S.drag=null;
