@@ -12,13 +12,15 @@ export const FLAVOR={
   moscowmule:{ko:'생강 톡 쏘는',en:'Spicy ginger fizz'},mojito:{ko:'민트 청량',en:'Minty and fresh'},
   highball:{ko:'시원한 위스키 소다',en:'Cold whiskey and soda'},gimlet:{ko:'깔끔한 라임 진',en:'Crisp lime gin'},
   oldfashioned:{ko:'진한 위스키 한 모금',en:'A slow whiskey sip'},espressomartini:{ko:'달콤한 커피',en:'Sweet coffee kick'},
-  cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'}
+  cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
+  whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'}
 };
 
 const say=(id,who,ko,en,next,x)=>Object.assign({id,t:'say',who,text:{ko,en},next},x||{});
 const nar=(id,ko,en,next,x)=>say(id,'narr',ko,en,next,x);
 const opt=(ko,en,next,x)=>Object.assign({text:{ko,en},next},x||{});
-const cand=(id,match)=>({id,match});
+/* A drink the player may serve: match = good | ok | miss; lead = what the guest says about this very drink. */
+const cand=(id,match,ko,en)=>({id,match,lead:{ko,en}});
 
 const NODES=[
   /* opening */
@@ -44,9 +46,20 @@ const NODES=[
   {id:'ov_sy',t:'over',retry:'e_sy',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
   say('sy_a1','seoyun','쓴 거. 근데 너무 독하진 않은 거요. 오늘은 취하러 온 게 아니라서.','Something bitter. But not too strong. I’m not here to get drunk tonight.','sy_a1n',{hearts:{seoyun:1}}),
   nar('sy_a1n','힌트가 두 개. 쓰다, 그리고 독하지 않다.','Two hints: bitter, and not too strong.','rec_sy'),
-  {id:'rec_sy',t:'recommend',who:'seoyun',hint:{ko:'쓴맛 · 너무 독하지 않게',en:'Bitter · not too strong'},
-   cands:[cand('negroni','good'),cand('americano','good'),cand('manhattan','ok'),cand('daiquiri','miss'),cand('moscowmule','miss'),cand('mojito','miss')],
+  {id:'rec_sy',t:'recommend',who:'seoyun',hint:{ko:'쓴맛 · 너무 독하지 않게',en:'Bitter · not too strong'},fail:'sy_m',
+   cands:[
+    cand('daiquiri','miss','……너무 달아요. 쓴 거라고 했는데.','…Too sweet. I said bitter.'),
+    cand('negroni','good','쌉쌀한데 깊네요. 딱 이런 걸 찾았어요.','Bitter, yet deep. This is exactly what I was after.'),
+    cand('manhattan','ok','좀 묵직하네요. 그래도 나쁘지 않아요.','A bit heavy. Not bad, though.'),
+    cand('mojito','miss','민트요? 지금은 상쾌해지고 싶은 기분이 아니에요.','Mint? I’m not in the mood to feel refreshed.'),
+    cand('americano','good','가볍게 쓰네요. 취하지 않고 마시기 좋아요.','Lightly bitter. Easy to drink without getting drunk.'),
+    cand('espressomartini','miss','커피를 마시면 오늘 밤 잠은 다 잔 거네요.','If I drink coffee, I can say goodbye to sleep tonight.'),
+    cand('boulevardier','ok','……위스키 향이 꽤 세네요. 오늘은 조금 가벼운 게 좋았는데.','…Quite a lot of whiskey. I wanted something lighter tonight.'),
+    cand('moscowmule','miss','생강이 너무 세요. 오늘 같은 날은 안 맞아요.','Too much ginger. Not right for a day like today.')],
    react:{3:'sy_r3',2:'sy_r2',1:'sy_r1'}},
+  say('sy_m','seoyun','죄송해요. 오늘은 이게 아니었나 봐요.','I’m sorry. This wasn’t what I needed tonight.','sy_mn'),
+  nar('sy_mn','그녀는 잔을 반쯤 남긴 채 일어섰다.','She stood up, leaving the glass half full.','l_x_sy3'),
+  {id:'l_x_sy3',t:'leave',who:'seoyun',next:'ov_sy'},
   say('sy_r3','seoyun','……(한 모금) 이거.','…(takes a sip) This.','sy_r3b'),
   say('sy_r3b','seoyun','전에 이런 맛을 내던 곳이 있었어요. 손이 비슷하네요.','There was a place that made it taste like this. Your hands are similar.','sy_r3n',{hearts:{seoyun:2},flag:'seoyun_knows_master'}),
   nar('sy_r3n','마스터를 아는 사람이다.','She knows the Master.','sy_f'),
@@ -75,13 +88,24 @@ const NODES=[
   {id:'l_x_ts2',t:'leave',who:'taesik',next:'ov_ts'},
   {id:'ov_ts',t:'over',retry:'e_ts',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
   say('ts_b1','taesik','오, 비슷한 거? 소주처럼 깔끔하게 넘어가는 걸로. 안주 없어도 되는 거.','Oh, something similar? Clean going down like soju. Something that needs no snacks.','rec_ts',{hearts:{taesik:1}}),
-  {id:'rec_ts',t:'recommend',who:'taesik',hint:{ko:'소주처럼 깔끔하게',en:'Clean like soju'},
-   cands:[cand('highball','good'),cand('americano','ok'),cand('gimlet','ok'),cand('oldfashioned','miss'),cand('espressomartini','miss'),cand('cosmopolitan','miss')],
+  {id:'rec_ts',t:'recommend',who:'taesik',hint:{ko:'소주처럼 깔끔하게',en:'Clean like soju'},fail:'ts_m',
+   cands:[
+    cand('cosmopolitan','miss','이게 뭐야, 핑크색이잖아! 나 이런 건 못 먹어!','What’s this, it’s pink! I can’t drink this!'),
+    cand('highball','good','캬— 소주보다 깔끔하네. 이게 위스키라고?','Ahh— cleaner than soju. This is whiskey?'),
+    cand('oldfashioned','ok','위스키가 진하네. 소주처럼 쭉은 못 마시겠는데, 이것도 맛있다.','Strong whiskey. Can’t knock it back like soju, but it’s good too.'),
+    cand('mojito','miss','풀이 들어갔네? 쌈 싸 먹으라는 거야?','There’s grass in it? Am I supposed to wrap meat in it?'),
+    cand('gimlet','good','오, 라임이네. 깔끔하게 넘어가는 게 소주 같아!','Oh, lime. Goes down clean, just like soju!'),
+    cand('whiskeysour','ok','시큼한데 위스키 맛이 나네. 안주가 있으면 더 좋겠다.','Sour, but I taste whiskey. Would be better with a snack.'),
+    cand('espressomartini','miss','커피? 이 시간에 마시면 잠은 다 잤네.','Coffee? At this hour I’ll never sleep.'),
+    cand('velvetrose','miss','장미? 나 이런 분위기 아니야. 향수 마시는 줄 알았네.','Rose? Not my style. Feels like drinking perfume.')],
    react:{3:'ts_r3',2:'ts_r2',1:'ts_r1'}},
-  say('ts_r3','taesik','캬— 이게 위스키라고? 소주보다 깔끔하네. 야, 우리 팀 회식 때 가져와도 되냐?','Ahh— that’s whiskey? Cleaner than soju. Hey, can I bring this to our team dinner?','ts_r3n',{hearts:{taesik:2},flag:'park_likes_highball'}),
+  say('ts_m','taesik','…미안한데 이건 못 먹겠네. 나 소주 마시러 갈게.','…Sorry, I can’t drink this. I’m off to find some soju.','ts_mn'),
+  nar('ts_mn','문이 닫히는 소리가 이상하게 컸다.','The door closed strangely loudly.','l_x_ts5'),
+  {id:'l_x_ts5',t:'leave',who:'taesik',next:'ov_ts'},
+  say('ts_r3','taesik','야, 총각 손이 좋은데? 우리 팀 회식 때 데려와도 되냐?','Hey, you’ve got good hands, kid. Can I bring you to our team dinner?','ts_r3n',{hearts:{taesik:2},flag:'park_trusts_you'}),
   nar('ts_r3n','한 잔에 회식까지 확장 중이다.','One glass, and he’s already planning the whole company dinner.','ts_p'),
-  say('ts_r2','taesik','시원하네. 소맥 같아.','Refreshing. Like somaek.','ts_p',{hearts:{taesik:1}}),
-  say('ts_r1','taesik','아… 위스키 향이 좀… 아니야, 마셔 볼게. 총각이 만든 거니까.','Ah… the whiskey smell is a bit… no, I’ll try it. You made it, kid.','ts_r1n'),
+  say('ts_r2','taesik','괜찮네. 오늘 밤은 이걸로 됐어.','Not bad. This will do for tonight.','ts_p',{hearts:{taesik:1}}),
+  say('ts_r1','taesik','아… 좀 밍밍한데… 아니야, 마셔 볼게. 총각이 만든 거니까.','Ah… a bit weak… no, I’ll drink it. You made it, kid.','ts_r1n'),
   nar('ts_r1n','‘총각’은 다음에 반드시 정정하자.','I really should correct “kid” next time.','ts_p'),
   nar('ts_p','태식이 휴대폰을 한참 들여다본다. 문자 한 줄. 보낸 사람은 “아들”.','Taesik stares at his phone for a long time. One text. From “Son”.','ts_p2'),
   say('ts_p2','taesik','아들이 내일 시험이라는데 뭐라고 보내야 할지 모르겠네. “잘 봐라”는 짧고, “열심히 했냐”는 부담 주잖아.','My son has an exam tomorrow and I don’t know what to send. “Do well” is too short and “Did you study hard” is pressure.','c3'),

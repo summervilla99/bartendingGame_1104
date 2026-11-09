@@ -35,6 +35,7 @@ export function begin(st,graph,entry){st.gain={};st.events=[];goto(st,graph,entr
 
 /* What the screen should show now. */
 export function view(st,graph){
+  if(st.node==='@lead')return {kind:'say',who:st.lead.who,text:st.lead.text};
   const n=graph[st.node];
   if(!n)return {kind:'end'};
   if(n.t==='say')return {kind:'say',who:n.who,text:n.text};
@@ -50,6 +51,7 @@ export function view(st,graph){
 
 /* Tap on a say node. */
 export function advance(st,graph){
+  if(st.node==='@lead'){goto(st,graph,st.lead.next);return true;}
   const n=graph[st.node];
   if(!n||n.t!=='say')return false;
   goto(st,graph,n.next);return true;
@@ -64,19 +66,25 @@ export function pick(st,graph,i){
   }
   if(n.t==='recommend'&&!st.order){
     const c=n.cands[i];if(!c)return false;
-    st.order={who:n.who,rec:c.id,match:c.match};return true;
+    st.order={who:n.who,rec:c.id,match:c.match,lead:c.lead||null};return true;
   }
   return false;
 }
 /* Which reaction branch a served drink leads to: a mismatch caps the praise at two stars. */
-export function reactStars(match,stars){return match==='miss'?Math.min(stars,2):stars;}
+/* Only a drink that really fits can earn the best reaction. */
+export function reactStars(match,stars){return match==='good'?stars:Math.min(stars,2);}
 export function served(st,graph,stars){
   const n=graph[st.node];
   if(!n||!st.order||(n.t!=='recommend'&&n.t!=='order'))return false;
-  const eff=reactStars(st.order.match,stars);
+  const o=st.order;
   let key=null;
-  for(let s=eff;s>=0;s--)if(n.react[s]){key=n.react[s];break;}
-  if(!key)for(let s=eff+1;s<=3;s++)if(n.react[s]){key=n.react[s];break;}
+  if(o.match==='miss'&&n.fail)key=n.fail;           // a drink that does not suit the guest: they walk out
+  else{
+    const eff=reactStars(o.match,stars);
+    for(let s=eff;s>=0;s--)if(n.react[s]){key=n.react[s];break;}
+    if(!key)for(let s=eff+1;s<=3;s++)if(n.react[s]){key=n.react[s];break;}
+  }
+  if(o.lead){st.lead={who:o.who,text:o.lead,next:key};st.node='@lead';st.order=null;return true;}   // the guest first comments on this very drink
   goto(st,graph,key);return true;
 }
 /* Events produced since the last call (enter/leave), for the renderer. */
