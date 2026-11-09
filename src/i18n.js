@@ -27,6 +27,8 @@ const D={
     onl_note:'지금은 같은 브라우저의 다른 탭에서 만나 함께 걷고 건배할 수 있어요. 주문과 칵테일은 아직 각자 진행돼요.',onl_bad:'방 코드는 5자리예요.',
     guest_default:'손님',room_open:'방이 열렸어요 · {code}',room_joined:'방에 들어왔어요 · {code}',room_copied:'초대 링크를 복사했어요',room_aria:'방 {code} · {n}명 · 눌러서 초대 링크 복사',
     bubble_making:'{name}님이 만드는 중',claim_fail:'다른 사람이 먼저 맡았어요',claim_lost:'주문이 다른 곳으로 넘어갔어요',act_full:'바텐더 자리가 가득 찼어요',host_only:'방장만 새로운 밤을 시작할 수 있어요',room_host_you:'이제 내가 방장이에요',onl_locked:'방 {code}에서 함께 진행 중이에요. 방장이 정한 설정으로 진행돼요.',
+    emote_btn:'이모트',emo_cheers:'건배',emo_wave:'손 흔들기',emo_clap:'박수',emo_bow:'인사',chat_btn:'채팅',chat_ph:'메시지를 입력하세요',chat_send:'보내기',
+    act_sit:'앉기 · {name}',act_stand:'일어서기',act_photo:'사진 찍기 · {name}',photo_save:'저장',photo_share:'공유',photo_close:'닫기',toast_saved:'사진을 저장했어요',set_night:'밤',
     net_error:'서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.',set_room:'방',room_leave:'방 나가기',room_left:'방에서 나왔어요',
     leave:'카운터 나가기',step_pour:'붓기',step_mix:'섞기',step_garnish:'가니시',step_serve:'서빙',
     tab_spirit:'증류주',tab_liqueur:'리큐르·베르뭇',tab_mixer:'주스·믹서',
@@ -69,6 +71,8 @@ const D={
     onl_note:'For now you can meet in another tab of the same browser to walk and cheer together. Orders and drinks are still separate.',onl_bad:'Room codes are 5 characters.',
     guest_default:'Guest',room_open:'Room open · {code}',room_joined:'Joined room · {code}',room_copied:'Invite link copied',room_aria:'Room {code} · {n} here · tap to copy invite link',
     bubble_making:'{name} is making it',claim_fail:'Someone else took it first',claim_lost:'That order moved on',act_full:'Both bartender spots are taken',host_only:'Only the host can start a new night',room_host_you:'You are the host now',onl_locked:'Playing together in room {code}. The host sets the night.',
+    emote_btn:'Emote',emo_cheers:'Cheers',emo_wave:'Wave',emo_clap:'Clap',emo_bow:'Bow',chat_btn:'Chat',chat_ph:'Say something',chat_send:'Send',
+    act_sit:'Sit · {name}',act_stand:'Stand up',act_photo:'Take a photo · {name}',photo_save:'Save',photo_share:'Share',photo_close:'Close',toast_saved:'Photo saved',set_night:'Night',
     net_error:"Couldn't reach the server. Try again in a moment.",set_room:'Room',room_leave:'Leave room',room_left:'Left the room',
     leave:'Leave counter',step_pour:'Pour',step_mix:'Mix',step_garnish:'Garnish',step_serve:'Serve',
     tab_spirit:'Spirits',tab_liqueur:'Liqueurs & Vermouth',tab_mixer:'Juices & Mixers',
@@ -104,6 +108,7 @@ export function applyDom(root){
   root=root||document;
   root.querySelectorAll('[data-i18n]').forEach(n=>{n.textContent=t(n.dataset.i18n);});
   root.querySelectorAll('[data-i18n-html]').forEach(n=>{n.innerHTML=t(n.dataset.i18nHtml);});
+  root.querySelectorAll('[data-i18n-ph]').forEach(n=>{n.placeholder=t(n.dataset.i18nPh);});
   root.querySelectorAll('[data-i18n-aria]').forEach(n=>{n.setAttribute('aria-label',t(n.dataset.i18nAria));});
 }
 export function setLang(l){

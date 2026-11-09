@@ -1,4 +1,4 @@
-import {createPeers,applyMessage,expire,sanitizeName,LOOK_COUNT} from './peers.js';
+import {createPeers,applyMessage,expire,sanitizeName,sanitizeText,LOOK_COUNT,EMOTES} from './peers.js';
 
 /* Room client: joins a room over a transport, broadcasts where this player is, tracks everyone else. */
 const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -12,9 +12,10 @@ export function createRoom(transport,opts){
   const peers=createPeers();
   const iv=transport.intervals||{moving:100,idle:500};
   const gameHandlers=new Set();
-  let code=null,unsub=null,lastSent=0,state={x:0,z:0,yaw:0,sp:0};
+  let prevSt=0;
+  let code=null,unsub=null,lastSent=0,state={x:0,z:0,yaw:0,sp:0,st:0};
 
-  const send=(t,extra)=>transport.send(Object.assign({t,id:me.id,name:me.name,c:me.c,x:state.x,z:state.z,yaw:state.yaw,sp:state.sp},extra));
+  const send=(t,extra)=>transport.send(Object.assign({t,id:me.id,name:me.name,c:me.c,x:state.x,z:state.z,yaw:state.yaw,sp:state.sp,st:state.st||0},extra));
 
   function join(c,name,look){
     leave();
@@ -41,14 +42,17 @@ export function createRoom(transport,opts){
   function update(s){
     if(!code)return;
     const t=now();state=s;
-    if(t-lastSent>=(s.sp>.02?iv.moving:iv.idle)){send('pos');lastSent=t;}
+    const changedSeat=(s.st||0)!==(prevSt||0);prevSt=s.st||0;
+    if(changedSeat||t-lastSent>=(s.sp>.02?iv.moving:iv.idle)){send('pos');lastSent=t;}
     if(expire(peers,t).length)onChange();
   }
-  function emote(){if(code)send('emote',{e:'cheers'});}
+  function emote(kind){if(code&&EMOTES.indexOf(kind||'cheers')>=0)send('emote',{e:kind||'cheers'});}
+  /* Returns the cleaned text that was sent (or '' when empty). */
+  function chat(text){const clean=sanitizeText(text);if(code&&clean)send('chat',{text:clean});return clean;}
   /* Game channel: opaque payloads for the shared night (validated by game/shared.js, not here). */
   function sendGame(payload){if(code)transport.send(Object.assign({},payload,{t:'g',id:me.id}));}
   function onGame(h){gameHandlers.add(h);return()=>gameHandlers.delete(h);}
   const ids=()=>code?[me.id].concat([...peers.keys()]):[];
 
-  return {me,peers,join,leave,update,emote,sendGame,onGame,ids,get code(){return code;},get active(){return code!==null;},get count(){return peers.size+(code?1:0);}};
+  return {me,peers,join,leave,update,emote,chat,sendGame,onGame,ids,get code(){return code;},get active(){return code!==null;},get count(){return peers.size+(code?1:0);}};
 }

@@ -16,7 +16,8 @@ import {TIMES,loadSession,saveSession,poolFor} from './session.js';
 import {createStart} from './start.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
-import {smooth as smoothPeer} from './net/peers.js';
+import {smooth as smoothPeer,EMOTES,CHAT_SHOW_MS} from './net/peers.js';
+import {SEATS,seatByWireId,PHOTO_SPOTS} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor} from './game/shared.js';
 import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
@@ -124,6 +125,7 @@ layoutRail(true);
 let dirtyUI=true,time=0;
 /* Session: the serialisable night config (hour, menu family, mode, guide) + runtime pieces derived from it. */
 S.paused=true;S.session=null;S.time=TIMES.prime;S.world=null;S.drink=null;
+S.seat=null;S.emote=null;S.photo=null;S.myChat=null;
 S.synced=true;S.claimSeat=null;S.claimInfo=null;S.summaryFor=null;S.lastBeat=0;S.syncWait=0;
 const VP=new THREE.Vector3(.25,COUNTER_TOP,-.05),SP=new THREE.Vector3(-.35,COUNTER_TOP,-.05);
 const BAR_STAND=new THREE.Vector3(0,0,-1.05);
@@ -136,7 +138,8 @@ const PRE={bar:{pos:new THREE.Vector3(0,2.5,-2.15),look:new THREE.Vector3(0,1.12
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let camFov=55,camOff=0;
 const cam={from:null,t:1,dur:1.1};
 const mouse={x:0,y:0},par={x:0,y:0};
-function camTarget(){return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
+const photoView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:42,off:0};
+function camTarget(){if(S.photo)return photoView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
 function goCam(){cam.from={pos:camPos.clone(),look:camLook.clone(),fov:camFov,off:camOff};cam.t=0;cam.dur=reduceMotion?.01:1.1;}
 function fovFor(v0){
   const a=W/H,hf=2*Math.atan(Math.tan(v0*Math.PI/360)*(16/9));
@@ -260,11 +263,30 @@ function nearestNpc(){
   npcs.forEach(g=>{if(!g.active)return;const d=Math.hypot(g.fig.position.x-player.pos.x,g.fig.position.z-player.pos.z);if(d<bd){bd=d;best=g;}});
   return best;
 }
+function nearestSeat(){
+  let best=null,bd=1.1;
+  SEATS.forEach((seat,i)=>{
+    if([...net.peers.values()].some(p=>p.st===i+1))return;
+    const d=Math.hypot(seat.x-player.pos.x,seat.z-player.pos.z);if(d<bd){bd=d;best=seat;}
+  });
+  return best;
+}
+function nearestSpot(){
+  let best=null,bd=1.1;
+  PHOTO_SPOTS.forEach(sp=>{const d=Math.hypot(sp.x-player.pos.x,sp.z-player.pos.z);if(d<bd){bd=d;best=sp;}});
+  return best;
+}
 function updateAction(){
   let a=null;
-  if(S.mode==='walk'&&!S.paused){
-    if(inBarZone(player.pos)){const n=pendingGuests().length,full=net.active&&S.world.stations.every(Boolean);a=full?{type:'wait',label:t('act_full')}:n?{type:'bar',label:t('act_bar',{n})}:{type:'wait',label:t('act_wait')};}
-    else{const g=nearestNpc();if(g)a={type:'talk',g,label:t('act_talk',{name:g.name})};}
+  if(S.mode==='walk'&&!S.paused&&!S.photo){
+    if(S.seat)a={type:'stand',label:t('act_stand')};
+    else if(inBarZone(player.pos)){const n=pendingGuests().length,full=net.active&&S.world.stations.every(Boolean);a=full?{type:'wait',label:t('act_full')}:n?{type:'bar',label:t('act_bar',{n})}:{type:'wait',label:t('act_wait')};}
+    else{
+      const seat=nearestSeat(),spot=nearestSpot();
+      if(seat)a={type:'sit',seat,label:t('act_sit',{name:tr(seat.name)})};
+      else if(spot)a={type:'photo',spot,label:t('act_photo',{name:tr(spot.name)})};
+      else{const g=nearestNpc();if(g)a={type:'talk',g,label:t('act_talk',{name:g.name})};}
+    }
   }
   const key=a?a.type+a.label:'';
   if(key!==(S.actionKey||'')){
@@ -277,6 +299,9 @@ function doAction(){
   const a=S.action;if(!a||S.mode!=='walk')return;
   Snd.init();
   if(a.type==='bar'){const g=pendingGuests()[0];if(g)beginBartending(g);}
+  else if(a.type==='sit')sitDown(a.seat);
+  else if(a.type==='stand')standUp();
+  else if(a.type==='photo')startPhoto(a.spot);
   else if(a.type==='talk'){
     const g=a.g;let rec=null,idx=g.talkIdx;
     if(g.order&&!g.askedOrder){g.askedOrder=true;rec=g.order;}
@@ -698,17 +723,119 @@ function updateNpcs(dt,t){
     u.arms[1].sh.rotation.x=-.6;u.arms[1].el.rotation.x=-1.2+Math.sin(t*2.2+1)*.1;
   }
 }
-function cheers(){
-  if(S.mode!=='walk')return;
-  Snd.init();Snd.clink(1);player.st.cheer=1.2;net.emote();
-  npcs.forEach((g,i)=>{if(g.active&&g.fig.position.distanceTo(player.pos)<5)setTimeout(()=>{g.cheer=1.2;},120+i*110);});
-  setTimeout(()=>Snd.clink(.7),380);
-  toast(t('toast_cheers'));
+/* ───────────── social: emotes, sitting, chat, photos ───────────── */
+function applyEmote(fig,kind,l,t){
+  const u=fig.userData,a0=u.arms[0],a1=u.arms[1];
+  if(kind==='cheers'){a1.sh.rotation.x=-2.5*l;a1.el.rotation.x=-.6*l;}
+  else if(kind==='wave'){a1.sh.rotation.x=-2.7*l;a1.sh.rotation.z=(.35+Math.sin(t*10)*.45)*l;a1.el.rotation.x=-.4*l;}
+  else if(kind==='clap'){[a0,a1].forEach((a,i)=>{a.sh.rotation.x=-1.15*l;a.sh.rotation.z=(i?-1:1)*(-.1+Math.sin(t*16)*.28)*l;a.el.rotation.x=-1.5*l;});}
+  else if(kind==='bow'){u.torso.rotation.x+=.95*l;u.head.rotation.x+=.35*l;}
 }
+const relaxArms=fig=>{fig.userData.arms[0].sh.rotation.z=-.06;fig.userData.arms[1].sh.rotation.z=.06;};
+function playEmote(kind){
+  if(S.mode!=='walk'||S.photo||S.paused)return;
+  Snd.init();S.emote={kind,until:performance.now()+1600};
+  if(net.active)net.emote(kind);
+  if(kind==='cheers'){
+    Snd.clink(1);
+    npcs.forEach((g,i)=>{if(g.active&&g.fig.position.distanceTo(player.pos)<5)setTimeout(()=>{g.cheer=1.2;},120+i*110);});
+    setTimeout(()=>Snd.clink(.7),380);
+    toast(t('toast_cheers'));
+  }
+}
+function updatePlayerPose(){
+  const nowT=performance.now();
+  if(S.seat){
+    playerFig.position.set(S.seat.x,room.groundAt(S.seat.x,S.seat.z)+S.seat.y,S.seat.z);playerFig.rotation.y=S.seat.yaw;poseSit(playerFig,S.seat.lean);
+  }
+  const e=S.emote;
+  if(e&&nowT<e.until)applyEmote(playerFig,e.kind,Math.sin(Math.min(1,(e.until-nowT)/1600)*Math.PI),time);
+  else{if(e)S.emote=null;relaxArms(playerFig);}
+  if(S.seat&&player.st.intent>.35)standUp();
+}
+function sitDown(seat){
+  if(S.photo||S.mode!=='walk')return;
+  S.seat=seat;S.emote=null;
+  player.place(seat.x,seat.z,seat.yaw,seat.yaw+Math.PI);player.pos.y=seat.y;player.st.locked=true;S.actionKey='';
+}
+function standUp(){
+  const seat=S.seat;if(!seat)return;
+  S.seat=null;player.st.locked=false;
+  player.place(seat.stand.x,seat.stand.z,seat.yaw+Math.PI,seat.yaw);resetArms(playerFig);S.actionKey='';
+}
+/* chat */
+const chatForm=$('#chat-form'),chatInput=$('#chat-input'),chatFeed=$('#chatfeed');
+const myChatEl=document.createElement('div');myChatEl.className='chatbubble';el.bubbles.appendChild(myChatEl);
+const typing=e=>!!(e.target&&e.target.closest&&e.target.closest('input,textarea'));
+function openChat(){if(!net.active||S.mode!=='walk'||S.paused||S.photo)return;$('#emotes').hidden=true;chatForm.hidden=false;chatInput.value='';chatInput.focus();}
+function closeChat(){chatForm.hidden=true;chatInput.blur();}
+function addFeed(name,text,mine){
+  const d=document.createElement('div');d.className='cl'+(mine?' me':'');
+  const b=document.createElement('b');b.textContent=name;d.append(b,' ',document.createTextNode(text));
+  chatFeed.appendChild(d);while(chatFeed.children.length>5)chatFeed.firstChild.remove();
+  setTimeout(()=>d.remove(),10000);
+}
+chatForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const clean=net.chat(chatInput.value);
+  if(clean){S.myChat={text:clean,until:performance.now()+CHAT_SHOW_MS};myChatEl.textContent=clean;addFeed(net.me.name,clean,true);}
+  closeChat();
+});
+$('#btn-chat').addEventListener('click',openChat);
+/* emote menu */
+const emoPop=$('#emotes');
+$('#btn-emote').addEventListener('click',()=>{if(S.mode==='walk'&&!S.paused)emoPop.hidden=!emoPop.hidden;});
+emoPop.addEventListener('click',e=>{const b=e.target.closest('button[data-e]');if(!b)return;emoPop.hidden=true;playEmote(b.dataset.e);});
+document.addEventListener('pointerdown',e=>{if(!emoPop.hidden&&!emoPop.contains(e.target)&&!$('#btn-emote').contains(e.target))emoPop.hidden=true;});
+/* photos: the camera swings round in front of the avatar, then the frame is captured with a watermark */
+const canShare=(()=>{try{return !!(navigator.canShare&&navigator.canShare({files:[new File([''],'a.jpg',{type:'image/jpeg'})]}));}catch(_){return false;}})();
+function startPhoto(spot){
+  if(S.mode!=='walk'||S.photo)return;
+  if(S.seat)standUp();
+  S.photo={spot,hold:0,shoot:false,shot:false,img:null};S.emote=null;
+  player.place(spot.x,spot.z,spot.face,spot.face+Math.PI);player.st.locked=true;
+  playerFig.position.set(spot.x,room.groundAt(spot.x,spot.z),spot.z);playerFig.rotation.y=spot.face;resetArms(playerFig);poseWalk(playerFig,0,0,time);
+  photoView.pos.set(spot.x+Math.sin(spot.face)*2.5,1.5,spot.z+Math.cos(spot.face)*2.5);photoView.look.set(spot.x,1.15,spot.z);
+  $('#app').classList.add('photo-mode');S.actionKey='';goCam();
+}
+function updatePhoto(dt){
+  const ph=S.photo;if(!ph||ph.shot||cam.t<1)return;
+  ph.hold+=dt;if(ph.hold>.55){ph.shot=true;ph.shoot=true;}
+}
+function capturePhoto(spot){
+  const w=canvas.width,h=canvas.height,c=document.createElement('canvas');c.width=w;c.height=h;
+  const g=c.getContext('2d');g.drawImage(canvas,0,0);
+  const pad=Math.round(Math.min(w,h)*.045),bar=pad*2.5;
+  const gr=g.createLinearGradient(0,h-bar*1.6,0,h);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');
+  g.fillStyle=gr;g.fillRect(0,h-bar*1.6,w,bar*1.6);
+  g.textBaseline='middle';g.textAlign='left';g.fillStyle='#f6dcd2';g.font=Math.round(pad*1.5)+'px Yellowtail,"Brush Script MT",cursive';
+  g.fillText('Courte Studio',pad,h-pad*1.35);
+  g.textAlign='right';g.fillStyle='#c9a066';g.font='600 '+Math.round(pad*.5)+'px "DM Sans","Noto Sans KR",sans-serif';
+  const bits=[tr(spot.name),new Date().toLocaleDateString(getLang()==='ko'?'ko-KR':'en-US',{year:'numeric',month:'short',day:'numeric'})];
+  if(net.active)bits.push(net.code);
+  g.fillText(bits.join('  ·  '),w-pad,h-pad*1.35);
+  return c.toDataURL('image/jpeg',.92);
+}
+function showPhoto(){
+  const f=$('#flash');f.classList.add('on');setTimeout(()=>f.classList.remove('on'),60);
+  $('#photo-img').src=S.photo.img;$('#btn-photo-share').hidden=!canShare;$('#photo').hidden=false;Snd.clink(.5);
+}
+function closePhoto(){
+  $('#photo').hidden=true;S.photo=null;player.st.locked=false;
+  $('#app').classList.remove('photo-mode');goCam();
+}
+$('#btn-photo-close').addEventListener('click',closePhoto);
+$('#btn-photo-save').addEventListener('click',()=>{
+  if(!S.photo||!S.photo.img)return;
+  const a=document.createElement('a');a.href=S.photo.img;a.download='courte-studio-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();a.remove();toast(t('toast_saved'));
+});
+$('#btn-photo-share').addEventListener('click',async()=>{
+  if(!S.photo||!S.photo.img)return;
+  try{const blob=await (await fetch(S.photo.img)).blob();await navigator.share({files:[new File([blob],'courte-studio.jpg',{type:'image/jpeg'})],title:'Courte Studio'});}catch(_){}
+});
 
 /* ───────────── events ───────────── */
 el.act.addEventListener('click',doAction);
-$('#btn-cheers').addEventListener('click',cheers);
 $('#btn-leave').addEventListener('click',leaveBar);
 $('#btn-reset').addEventListener('click',()=>{
   if(S.stage!=='pour')return;
@@ -742,8 +869,17 @@ function refreshAll(){
 }
 onLang(refreshAll);
 window.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&S.mode==='bar'&&el.result.hidden)leaveBar();
+  if(e.key==='Escape'){
+    if(!chatForm.hidden){closeChat();return;}
+    if(!$('#photo').hidden){closePhoto();return;}
+    if(!emoPop.hidden){emoPop.hidden=true;return;}
+    if(S.mode==='bar'&&el.result.hidden)leaveBar();
+  }
+  if(typing(e))return;
   if(e.code==='KeyE'&&!e.repeat&&S.mode==='walk'&&!S.paused)doAction();
+  if(e.code==='Enter'&&!e.repeat&&net.active){e.preventDefault();openChat();}
+  const n=e.code.indexOf('Digit')===0?parseInt(e.code.slice(5),10):0;
+  if(n>=1&&n<=EMOTES.length&&!e.repeat)playEmote(EMOTES[n-1]);
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden)Snd.pause();else Snd.resume();});
 
@@ -764,12 +900,14 @@ let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(DT_MAX,(now-last)/1000);last=now;time+=dt;
-  if(S.mode==='walk'){if(!S.paused)player.update(dt,time);player.view.off=portraitNow()?.12:0;}
+  if(S.mode==='walk'){if(!S.paused){player.update(dt,time);updatePlayerPose();}player.view.off=portraitNow()?.12:0;}
+  updatePhoto(dt);
   updateCamera(dt);room.animate(dt,time);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
   finalPass.uniforms.time.value=time%50;
   composer.render(dt);
+  if(S.photo&&S.photo.shoot){S.photo.shoot=false;S.photo.img=capturePhoto(S.photo.spot);showPhoto();}
   if(firstFrame){firstFrame=false;requestAnimationFrame(()=>$('#loading').classList.add('gone'));}
 }
 /* ───────────── online room: walking sync (transport is local-tab for now, Supabase later) ───────────── */
@@ -914,7 +1052,7 @@ setInterval(()=>{
   }
 },1000);
 function refreshRoomUI(){
-  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');
+  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#btn-chat').hidden=!net.active;if(!net.active&&!chatForm.hidden)closeChat();
   if(net.active){chip.textContent=net.code+' · '+net.count+(isHost()?' ★':'');chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
 }
 function connectRoom(onl){
@@ -930,29 +1068,44 @@ function connectRoom(onl){
   toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
 }
 const STATION_X=[-.9,.9];
-const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0});
+const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0,st:S.seat?SEATS.indexOf(S.seat)+1:0});
 function syncRemotes(dt,t){
   if(!net.active&&!remotes.size)return;
   net.update(myState());
-  const nowT=performance.now(),rect=canvas.getBoundingClientRect(),showTags=S.mode==='walk'&&cam.t>=.7;
+  const nowT=performance.now(),rect=canvas.getBoundingClientRect(),showTags=S.mode==='walk'&&cam.t>=.7&&!S.photo;
+  const place=(elm,x,y,z,lift)=>{
+    tagV.set(x,y,z).project(camera);
+    if(!showTags||tagV.z>1||Math.abs(tagV.x)>1.2){elm.style.display='none';return;}
+    elm.style.display='block';
+    elm.style.transform='translate('+((tagV.x*.5+.5)*rect.width).toFixed(1)+'px,'+((-tagV.y*.5+.5)*rect.height-lift).toFixed(1)+'px) translate(-50%,-100%)';
+  };
   net.peers.forEach((p,id)=>{
     let r=remotes.get(id);
     if(!r){
       const fig=makeCharacter(LOOKS[p.c]);scene.add(fig);
       const tag=document.createElement('div');tag.className='nametag';el.bubbles.appendChild(tag);
-      r={fig,tag};remotes.set(id,r);
+      const chat=document.createElement('div');chat.className='chatbubble';el.bubbles.appendChild(chat);
+      r={fig,tag,chat,seq:p.chatSeq};remotes.set(id,r);
     }
     smoothPeer(p,dt);
-    r.fig.position.set(p.x,room.groundAt(p.x,p.z),p.z);r.fig.rotation.y=p.yaw;
-    poseWalk(r.fig,p.ph,Math.min(1,p.sp),t);
-    const l=p.emoteUntil>nowT?Math.sin(Math.min(1,(p.emoteUntil-nowT)/1200)*Math.PI):0;
-    if(l>0){const a=r.fig.userData.arms[1];a.sh.rotation.x=-2.5*l;a.el.rotation.x=-.6*l;}
+    const seat=seatByWireId(p.st);
+    if(seat){
+      r.fig.position.set(seat.x,room.groundAt(seat.x,seat.z)+seat.y,seat.z);r.fig.rotation.y=seat.yaw;poseSit(r.fig,seat.lean);
+      if(S.seat===seat&&id<net.me.id)standUp();            // same seat picked twice: the lower id keeps it
+    }else{
+      r.fig.position.set(p.x,room.groundAt(p.x,p.z),p.z);r.fig.rotation.y=p.yaw;poseWalk(r.fig,p.ph,Math.min(1,p.sp),t);
+    }
+    const l=p.emoteUntil>nowT?Math.sin(Math.min(1,(p.emoteUntil-nowT)/1600)*Math.PI):0;
+    if(l>0)applyEmote(r.fig,p.emote,l,t);else relaxArms(r.fig);
+    if(p.chatSeq!==r.seq){r.seq=p.chatSeq;if(p.chat)addFeed(p.name,p.chat.text,false);}
     if(r.tag.textContent!==p.name)r.tag.textContent=p.name;
-    tagV.set(p.x,r.fig.position.y+1.95,p.z).project(camera);
-    if(!showTags||tagV.z>1||Math.abs(tagV.x)>1.2){r.tag.style.display='none';}
-    else{r.tag.style.display='block';r.tag.style.transform='translate('+((tagV.x*.5+.5)*rect.width).toFixed(1)+'px,'+((-tagV.y*.5+.5)*rect.height).toFixed(1)+'px) translate(-50%,-100%)';}
+    const hy=r.fig.position.y+1.95;
+    place(r.tag,r.fig.position.x,hy,r.fig.position.z,0);
+    if(p.chat&&nowT<p.chat.until){if(r.chat.textContent!==p.chat.text)r.chat.textContent=p.chat.text;place(r.chat,r.fig.position.x,hy,r.fig.position.z,26);}
+    else r.chat.style.display='none';
   });
-  remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();remotes.delete(id);}});
+  remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();r.chat.remove();remotes.delete(id);}});
+  if(S.myChat&&nowT<S.myChat.until)place(myChatEl,playerFig.position.x,playerFig.position.y+1.95,playerFig.position.z,4);else myChatEl.style.display='none';
 }
 $('#room-chip').addEventListener('click',()=>{
   if(!net.active)return;

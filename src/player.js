@@ -18,7 +18,7 @@ function rayBox(o,d,b){
 export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
   const pos=new THREE.Vector3(0,0,8.6);
   const vel=new THREE.Vector2();
-  const st={camYaw:0,pitch:.26,yaw:Math.PI,ph:0,amt:0,enabled:true,drag:null,cheer:0};
+  const st={camYaw:0,pitch:.26,yaw:Math.PI,ph:0,amt:0,enabled:true,drag:null,locked:false,intent:0};
   const keys=new Set();
   const joy={x:0,y:0,id:null};
   const view={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:55,off:0};
@@ -72,9 +72,11 @@ export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
       ix+=joy.x;iz-=joy.y;
     }
     const il=Math.hypot(ix,iz);if(il>1){ix/=il;iz/=il;}
+    st.intent=Math.min(1,il);
+    fwd.set(-Math.sin(st.camYaw),0,-Math.cos(st.camYaw));right.set(Math.cos(st.camYaw),0,-Math.sin(st.camYaw));
+    if(st.locked){vel.set(0,0);st.amt=0;}else{
     const run=keys.has('ShiftLeft')||keys.has('ShiftRight')||Math.hypot(joy.x,joy.y)>.92;
     const sp=(run?RUN:WALK)*Math.min(1,il);
-    fwd.set(-Math.sin(st.camYaw),0,-Math.cos(st.camYaw));right.set(Math.cos(st.camYaw),0,-Math.sin(st.camYaw));
     const tx=(fwd.x*iz+right.x*ix),tz=(fwd.z*iz+right.z*ix),tl=Math.hypot(tx,tz)||1;
     const k=Math.min(1,dt*(il>.01?9:7));
     vel.x=lerp(vel.x,tx/tl*sp,k);vel.y=lerp(vel.y,tz/tl*sp,k);
@@ -86,7 +88,7 @@ export function createPlayer({fig,colliders,groundAt,canvas,joyEl,ceiling}){
     st.ph+=dt*(4.6+speed*1.6)*(speed>.05?1:0);
     fig.position.copy(pos);fig.rotation.y=st.yaw;
     poseWalk(fig,st.ph,Math.min(1,st.amt),t);
-    if(st.cheer>0){st.cheer=Math.max(0,st.cheer-dt);const l=Math.sin(Math.min(1,st.cheer/1.2)*Math.PI);fig.userData.arms[1].sh.rotation.x=-2.5*l;fig.userData.arms[1].el.rotation.x=-.6*l;}
+    }
 
     /* shoulder camera with wall pull-in */
     const cp=Math.cos(st.pitch);

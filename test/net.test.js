@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parse,applyMessage,createPeers,expire,smooth,sanitizeName,STALE_MS,MAX_PEERS,NAME_MAX} from '../src/net/peers.js';
+import {parse,applyMessage,createPeers,expire,smooth,sanitizeName,sanitizeText,STALE_MS,MAX_PEERS,NAME_MAX,CHAT_MAX,CHAT_GAP_MS,EMOTES} from '../src/net/peers.js';
+import {SEAT_MAX} from '../src/game/seats.js';
 import {createRoom,makeCode,normalizeCode,CODE_LEN} from '../src/net/room.js';
 import {createLocalTransport} from '../src/net/transport.js';
 
@@ -91,5 +92,47 @@ test('game messages travel between room clients and never reach the peer table',
     assert.equal(got.length,1);assert.equal(got[0].k,'claim');assert.equal(got[0].id,a.me.id);
     assert.equal(b.peers.size,1);
     assert.deepEqual(b.ids().sort(),[a.me.id,b.me.id].sort());
+  }finally{a.leave();b.leave();}
+});
+
+test('chat: cleaned, bounded, ignored from strangers and rate limited',()=>{
+  assert.equal(sanitizeText('  hi <b>there</b>\n\n you '),'hi bthere/b you');
+  assert.equal(sanitizeText('x'.repeat(500)).length,CHAT_MAX);
+  assert.equal(parse({t:'chat',id:'p-aaaa',text:'   '}),null);
+  assert.equal(parse({t:'chat',id:'p-aaaa',text:'<>'}),null);
+  const peers=createPeers();
+  assert.equal(applyMessage(peers,{t:'chat',id:'p-aaaa',text:'hello'},0),false);   // unknown sender
+  applyMessage(peers,pos(),0);
+  assert.ok(applyMessage(peers,{t:'chat',id:'p-aaaa',text:'hello'},100));
+  const p=peers.get('p-aaaa');
+  assert.equal(p.chat.text,'hello');assert.equal(p.chatSeq,1);assert.ok(p.chat.until>100);
+  assert.equal(applyMessage(peers,{t:'chat',id:'p-aaaa',text:'spam'},100+CHAT_GAP_MS-10),false);
+  assert.equal(p.chat.text,'hello');
+  assert.ok(applyMessage(peers,{t:'chat',id:'p-aaaa',text:'later'},100+CHAT_GAP_MS+10));
+  assert.equal(p.chatSeq,2);
+});
+test('emotes and seats are validated',()=>{
+  for(const e of EMOTES)assert.equal(parse({t:'emote',id:'p-aaaa',e}).e,e);
+  assert.equal(parse({t:'emote',id:'p-aaaa',e:'dance'}),null);
+  assert.equal(parse(pos({st:1})).st,1);
+  assert.equal(parse(pos({st:SEAT_MAX})).st,SEAT_MAX);
+  for(const bad of [0,-1,SEAT_MAX+1,1.5,'3',null,NaN])assert.equal(parse(pos({st:bad})).st,0);
+  const peers=createPeers();
+  applyMessage(peers,pos({st:2}),0);assert.equal(peers.get('p-aaaa').st,2);
+  applyMessage(peers,pos({st:0}),50);assert.equal(peers.get('p-aaaa').st,0);
+  applyMessage(peers,{t:'emote',id:'p-aaaa',e:'wave'},60);assert.equal(peers.get('p-aaaa').emote,'wave');
+});
+test('chat and emotes reach another room client',async()=>{
+  const a=createRoom(createLocalTransport()),b=createRoom(createLocalTransport());
+  try{
+    a.join('SOCI1','Ann',0);b.join('SOCI1','Ben',0);await sleep(80);
+    a.update({x:1,z:1,yaw:0,sp:0,st:3});await sleep(40);
+    assert.equal([...b.peers.values()][0].st,3);
+    assert.equal(a.chat('  hello <3 '),'hello 3');await sleep(40);
+    const p=[...b.peers.values()][0];
+    assert.equal(p.chat.text,'hello 3');
+    a.emote('clap');await sleep(40);assert.equal(p.emote,'clap');
+    a.emote('nonsense');await sleep(40);assert.equal(p.emote,'clap');
+    assert.equal(a.chat('   '),'');
   }finally{a.leave();b.leave();}
 });

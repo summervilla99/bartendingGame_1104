@@ -27,6 +27,7 @@
   </header>
   <div class="pop" id="settings" hidden>
     <div class="srow"><span data-i18n="set_lang"></span><button class="btn sm" id="btn-lang" type="button" data-i18n-aria="lang_aria"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>
+    <div class="srow"><span data-i18n="set_night"></span><button class="btn sm" id="btn-night" type="button" data-i18n="night_btn"></button></div>
     <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></div>
     <div class="srow"><span data-i18n="set_music"></span><button class="btn sm" id="btn-music" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">♪</span><span class="lb" id="music-lb"></span></button></div>
   </div>
@@ -36,8 +37,8 @@
     <div class="joy" id="joy" aria-hidden="true"><i></i></div>
     <div class="dock">
       <button class="btn lg primary prompt" id="btn-act" type="button" hidden><kbd>E</kbd><span id="act-label"></span></button>
-      <button class="btn sm" id="btn-cheers" type="button" data-i18n="cheers"></button>
-      <button class="btn sm" id="btn-night" type="button" data-i18n="night_btn"></button>
+      <button class="btn sm" id="btn-emote" type="button" data-i18n="emote_btn"></button>
+      <button class="btn sm" id="btn-chat" type="button" data-i18n="chat_btn" hidden></button>
       <p class="hint" id="walk-hint" data-i18n-html="hint_kb"></p>
     </div>
   </section>
@@ -112,6 +113,30 @@
   </div>
 
   <div id="start" hidden></div>
+
+  <div class="emotes glass" id="emotes" hidden>
+    <button class="btn sm" type="button" data-e="cheers" data-i18n="emo_cheers"></button>
+    <button class="btn sm" type="button" data-e="wave" data-i18n="emo_wave"></button>
+    <button class="btn sm" type="button" data-e="clap" data-i18n="emo_clap"></button>
+    <button class="btn sm" type="button" data-e="bow" data-i18n="emo_bow"></button>
+  </div>
+  <div class="chatfeed" id="chatfeed" aria-live="polite"></div>
+  <form class="chatbar glass" id="chat-form" hidden autocomplete="off">
+    <input class="st-input" id="chat-input" maxlength="100" data-i18n-ph="chat_ph" autocomplete="off" enterkeyhint="send">
+    <button class="btn primary sm" type="submit" data-i18n="chat_send"></button>
+  </form>
+
+  <div class="result" id="photo" hidden>
+    <div class="rcard photocard" role="dialog">
+      <img id="photo-img" alt="">
+      <div class="row">
+        <button class="btn sm" id="btn-photo-close" type="button" data-i18n="photo_close"></button>
+        <button class="btn sm" id="btn-photo-share" type="button" data-i18n="photo_share" hidden></button>
+        <button class="btn primary" id="btn-photo-save" type="button" data-i18n="photo_save"></button>
+      </div>
+    </div>
+  </div>
+  <div id="flash"></div>
 
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="loading" data-i18n="loading"></div>

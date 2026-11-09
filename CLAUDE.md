@@ -50,8 +50,9 @@ src/
   glass.js          잔 11종(mixing/rocks/tumbler/fashioned/coupe/margarita/nick/highball/collins/mug/martini), 액체 수위, 얼음, 가니시(오렌지/라임/레몬/민트/체리), 셰이커
   session.js        세션 설정(시간대/메뉴 계열/모드/가이드) 정의, 저장, 레시피 풀 필터. 나중에 온라인 방 설정으로 그대로 쓴다
   start.js          "오늘 밤을 골라 주세요" 시작 화면(시간대 선택 시 뒤의 바가 실시간 미리보기)
+  game/seats.js     앉을 자리(스툴/의자/소파)와 포토 스팟 데이터(순수)
   game/             순수 게임 규칙(three/DOM 없음, JSON 상태): rng.js 시드 난수, world.js 월드·주문·밤 정산·스냅샷, bartending.js 붓기/섞기/점수, shared.js 방 공유 규칙(티켓 잡기·서빙 적용·NPC 바텐더·방장 선출·메시지 검증)
-  net/              온라인 방: peers.js(메시지 검증/만료/보간, 순수), room.js(방 클라이언트, 코드 생성), transport.js(전송 추상화)
+  net/              온라인 방(채팅·이모트·앉기 상태 포함): peers.js(메시지 검증/만료/보간, 순수), room.js(방 클라이언트, 코드 생성), transport.js(전송 추상화)
   data.js           재료 20종(INGR, cat=spirit|liqueur|mixer), 레시피 19종(RECIPES, house:true=하우스 오리지널), 가니시, 이름은 전부 {ko,en}
   i18n.js           ko/en 사전, t(key,vars), tr({ko,en}), setLang/onLang, data-i18n 속성 적용
   units.js          ml · oz 병기(fmtVol, fmtRatio, 5ml 미만은 대시). 토글 없음
@@ -158,3 +159,12 @@ src/
 - **방장 교체**: 방장이 방에서 사라지면(`hostMissing`) 남은 사람 중 id 가 가장 작은 사람이 `becomeHost`. 사라진 사람의 티켓은 `expireClaims` 로 풀린다. 두 방장이 생기면 id 가 작은 쪽이 이긴다.
 - **새로운 밤/정산**: 방장만 시작한다(`host_only`). 밤이 끝나면(`nightOver`) 모두에게 정산 카드가 뜨고, 방장이 "한 번 더"를 누르면 새 시드의 월드가 퍼져서 모두의 카드가 닫힌다.
 - **확인 방법**: 탭 두 개(`?debug&dtmax=0.2`)로 방 만들기 → 참가 → 한쪽이 티켓 잡기/서빙 → 다른 쪽 집계 확인. **브라우저 패널이 숨겨져 있으면 requestAnimationFrame 이 멈춰 게임 시간이 안 흐른다**(방장 타이머 기반 로직도 멈춤).
+
+## 소셜 (5단계: 채팅, 이모트, 앉기, 포토)
+
+- **메시지**: 방 클라이언트(`net/room.js`)가 `pos`(+`st` 앉은 자리 번호 0=서 있음), `emote`(`cheers|wave|clap|bow`), `chat`(텍스트)을 보낸다. 모두 `peers.parse` 가 검증한다: 채팅은 제어문자/`<>` 제거, 100자 제한, 상대별 600ms 도배 방지, 모르는 상대의 채팅은 무시. 화면에는 **항상 `textContent`** 로만 그린다(HTML 로 해석 금지).
+- **앉기**: 자리는 `game/seats.js` 에 있다(NPC 손님이 안 쓰는 스툴 2개, 라운지 의자 1개, 벽 쪽 소파 6개). 가까이 가면 `E` 로 앉고, 이동 입력(`player.st.intent`)이 있으면 일어선다. 앉으면 `player.st.locked=true`(이동·충돌 정지, 카메라는 계속). 같은 자리를 둘이 고르면 id 가 작은 쪽이 앉아 있는다. 바 구역에서는 앉기 대신 바텐딩이 우선.
+- **이모트**: `applyEmote`(건배/손 흔들기/박수/인사)를 내 아바타와 원격 아바타에 똑같이 적용한다. 숫자키 1~4, 또는 이모트 메뉴. 팔의 `rotation.z` 를 건드리므로 끝나면 `relaxArms` 로 되돌린다.
+- **채팅**: 방 안에서만 버튼이 보인다(`Enter` 로 열기, `Esc` 로 닫기). 머리 위 말풍선 6초 + 왼쪽 로그 5줄(10초 뒤 사라짐).
+- **포토**: 포토 스팟(`PHOTO_SPOTS`)에서 `E` → 카메라가 아바타 앞으로 돌아 와 0.5초 뒤 캔버스를 캡처(`composer.render` 직후 같은 틱에서 `drawImage`)하고 워터마크(로고, 장소, 날짜, 방 코드)를 합성한다. 저장(다운로드)과 공유(`navigator.share`, 지원할 때만).
+- 확인은 탭 두 개로: 한쪽이 앉기/채팅/손 흔들기 → 다른 쪽의 `net.peers` 와 화면.
