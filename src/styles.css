@@ -655,4 +655,5 @@ body.xmas #start .st-card{position:relative;z-index:1}
 .rd-sec .oc-row{font-size:14px}
 .rd-story{font-style:italic;font-family:var(--f-serif)}
 
-.k-more{margin:0 0 8px;min-height:40px}
+.k-more{appearance:none;cursor:pointer;display:block;margin:6px 0 0 auto;padding:6px 4px;background:none;border:0;color:var(--brass);font:600 11.5px var(--f-ui);letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;opacity:.85}
+.k-more:hover{opacity:1}
