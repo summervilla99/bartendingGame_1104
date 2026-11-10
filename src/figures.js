@@ -65,6 +65,11 @@ export function makeCharacter(cfg){
   const head=new THREE.Group();head.position.y=.72;torso.add(head);
   const hm=new THREE.Mesh(headGeo,skin);hm.scale.set(.95,1.08,1);head.add(hm);
   [-1,1].forEach(s=>{const e=new THREE.Mesh(eyeGeo,eyeMat);e.position.set(s*.038,.01,.096);head.add(e);});
+  if(cfg.blush){                                          // flushed cheeks (drink): soft red discs on the cheeks and a touch on the nose
+    const bm=new THREE.MeshBasicMaterial({color:cfg.blush,transparent:true,opacity:.75,depthWrite:false});
+    [-1,1].forEach(s=>{const c=new THREE.Mesh(new THREE.CircleGeometry(.036,16),bm);c.position.set(s*.063,-.018,.092);c.rotation.y=s*.55;head.add(c);});
+    const nz=new THREE.Mesh(new THREE.CircleGeometry(.016,12),bm);nz.position.set(0,-.012,.111);head.add(nz);
+  }
   if(cfg.bald){                                           // thinning: hair only in a band round the sides and back
     const hb=new THREE.Mesh(hairBandGeo,hairM);hb.position.set(0,.012,-.012);hb.rotation.x=-.1;head.add(hb);
   }else{

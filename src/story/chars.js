@@ -13,7 +13,7 @@ export const CHARS={
   seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},intro:{ko:'30대 중후반쯤으로 보이는 손님. 왠지 모를 고독함을 지니고 있다.',en:'A guest in her mid-to-late thirties, with a loneliness she does not explain.'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
     look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
   taesik:{name:{ko:'박태식',en:'Park Taesik'},intro:{ko:'술기운에 볼이 발갛게 달아올라 있다.',en:'His cheeks are flushed red from drink.'},seat:'g1',tone:'#d9a486',prop:'soju',
-    look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
+    look:{name:'태식',blush:0xd23b3b,skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
 };
 /* One short flavour line per drink, shown on the recommendation buttons. */
 export const FLAVOR={
