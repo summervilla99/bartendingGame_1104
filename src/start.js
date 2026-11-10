@@ -6,8 +6,8 @@ import {loadTale,isNightOpen,resetTale} from './story/save.js';
 
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
-export function createStart({root,recipes,getCfg,onPreview,onStart,initialOnline,roomLock}){
-  let cfg=null,open=false,err='',view='main',confirmReset=false;
+export function createStart({root,recipes,getCfg,onPreview,onStart,onFirstTap,initialOnline,roomLock}){
+  let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false;
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -76,6 +76,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
   }
   root.addEventListener('click',e=>{
     if(!open)return;
+    if(!tapped){tapped=true;if(onFirstTap)onFirstTap();}
     const b=e.target.closest('button');if(!b)return;
     if(b.id==='st-lang'){setLang(getLang()==='ko'?'en':'ko');return;}
     if(b.id==='st-back'){view='main';render();return;}

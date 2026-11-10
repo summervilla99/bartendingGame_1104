@@ -862,10 +862,10 @@ const musicPref=()=>{try{return localStorage.getItem(MUSIC_PREF);}catch(_){retur
 const saveMusicPref=on=>{try{if(on)localStorage.removeItem(MUSIC_PREF);else localStorage.setItem(MUSIC_PREF,'off');}catch(_){}};
 /* The bar opens with music unless the player turned it off. Called from the tap on 'Open the bar' (browsers only allow sound after a tap). */
 let musicHinted=false;
-function startMusicOnOpen(){
-  if(musicPref()==='off'||Snd.on)return;
-  Snd.init();
-  if(Snd.music(true)){refreshMusic();refreshMusicUI();if(!musicHinted){musicHinted=true;toast(t('music_auto'),3800);}}
+function startMusicOnOpen(quiet){
+  if(musicPref()==='off')return;
+  if(!Snd.on){Snd.init();if(!Snd.music(true))return;refreshMusic();refreshMusicUI();}
+  if(!quiet&&!musicHinted){musicHinted=true;toast(t('music_auto'),3800);}
 }
 function setMusic(g,remote){
   if(g==='off'){saveMusicPref(false);if(Snd.on){Snd.music(false);refreshMusic();}refreshMusicUI();return;}
@@ -1440,6 +1440,7 @@ function taleStart(){
   updateWalkUI();taleStep();
 }
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
+  onFirstTap:()=>startMusicOnOpen(true),          // the first tap on the start screen is the browser's cue to let the music begin
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
