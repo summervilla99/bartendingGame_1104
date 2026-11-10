@@ -339,6 +339,9 @@ function doAction(){
 }
 
 /* ───────────── mode switching ───────────── */
+/* the player's own open/close choice on the recipe card is kept for later drinks */
+let tkPref=null;
+el.ticket.querySelector('summary').addEventListener('click',()=>setTimeout(()=>{tkPref=el.ticket.open;},0));
 function enterBar(g){
   Snd.init();
   S.mode='bar';S.guest=g;S.recipe=g.order;S.drink=startDrink(S.world,g.seatId,S.claimInfo?S.claimInfo.orderNo:undefined);g.askedOrder=false;
@@ -346,7 +349,7 @@ function enterBar(g){
   playerFig.position.copy(BAR_STAND);playerFig.rotation.y=0;poseWalk(playerFig,0,0,time);
   resetBar();
   el.uiWalk.hidden=true;el.uiBar.hidden=false;el.act.hidden=true;S.actionKey='';
-  el.ticket.open=window.innerWidth>=900||S.session.mode==='practice';
+  el.ticket.open=tkPref!==null?tkPref:(window.innerWidth>=900||S.session.mode==='practice'||S.session.mode==='tale');
   setTab(ING[Object.keys(S.recipe.parts)[0]].cat);layoutRail(true);
   goCam();updateTicket();
   S.barLimit=S.world.session.limit>0?patienceOf(S.world.session.limit,g.rush):0;
