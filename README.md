@@ -22,7 +22,7 @@ npm test   # 단위 테스트 (네트워크 필요 없음)
 
 ## 배포 (Vercel)
 
-- 주소: https://courte-studio.vercel.app (Vercel 프로젝트 `courte-studio`)
+- 주소: https://bar-coda.vercel.app (Vercel 프로젝트 `bar-coda`; 예전 주소 courte-studio.vercel.app 도 계속 열린다)
 - 배포: `vercel deploy --prod` (로그인된 CLI 필요). 빌드는 Vercel 이 `vite build` 로 하고 `dist/` 를 올려요.
 - 환경 변수(Production/Preview/Development 모두): `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY` — **publishable 키만**. 값을 바꾸면 다시 배포해야 반영돼요(빌드 때 번들에 들어가요).
 - `.vercel/` 은 git 에서 제외돼요. `vercel link` 가 `.env.local` 에 토큰을 덧붙이면 그 줄은 지워도 돼요.

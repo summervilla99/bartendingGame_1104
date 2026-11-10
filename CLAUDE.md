@@ -2,7 +2,7 @@
 
 어두운 마호가니 톤의 고급 라운지 바에서 걸어 다니며 칵테일을 만들고 손님과 네트워킹하는 3D 바텐딩 게임. 지금은 **싱글플레이 프로토타입**이고, 최종 목표는 **온라인 라이브로 같이 바에서 즐기는 것**(걸어 다니는 손님 ↔ 카운터 안의 바텐더 역할 전환). 디자인적 아름다움이 최우선.
 
-게임 이름은 **Bar Coda**(리스닝 라운지, 곡의 마지막 맺음 "코다"). 이야기 속 가게 이름도 Coda이고 하우스 칵테일은 코다 누아(Coda Noir, 내부 id `courtenoir`). 내부 식별자는 바꾸지 않았다: localStorage 키 `courte.*`, 방 채널 `courte-*`, `window.__courte`, 레시피 id `courtenoir`, Vercel 프로젝트/주소 `courte-studio`(저장 데이터와 접속 호환 때문).
+게임 이름은 **Bar Coda**(리스닝 라운지, 곡의 마지막 맺음 "코다"). 이야기 속 가게 이름도 Coda이고 하우스 칵테일은 코다 누아(Coda Noir, 내부 id `courtenoir`). 내부 식별자는 바꾸지 않았다: localStorage 키 `courte.*`, 방 채널 `courte-*`, `window.__courte`, 레시피 id `courtenoir`, 옛 주소 `courte-studio.vercel.app`(친구들이 받은 링크 호환 때문; 프로젝트 이름과 새 주소는 `bar-coda`).
 
 사용자는 한국어로 소통한다. 대화는 한국어, 코드 식별자와 주석은 영어. 게임 UI는 **한국어/영어 이중 언어**(기본은 `navigator.language`, 상단 KO/EN 토글로 전환, `localStorage` 저장).
 
@@ -175,7 +175,7 @@ src/
 
 ## 배포
 
-- Vercel 프로젝트 `courte-studio`, 주소 https://courte-studio.vercel.app . 배포는 `vercel deploy --prod`. 환경 변수는 Vercel 프로젝트에 `VITE_SUPABASE_URL`/`VITE_SUPABASE_KEY`(publishable 만)가 있다. GitHub 저장소 자동 배포 연동은 아직 안 했다(사용자 승인 필요).
+- Vercel 프로젝트 `bar-coda`, 주소 https://bar-coda.vercel.app (예전 주소 courte-studio.vercel.app 도 같은 프로젝트의 도메인이라 계속 열린다; 새 주소는 `vercel domains add bar-coda.vercel.app bar-coda` 로 프로젝트 도메인에 연결해야 로그인 보호 없이 공개된다). 배포는 `vercel deploy --prod`. 환경 변수는 Vercel 프로젝트에 `VITE_SUPABASE_URL`/`VITE_SUPABASE_KEY`(publishable 만)가 있다. GitHub 저장소 자동 배포 연동은 아직 안 했다(사용자 승인 필요).
 - 배포 전 `npm run build` 와 `npm test` 를 통과시킬 것. 배포 뒤에는 배포 주소에서 방을 하나 만들어 Supabase 연결(방 칩이 흐려지지 않음)을 확인한다.
 
 ## 친구 모드 바 (의자 수, 손님 주문, 제한시간)
