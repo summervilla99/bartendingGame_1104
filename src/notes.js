@@ -21,14 +21,17 @@ const HAND={
     taste:N('좋은 베르뭇은 개봉 후 냉장 보관해야 향이 살아 있어요. 체리 하나로 마무리하세요.','Keep opened vermouth in the fridge so it stays fresh. Finish with a single cherry.'),
     mistake:N('젓는 시간이 짧으면 독하고 뜨뜻해요. 오래 둔 상한 베르뭇은 시큼한 맛을 내요.','Too little stirring leaves it harsh and warm. Stale vermouth tastes sour.')},
   whiskeysour:{watch:N('레몬, 시럽, 위스키를 얼음과 힘차게 흔들어요. 얼음 위에 따라 체리로 마무리해요.','Shake whiskey, lemon and syrup hard with ice, pour over fresh ice and add a cherry.'),
-    taste:N('오래 흔들수록 질감이 부드러워져요. 레몬과 시럽은 3 : 2 정도가 기준점이에요.','The longer you shake, the silkier it gets. Lemon to syrup around 3 : 2 is a good starting point.'),
+    taste:N('오래 흔들수록 질감이 부드러워져요. 레몬과 시럽은 5 : 3 정도(25ml : 15ml)가 기준점이에요.','The longer you shake, the silkier it gets. Lemon to syrup around 3 : 2 is a good starting point.'),
     mistake:N('레몬이 많으면 입이 오그라들고, 시럽이 많으면 느끼해요. 반드시 재서 넣으세요.','Too much lemon puckers; too much syrup cloys. Always measure.')},
   boulevardier:{watch:N('버번, 캄파리, 베르뭇을 얼음과 저어 큰 얼음 위에 따라요. 오렌지 껍질로 향을 더해요.','Stir bourbon, Campari and vermouth with ice and pour over a large cube. Add an orange peel.'),
     taste:N('네그로니보다 묵직하고 따뜻해요. 버번은 너무 거칠지 않은 것으로 고르세요.','Heavier and warmer than a Negroni. Choose a bourbon that is not too rough.'),
     mistake:N('버번이 너무 많으면 캄파리의 개성이 사라져요.','Too much bourbon buries the Campari.')},
-  tomcollins:{watch:N('진, 레몬, 시럽을 먼저 섞고 얼음 가득 채운 잔에 따른 뒤 소다로 마무리해요.','Build gin, lemon and syrup first, add ice, and top with soda.'),
+  tomcollins:{watch:N('콜린스 잔에 얼음을 가득 채우고 진, 레몬, 시럽을 넣어요. 소다는 마지막에 천천히 얹어요(셰이크하지 않고 잔에서 바로 만들어요).','Fill a Collins glass with ice, add gin, lemon and syrup, then top slowly with soda. It is built in the glass, not shaken.'),
     taste:N('소다는 차갑게, 마지막에 살짝만. 레몬 휠을 얹으면 향이 더해져요.','Keep the soda cold and add it last. A lemon wheel adds aroma.'),
     mistake:N('소다를 세게 따르거나 휘저으면 탄산이 날아가요.','Pouring soda hard or stirring it flat kills the fizz.')},
+  neat:{watch:N('얼음도 물도 없이 잔에 위스키만 따라요. 얼음을 넣지 않는 것이 핵심이에요.','Pour only the whiskey into the glass. No ice and no water: that is the whole point.'),
+    taste:N('잔을 손으로 살짝 데워 향을 열고, 먼저 향을 맡은 뒤 한 모금 머금어 천천히 마셔요.','Warm the glass in your hand to open the aroma, nose it first, then sip slowly.'),
+    mistake:N('얼음을 넣거나 물을 타면 니트가 아니에요. 너무 많이 따르면 향이 모이지 않아요.','Adding ice or water makes it not neat. Pouring too much stops the aroma from gathering.')},
   mojito:{watch:N('민트는 찢지 말고 살짝 눌러 향만 내요. 얼음을 가득 채우고 소다는 마지막에 넣어요.','Press the mint gently, never shred it. Pack with ice and add soda last.'),
     taste:N('민트 줄기는 쓴맛이 나니 잎만 쓰고, 마지막에 민트를 손바닥으로 톡 쳐서 향을 깨워 올려요.','Stems turn bitter, so use leaves only; slap the garnish mint between your palms to wake its aroma.'),
     mistake:N('민트를 으깨면 풀맛이 나요. 얼음이 적으면 금방 밍밍해져요.','Crushed mint tastes grassy. Too little ice and it goes weak fast.')},
@@ -56,7 +59,7 @@ const HAND={
   gimlet:{watch:N('진, 라임, 시럽을 얼음과 아주 차갑게 흔들어 닉앤노라 잔에 따라요.','Shake gin, lime and syrup very cold and strain into a Nick & Nora.'),
     taste:N('라임은 직접 짠 것으로. 진의 허브 향이 라임과 만나 가장 깨끗하게 드러나요.','Squeeze the lime yourself; the gin’s botanicals show cleanest against it.'),
     mistake:N('시럽을 많이 넣으면 달아서 진의 향이 사라져요.','Too much syrup is cloying and hides the gin.')},
-  french75:{watch:N('진, 레몬, 시럽을 흔들어 따르고, 차가운 프로세코를 천천히 얹어요.','Shake gin, lemon and syrup, strain, then top slowly with cold prosecco.'),
+  french75:{watch:N('얼음 없이 차가운 쿠페에 진, 레몬, 시럽을 넣고 차가운 프로세코를 천천히 얹어요(셰이크하지 않고 잔에서 바로 만들어요).','In a chilled coupe with no ice, add gin, lemon and syrup, then top slowly with cold prosecco. It is built in the glass, not shaken.'),
     taste:N('프로세코는 아주 차갑게. 레몬 껍질을 비틀어 마지막 향을 더해요.','Keep the prosecco very cold and finish with a lemon twist.'),
     mistake:N('프로세코를 세게 따르면 거품이 넘치고 김이 빠져요.','Pouring prosecco hard makes it foam over and go flat.')},
   aperolspritz:{watch:N('얼음 위에 프로세코, 아페롤, 소다 순서로 따라 한 번만 저어요.','Over ice, add prosecco, then Aperol, then soda, and stir once.'),
@@ -77,9 +80,9 @@ const HAND={
   pinacolada:{watch:N('럼, 파인애플, 크림을 얼음과 오래 흔들어 부드러운 질감을 만들어요.','Shake rum, pineapple and cream long and hard for a smooth texture.'),
     taste:N('아주 차갑고 크리미할수록 좋아요. 체리와 파인애플 조각으로 마무리하세요.','The colder and creamier the better. Finish with a cherry and pineapple.'),
     mistake:N('덜 흔들면 크림이 분리되고 얼음 조각이 거슬려요.','Under-shaking leaves it split and icy.')},
-  maitai:{watch:N('럼, 트리플 섹, 라임, 시럽을 얼음과 흔들고, 짙은 럼은 마지막에 위에 얹어요.','Shake rum, triple sec, lime and syrup, and float the dark rum on top.'),
+  maitai:{watch:N('럼, 오버프루프 럼, 트리플 섹, 라임, 시럽을 얼음과 힘차게 흔들어 얼음 위에 따라요.','Shake rum, overproof rum, triple sec, lime and syrup hard with ice and strain over fresh ice.'),
     taste:N('민트를 손으로 쳐 향을 깨워 올려요. 라임과 럼의 향이 잔 위에서 먼저 올라와요.','Slap the mint to wake it up so the aroma greets you first.'),
-    mistake:N('럼 종류를 섞지 않고 한 가지로만 만들면 깊이가 부족해요.','Using only one rum loses the depth.')},
+    mistake:N('오버프루프 럼을 많이 넣으면 술 맛만 강해져 라임과의 균형이 깨져요.','Too much overproof rum is all booze and breaks the balance with the lime.')},
   longisland:{watch:N('다섯 가지 술을 같은 양으로 넣고 콜라는 마지막에 살짝만 넣어 색을 내요.','Five spirits in equal parts; add only a splash of cola for colour.'),
     taste:N('레몬은 생과즙으로. 얼음을 가득 채워 천천히 마시게 하세요.','Fresh lemon and plenty of ice make it easier to sip.'),
     mistake:N('콜라를 많이 넣으면 술이 약해 보이지만 단 음료가 돼 버려요.','Too much cola hides the strength but makes it syrupy.')},
@@ -102,8 +105,10 @@ function auto(r){
     watch.push(N('얼음과 함께 20~30초 천천히 저어 맑고 차갑게 만들어요.','Stir slowly with ice for 20–30 seconds until clear and cold.'));
     mistake.push(N('흔들면 탁하고 묽어져요.','Shaking makes it cloudy and thin.'));
   }else{
-    watch.push(N('섞지 않고 잔에 바로 만들어요. 얼음을 먼저 채우고 순서대로 따라요.','No mixing: build it straight in the glass, ice first, then pour in order.'));
-    mistake.push(N('너무 세게 저으면 맛이 섞이기 전에 묽어져요.','Over-stirring waters it down before the flavours join.'));
+    if(r.noIce)watch.push(N('섞지 않고 잔에 바로 따라요. 얼음은 넣지 않아요.','No mixing: pour straight into the glass. No ice.'));
+    else if(serveOf(r.glass)==='up')watch.push(N('섞지 않고 차가운 잔에 바로 만들어요. 이 잔은 얼음 없이 내요.','No mixing: build it straight in a chilled glass. This one is served without ice.'));
+    else watch.push(N('섞지 않고 잔에서 바로 만들어요. 얼음을 먼저 채우고 순서대로 따라요.','No mixing: build it in the glass, ice first, then pour in order.'));
+    if(!r.noIce)mistake.push(N('너무 세게 저으면 맛이 섞이기 전에 묽어져요.','Over-stirring waters it down before the flavours join.'));
   }
   if(has(['soda','tonic','ginger','cola','prosecco'])){
     watch.push(N('탄산 재료는 마지막에 천천히 따르고 거의 젓지 마세요.','Add fizzy ingredients last, pour slowly, and barely stir.'));
@@ -113,20 +118,24 @@ function auto(r){
     taste.push(N('과즙은 바로 짠 신선한 것이 가장 좋아요. 너무 시면 시럽을 5ml 더, 너무 달면 과즙을 조금 더하세요.','Fresh-squeezed juice is best. If too sharp, add 5 ml syrup; if too sweet, a touch more juice.'));
   }
   if(has(['cream','creamliq'])){
-    watch.push(N('크림이 들어가면 평소보다 오래 흔들어 질감을 매끄럽게 만드세요.','With cream, shake longer than usual to get a smooth texture.'));
+    watch.push(r.method==='shake'?N('크림이 들어가면 평소보다 오래 흔들어 질감을 매끄럽게 만드세요.','With cream, shake longer than usual to get a smooth texture.'):N('크림은 마지막에 천천히 얹어요.','Add the cream last and slowly.'));
   }
-  if(has(['coffee','espresso'])){taste.push(N('커피는 식혀서 쓰면 얼음이 덜 녹아 맛이 진해요.','Cooled coffee melts less ice and tastes richer.'));}
+  if(has(['espresso'])){taste.push(N('커피는 식혀서 쓰면 얼음이 덜 녹아 맛이 진해요.','Cooled coffee melts less ice and tastes richer.'));}
   if(r.korean){
-    watch.push(N('소주와 막걸리는 도수가 낮아 흔들거나 저을 때 희석을 짧게 하세요.','Soju and makgeolli are lower in alcohol, so keep dilution short.'));
+    watch.push(r.method==='build'?N('소주와 막걸리는 도수가 낮아 부재료 비율이 조금만 어긋나도 맛이 흐려져요. 계량을 지키세요.','Soju and makgeolli are low in alcohol, so a slightly off mixer ratio blurs the taste. Measure carefully.'):N('소주와 막걸리는 도수가 낮아 흔들거나 저을 때 희석을 짧게 하세요.','Soju and makgeolli are lower in alcohol, so keep dilution short.'));
     taste.push(N('아주 차갑게 마실수록 깔끔해요. 재료도 미리 식혀 두세요.','The colder, the cleaner. Chill the ingredients beforehand.'));
   }
   const up=serveOf(r.glass)==='up';
   if(up)taste.push(N('잔을 미리 얼음물로 차갑게 해 두면 마지막 모금까지 시원해요.','Chill the glass with ice water first so the last sip stays cold.'));
   else if(r.noIce)taste.push(N('얼음이 없으니 잔의 향을 먼저 맡고 천천히 마셔요.','With no ice, nose the glass first and sip slowly.'));
-  else taste.push(N('얼음은 단단하고 투명한 큰 것이 천천히 녹아 좋아요.','Hard, clear, large ice melts slowly and keeps the drink right.'));
-  if(r.garnish&&r.garnish!=='none'){
-    taste.push(N('가니시는 향을 더하는 마지막 터치예요. 서빙 직전에 올려요.','The garnish is the last touch of aroma. Add it right before serving.'));
-  }
+  else taste.push(N('얼음은 단단하고 투명한 것이 천천히 녹아 좋아요.','Hard, clear ice melts slowly and keeps the drink right.'));
+  const G={orange:N('오렌지 껍질은 잔 위에서 비틀어 짜 향을 입힌 뒤 올려요.','Twist the orange peel over the drink to release its oils, then add it.'),
+    lime:N('라임 휠은 잔 가장자리에 걸치거나 위에 띄워 서빙 직전에 올려요.','Add the lime wheel on the rim or floating, right before serving.'),
+    lemon:N('레몬 휠(또는 껍질)은 서빙 직전에 올려 상큼한 향을 더해요.','Add the lemon right before serving for a fresh aroma.'),
+    mint:N('민트는 손바닥으로 톡 쳐서 향을 깨운 뒤 올려요.','Slap the mint between your palms to wake its aroma, then add it.'),
+    cherry:N('체리는 마지막에 올려요. 시럽을 털어 내면 술이 달아지지 않아요.','Add the cherry last, and shake off the syrup so it does not sweeten the drink.'),
+    beans:N('커피콩 세 알을 거품 위에 살짝 띄워요.','Float three coffee beans on the foam.')};
+  if(G[r.garnish])taste.push(G[r.garnish]);
   return {watch,taste,mistake};
 }
 
@@ -136,10 +145,11 @@ export function detailOf(r){
   const out=h?{watch:[h.watch],taste:[h.taste],mistake:[h.mistake]}:a;
   const ids=Object.keys(r.parts);
   const pour=ids.map(k=>ING[k].name);
-  const method=r.method==='shake'?N('셰이커에 얼음과 함께 담아 흔들어요.','Add ice and shake.'):r.method==='stir'?N('믹싱 글라스에서 얼음과 함께 저어요.','Stir with ice in the mixing glass.'):N('섞지 않고 잔에서 바로 완성해요.','No mixing; finish right in the glass.');
+  const method=r.method==='shake'?N('셰이커에 얼음과 함께 담아 흔들어요.','Add ice and shake.'):r.method==='stir'?N('믹싱 글라스에서 얼음과 함께 저어요.','Stir with ice in the mixing glass.'):r.noIce?N('얼음 없이 잔에 따라 완성해요.','Pour into the glass, no ice.'):N('섞지 않고 잔에서 바로 완성해요.','No mixing; finish right in the glass.');
+  const up=serveOf(r.glass)==='up';
   out.steps=[N('재료를 따라요: '+pour.join(' → '),'Pour: '+pour.join(' → ')),method];
-  if(r.method!=='build')out.steps.push(N('차가운 잔에 걸러 따라요.','Strain into a chilled glass.'));
-  out.steps.push(N('가니시를 올려 서빙해요.','Garnish and serve.'));
+  if(r.method!=='build')out.steps.push(up?N('얼음 없이 차가운 잔에 걸러 따라요.','Strain into a chilled glass, no ice.'):N('신선한 얼음을 채운 잔에 걸러 따라요.','Strain into a glass over fresh ice.'));
+  out.steps.push(r.garnish&&r.garnish!=='none'?N('가니시를 올려 서빙해요.','Garnish and serve.'):N('바로 서빙해요.','Serve right away.'));
   return out;
 }
 export const SECTION_TITLES={watch:N('만들 때 주의할 점','Watch out for'),taste:N('맛있게 만드는 팁','Tips for better taste'),mistake:N('흔한 실수','Common mistakes'),steps:N('만드는 순서','How it is made')};

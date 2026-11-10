@@ -452,7 +452,7 @@ function updateTicket(){
   const mb=$('#tk-method');mb.textContent=METHOD_NAME[r.method];mb.className='tk-method m-'+r.method;
   $('#tk-why').textContent=t('why_'+r.method);$('#tk-why').className='tk-why m-'+r.method;
   const kn=$('#tk-know'),ra=ratioOf(r),chip=(a,b)=>'<span class="k-chip">'+(a?'<i>'+a+'</i>':'')+b+'</span>';
-  kn.innerHTML='<div class="k-row">'+chip('',t('serve_'+serveOf(r.glass)))+(ra?chip(t('k_ratio'),ra):'')+chip('',t('tech_'+r.method))+'</div>'+(r.tip?'<p class="k-tip">'+tr(r.tip)+'</p>':'');
+  kn.innerHTML='<div class="k-row">'+chip('',t('serve_'+serveOf(r.glass)))+(ra?chip(t('k_ratio'),ra):'')+chip('',t(r.noIce?'tech_neat':'tech_'+r.method))+'</div>'+(r.tip?'<p class="k-tip">'+tr(r.tip)+'</p>':'');
   el.tkMeta.textContent=GLASS_NAME[r.glass]+' · '+(r.garnish==='none'?t('no_garnish'):GARNISH_NAME[r.garnish]);
   const st=$('#tk-story');st.hidden=!r.house;if(r.house)st.textContent=tr(r.story);
   el.tkLines.innerHTML='';

@@ -152,3 +152,16 @@ test('every recipe has detailed notes in both languages; classic family is real'
   assert.ok(FAMILIES.classic.every(id=>RECIPES.some(r=>r.id===id&&!r.season)),'classic ids must exist and not be seasonal');
   assert.equal(FAM_ORDER[0],'classic');
 });
+
+test('recipe notes never tell you to use ice where the recipe has none', async ()=>{
+  const {detailOf}=await import('../src/notes.js');
+  const {RECIPES,serveOf}=await import('../src/data.js');
+  for(const r of RECIPES){
+    if(!(r.noIce||serveOf(r.glass)==='up'))continue;
+    const d=detailOf(r);
+    const keep=x=>r.method==='build'||/걸러|strain/i.test(x.ko+x.en);      // shaking/stirring text may mention ice in the tin; what goes into the glass may not
+    const text=[].concat(d.steps,d.watch,d.taste,d.mistake).filter(keep).map(x=>x.ko+' '+x.en).join(' ');
+    assert.ok(!/얼음을 먼저|얼음을 가득|신선한 얼음|ice first|over fresh ice|over ice/i.test(text),r.id+' mentions ice but is served without it');
+    assert.ok(!r.noIce||!/얼음.*저어|ice.*stir/i.test(text.replace(/얼음 없이|얼음도|얼음을 넣|no ice/g,'')),r.id);
+  }
+});
