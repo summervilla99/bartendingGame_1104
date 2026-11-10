@@ -503,3 +503,13 @@ button.st-night.on{background:linear-gradient(140deg,rgba(29,74,54,.58),rgba(201
 .st-compact .st-next span{display:block;line-height:1.35}
 .st-compact .st-more{display:flex;margin:12px auto 0;align-items:center;gap:6px}
 .st-compact .st-moreBody{margin-top:18px;padding-top:6px;border-top:1px solid var(--line)}
+
+/* ticket header: order no + toggle on one line, name + method badge on the next, never stacked or overlapping */
+.ticket summary{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"no toggle" "row row" "live live";align-items:center;gap:6px 8px}
+.ticket .tk-no{grid-area:no;min-width:0;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+.ticket .tk-no>span:first-child{overflow:hidden;text-overflow:ellipsis}
+.ticket .tk-toggle{grid-area:toggle;align-self:center;margin:0;white-space:nowrap}
+.ticket .tk-row{grid-area:row;flex-wrap:nowrap;align-items:center;gap:8px;min-width:0}
+.ticket .tk-row b{flex:1 1 auto;min-width:0;font-size:21px;line-height:1.15;word-break:keep-all;overflow-wrap:anywhere}
+.ticket .tk-method{flex:none;white-space:nowrap}
+.ticket .tk-live{grid-area:live;margin:0;white-space:nowrap}
