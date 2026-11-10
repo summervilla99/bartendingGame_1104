@@ -14,6 +14,11 @@ SEATS.push(mk('armchair','chair',-6.2,8.2,Math.PI/2,-.46,.25,-5.1,8.2,{ko:'라�
   SEATS.push(mk('benchR'+z,'bench',9.5,z,-Math.PI/2,-.46,.25,8.3,z,{ko:'소파 자리',en:'Sofa seat'}));
 });
 SEATS.push(mk('piano','piano',7.1,7.7,-.6,.18,.6,7.7,6.7,{ko:'피아노 의자',en:'Piano bench'}));
+/* the two armchairs on either side of the lounge table; the lounge guests (Haeun, Teo) sit there in some hours */
+SEATS.push(mk('lounge0','chair',-6.2,6.6,Math.PI/2,-.46,.25,-6.2,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
+SEATS.push(mk('lounge1','chair',-4.4,6.6,-Math.PI/2,-.46,.25,-4.4,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
+export const LOUNGE_SEAT_IDS=['lounge0','lounge1'];
+export function setLoungeTaken(flags){LOUNGE_SEAT_IDS.forEach((id,i)=>{const s=SEATS.find(x=>x.id===id);if(s)s.npc=!!flags[i];});}
 export const SEAT_MAX=SEATS.length;
 export const seatByWireId=n=>(Number.isInteger(n)&&n>=1&&n<=SEAT_MAX)?SEATS[n-1]:null;
 

@@ -186,3 +186,11 @@ test('order messages are validated',()=>{
   assert.equal(parseGameMessage(m({k:'claim',seat:'g7'})).seat,'g7');
   assert.equal(parseGameMessage(m({k:'claim',seat:'g8'})),null);
 });
+
+test('a friends room can switch the NPC guest\'s orders off',()=>{
+  const mk=npc=>createWorld(Object.assign({},DEFAULT,{time:'prime',mode:'service',chairs:4,limit:45,npcOrders:npc}),11,0);
+  const on=mk(true),off=mk(false);let nOn=0,nOff=0;
+  for(let t=0;t<120;t+=.5){if(tickOrders(on,t))nOn++;if(tickOrders(off,t))nOff++;}
+  assert.ok(nOn>0,'the NPC guest orders by default');assert.equal(nOff,0);
+  assert.ok(off.seats.every(s=>!s.order));
+});

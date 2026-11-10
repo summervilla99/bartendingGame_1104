@@ -21,6 +21,7 @@ export function tickOrders(world,now){
   if(world.session.mode==='tale')return null;               // the tale places its own orders
   if(now<world.nextOrderAt)return null;
   const T=TIMES[world.session.time],N=world.night;
+  if(world.session.chairs>0&&world.session.npcOrders===false){world.nextOrderAt=now+randRange(world,T.every[0],T.every[1]);return null;}      // friends room with the NPC guest's orders switched off
   const more=(world.session.mode!=='service'&&world.session.mode!=='story')||N.ordered<goalOf(world.session);
   const free=world.seats.filter(s=>s.active&&!s.order&&(!s.reaction||now>s.reaction.until));
   let ev=null;

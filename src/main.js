@@ -25,7 +25,7 @@ import {createStart} from './start.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
-import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree} from './game/seats.js';
+import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,FIRE_COOLDOWN} from './game/shared.js';
 import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
@@ -1206,7 +1206,21 @@ setInterval(()=>{
     if(document.hidden)broadcastWorld();
   }
 },1000);
+/* host switch: does the NPC guest at the left end of the bar order? */
+function refreshNpcRow(){
+  const row=$('#row-npc'),show=!!(net.active&&isHost()&&S.world&&S.world.session.chairs>0);
+  row.hidden=!show;if(!show)return;
+  const on=S.world.session.npcOrders!==false,b=$('#btn-npc');
+  b.textContent=t(on?'npc_on':'npc_off');b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('on',on);
+}
+$('#btn-npc').addEventListener('click',()=>{
+  if(!net.active||!isHost())return;
+  const on=S.world.session.npcOrders===false;                    // flip
+  S.world.session=Object.assign({},S.world.session,{npcOrders:on});S.world.rev++;commitWorld();
+  refreshNpcRow();toast(t(on?'npc_toast_on':'npc_toast_off'),2400);
+});
 function refreshRoomUI(){
+  refreshNpcRow();
   const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;if(!net.active&&!chatForm.hidden)closeChat();
   if(net.active){chip.setAttribute('aria-label',t('inv_aria',{code:net.code,n:net.count}));}
 }
@@ -1220,7 +1234,7 @@ function connectRoom(onl){
   net.join(code,name,myLook());setRoomParam(code);
   if(onl.mode==='create'){
     const limit=DIFFS[S.session.diff]||60,chairs=Math.max(2,Math.min(6,(onl.chairs|0)||4));
-    S.world.session=Object.assign({},S.world.session,{chairs,limit});
+    S.world.session=Object.assign({},S.world.session,{chairs,limit,npcOrders:onl.npc!==false});
     S.world.seats.forEach((st,i)=>{st.active=i===0;st.order=null;st.claim=null;});
     S.world.hostId=net.me.id;S.world.rev++;S.synced=true;
     adoptSession(S.world.session);commitWorld();refreshRoomUI();
@@ -1322,7 +1336,8 @@ function adoptSession(cfg){
   room.setStools(layoutStools(cfg.chairs||0));
   guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
   proxies.forEach(g=>{g.order=null;g.claimBy=null;g.claimName='';g.servedRev=0;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}});
-  loungers.forEach((g,i)=>{g.active=S.time.lounge.indexOf(i)>=0;});
+  loungers.forEach((g,i)=>{g.active=!(cfg.chairs>0)&&S.time.lounge.indexOf(i)>=0;});     // a friends room has one NPC guest, so the lounge chairs are free
+  setLoungeTaken(loungers.map(g=>g.active));
   npcs.forEach(g=>{
     g.fig.visible=g.active;g.order=null;g.reaction=null;g.talk=null;g.askedOrder=false;g.claimBy=null;g.claimName='';g.servedRev=0;
     if(g.drink){scene.remove(g.drink.group);g.drink=null;}

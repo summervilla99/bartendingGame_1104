@@ -9,7 +9,7 @@ const KINDS=['tale','room','practice'];
 export function createStart({root,recipes,getCfg,onPreview,onStart,onFirstTap,getMusic,onMusic,initialOnline,roomLock}){
   let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false;
   /* online choice lives outside the session config (it is per player, not part of the night) */
-  const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4},initialOnline||{});
+  const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4,npc:true},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const opt=(k,v,on,cls,inner,dis)=>'<button type="button" class="st-opt '+(cls||'')+(on?' on':'')+'" data-k="'+k+'" data-v="'+v+'"'+(dis?' disabled':'')+' aria-pressed="'+(on?'true':'false')+'">'+inner+'</button>';
   /* which of the three the screen is showing */
@@ -50,7 +50,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
           +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
           +'</div>'
-          +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div></div>':'')
+          +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div><div class="st-field"><span>'+t('st_npc')+'</span><div class="st-row st-chairs">'+opt('npc','on',onl.npc!==false,'st-guide',t('npc_on'))+opt('npc','off',onl.npc===false,'st-guide',t('npc_off'))+'</div></div></div><p class="st-note">'+t('st_npc_note')+'</p>':'')
           +'<p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
       }
       if(lock||onl.mode==='create')body+=hourMenu+'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t('diff_note3')+'</p>';
@@ -109,6 +109,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         err='';previewTime();
       }else if(k==='online'){onl.mode=v;err='';}
       else if(k==='chairs')onl.chairs=+v;
+      else if(k==='npc')onl.npc=v==='on';
       else if(k==='music'){if(onMusic)onMusic(v);}
       else{cfg[k]=v;if(k==='time')previewTime();}
       render();const c2=root.querySelector('.st-card');if(c2)c2.scrollTop=y;

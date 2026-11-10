@@ -55,3 +55,13 @@ test('photo spots are inside the room and apart from each other',()=>{
     assert.ok(inRoom(cx,cz),p.id+' photo camera would be outside the room');
   }
 });
+
+import {setLoungeTaken,LOUNGE_SEAT_IDS} from '../src/game/seats.js';
+test('the lounge armchairs are seats; they are taken only while the lounge guests sit there',()=>{
+  layoutStools(0);
+  const seats=LOUNGE_SEAT_IDS.map(id=>SEATS.find(s=>s.id===id));
+  assert.equal(seats.length,2);seats.forEach(s=>assert.ok(s&&s.kind==='chair'));
+  setLoungeTaken([true,false]);assert.equal(isFree(seats[0]),false);assert.equal(isFree(seats[1]),true);
+  setLoungeTaken([false,false]);seats.forEach(s=>assert.equal(isFree(s),true));      // a friends room: nobody in the lounge
+  setLoungeTaken([false,false]);
+});
