@@ -31,6 +31,7 @@ import {quip} from './game/quips.js';
 import {patienceOf,breakCombo} from './game/bonus.js';
 import {createZoom} from './zoom.js';
 import {createStart} from './start.js';
+import {LOOKS} from './looks.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
@@ -109,7 +110,18 @@ const allSeats=guests.concat(proxies);
 const bartender=makeCharacter(BARTENDER_CFG);bartender.position.set(-3.6,0,-1.95);scene.add(bartender);
 room.colliders.push({min:new THREE.Vector3(-3.85,0,-2.26),max:new THREE.Vector3(-3.35,2,-1.72)});
 
-const playerFig=makeCharacter(PLAYER_CFG);scene.add(playerFig);
+const LOOK_KEY='courte.look';
+const storedLook=()=>{let v=NaN;try{v=parseInt(localStorage.getItem(LOOK_KEY),10);}catch(_){}return v>=0&&v<LOOKS.length?v:-1;};
+const playerFig=makeCharacter(storedLook()>=0?LOOKS[storedLook()]:PLAYER_CFG);scene.add(playerFig);
+/* swap the player's design in place (the controller keeps a reference to this group) */
+function setDesign(i){
+  if(!(i>=0&&i<LOOKS.length))return;
+  try{localStorage.setItem(LOOK_KEY,String(i));}catch(_){}
+  const nf=makeCharacter(LOOKS[i]);
+  playerFig.children.slice().forEach(c=>playerFig.remove(c));
+  nf.children.slice().forEach(c=>playerFig.add(c));
+  playerFig.userData=nf.userData;playerFig.scale.copy(nf.scale);
+}
 const player=createPlayer({fig:playerFig,colliders:room.colliders,groundAt:room.groundAt,canvas,joyEl:$('#joy'),ceiling:ROOM.h});
 
 /* ingredient bottles on the counter rail */
@@ -1309,24 +1321,14 @@ function frame(now){
   if(firstFrame){firstFrame=false;requestAnimationFrame(()=>$('#loading').classList.add('gone'));}
 }
 /* ───────────── online room: walking sync (transport is local-tab for now, Supabase later) ───────────── */
-const NAME_KEY='courte.name',LOOK_KEY='courte.look';
+const NAME_KEY='courte.name';
 const transport=createTransport();
 const net=createRoom(transport,{now:()=>performance.now(),onChange:()=>refreshRoomUI()});
 if(transport.onStatus)transport.onStatus(st=>{if(st==='error')toast(t('net_error'),4500);refreshRoomUI();});
-const LOOKS=[
-  {skin:0xe2b291,top:0x1f3b52,shirt:0xe9dfcc,tie:0xc9a066,pants:0x1c1c20,hair:0x17100c},
-  {skin:0xc99372,top:0x5a1e1a,shirt:0xece2cf,pants:0x1e1a1c,hair:0x0e0806,hat:0x2b2522},
-  {skin:0xf0c8aa,top:0x2e4a3c,dress:true,sheen:true,hair:0x3b1f16,long:true,shoes:0x2a0d0d},
-  {skin:0xd9a885,top:0x3a2a4a,dress:true,sheen:true,hair:0x120a08,bun:true},
-  {skin:0xe5b99a,top:0x6a4a2a,shirt:0xf0e6d6,tie:0x5a1e1a,pants:0x2a221e,hair:0x2a1a10},
-  {skin:0xc89070,top:0x24262b,shirt:0xddd2bf,pants:0x161a24,hair:0x0e0a08,hat:0x4a3a2a},
-  {skin:0xeac2a4,top:0x7a2a3a,dress:true,sheen:true,hair:0x2a1a10,long:true},
-  {skin:0xb8805e,top:0x2b3a2a,shirt:0xe6e0d4,tie:0x9c7239,pants:0x1a1c18,hair:0x120c10}
-];
 const remotes=new Map(),tagV=new THREE.Vector3();
 function myLook(){
   let v=NaN;try{v=parseInt(localStorage.getItem(LOOK_KEY),10);}catch(_){}
-  if(!(v>=0&&v<LOOKS.length)){v=Math.floor(Math.random()*LOOKS.length);try{localStorage.setItem(LOOK_KEY,String(v));}catch(_){}}
+  if(!(v>=0&&v<LOOKS.length)){v=Math.floor(Math.random()*5);setDesign(v);}      // nobody chose yet: one of the five designs
   return v;
 }
 function setRoomParam(code){const u=new URL(location.href);if(code)u.searchParams.set('room',code);else u.searchParams.delete('room');history.replaceState(null,'',u);}
@@ -1920,6 +1922,7 @@ const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session
   onFirstTap:()=>startMusicOnOpen(true),
   onStill:(id,done)=>{const pc=$('#peek-close');setStill(id);pc.hidden=false;pc.onclick=()=>{setStill(null);pc.hidden=true;done();};},
   getMusic:startMusicChoice,onMusic:g=>setMusic(g,false),          // the first tap on the start screen is the browser's cue to let the music begin
+  getDesign:()=>Math.max(0,storedLook()),onDesign:setDesign,
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),

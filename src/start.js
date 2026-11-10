@@ -3,11 +3,13 @@ import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,DIFFS,STAGES,stageOf,isUnlocked,loa
 import {normalizeCode,CODE_LEN} from './net/room.js';
 import {NIGHTS,ENDINGS} from './story/nights.js';
 import {loadTale,isNightOpen,resetTale} from './story/save.js';
+import {DESIGNS} from './looks.js';
+import {portraitOf} from './portrait.js';
 
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
-export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,initialOnline,roomLock}){
-  let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false;
+export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,getDesign,onDesign,initialOnline,roomLock}){
+  let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false,design=0;
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4,npc:true},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -87,13 +89,17 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +'<button class="btn lg primary st-go" id="st-back" type="button">'+t('gal_back')+'</button></div>';
       return;
     }
+    const designHtml=onDesign?'<h2>'+t('st_design')+'</h2><div class="st-row st-designs">'+DESIGNS.map((d,i)=>{
+      const img=portraitOf('design:'+d.id,d.look,'smile');
+      return opt('design',i,design===i,'st-design',(img?'<img src="'+img+'" alt="">':'<span class="st-ph"></span>')+'<b>'+t('design_n',{n:i+1})+'</b><i>'+esc(tr(d.name))+'</i>');
+    }).join('')+'</div>':'';
     const mus=getMusic?getMusic():'jazz';
     const musicHtml=(kind==='room'&&onl.mode==='join'&&!lock)?'':'<h2>'+t('st_music')+'</h2><div class="st-row st-music">'+['jazz','classical','house','off'].map(g=>opt('music',g,mus===g,'st-guide',t('mus_'+g))).join('')+'</div>';
     /* a returning story player sees the next night first; every other menu folds away below it */
     const head='<div class="st-head"><span class="neon">Bar Coda</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>';
     if(compact){
       const nn=cfg.night||nextNight(),def=NIGHTS.find(x=>x.n===nn),all=NIGHTS.every(x=>tale.done[x.n]),dn=Object.keys(tale.done).length;
-      const full='<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'+body+musicHtml
+      const full=designHtml+'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'+body+musicHtml
         +(kind==='tale'?'':'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button>');
       root.innerHTML='<div class="st-card st-compact" role="dialog" aria-labelledby="st-h">'+head
         +'<h1 id="st-h">'+t(all?'st_replay':'st_next')+'</h1><p class="st-sub">'+t('st_next_note',{n:dn})+'</p>'
@@ -105,6 +111,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
       +head
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
+      +designHtml
       +'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'
       +body
       +musicHtml
@@ -148,6 +155,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       else if(k==='level'){if(v==='free')cfg.mode='practice';else{cfg.mode='story';cfg.stage=v;}}
       else if(k==='chairs')onl.chairs=+v;
       else if(k==='npc')onl.npc=v==='on';
+      else if(k==='design'){design=+v;if(onDesign)onDesign(design);}
       else if(k==='music'){if(onMusic)onMusic(v);}
       else if(k==='limit'){const kd=kindOf()==='room'?'room':'practice';if(v==='off')cfg.timers[kd]=false;else{cfg.timers[kd]=true;cfg.diff=v;}}
       else{cfg[k]=v;if(k==='time')previewTime();}
@@ -162,7 +170,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
   onLang(()=>{if(open)render();});
   function nextNight(){const tl=loadTale();const n=NIGHTS.find(x=>!tl.done[x.n]&&isNightOpen(x.n,tl));return n?n.n:NIGHTS[NIGHTS.length-1].n;}
   function show(){
-    view='main';confirmReset=false;more=false;
+    view='main';confirmReset=false;more=false;design=getDesign?getDesign():0;
     cfg=Object.assign({},getCfg());cfg.night=nextNight();
     cfg.timers=Object.assign({room:true,practice:false},cfg.timers);                 // remembered per kind of play
     if(onl.mode!=='solo')cfg.mode='service';                       // joining or creating a room

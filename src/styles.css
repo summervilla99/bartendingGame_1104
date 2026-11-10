@@ -657,3 +657,12 @@ body.xmas #start .st-card{position:relative;z-index:1}
 
 .k-more{appearance:none;cursor:pointer;display:block;margin:6px 0 0 auto;padding:6px 4px;background:none;border:0;color:var(--brass);font:600 11.5px var(--f-ui);letter-spacing:.04em;text-decoration:underline;text-underline-offset:3px;opacity:.85}
 .k-more:hover{opacity:1}
+
+/* character design picker on the start screen */
+.st-designs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.st-design{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 10px;text-align:center}
+.st-design img{width:64px;height:76px;object-fit:contain;display:block}
+.st-design .st-ph{width:64px;height:76px;display:block;border-radius:12px;background:rgba(255,255,255,.05)}
+.st-design b{font:600 13px/1.2 var(--f-ui)}
+.st-design i{font-size:10px;letter-spacing:.04em;color:var(--text-3)}
+@media (max-width:520px){.st-designs{grid-template-columns:repeat(3,1fr)}}
