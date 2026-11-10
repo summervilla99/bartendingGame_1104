@@ -22,9 +22,13 @@ export const FAMILIES={
   long:['highball','paloma','tomcollins','mojito','moscowmule','americano'],
   agave:['margarita','tommys','paloma','mezcalnegroni','amberhour'],
   gin:['negroni','gimlet','tomcollins','whitenegroni','velvetrose'],
-  house:['courtenoir','amberhour','velvetrose']
+  house:['courtenoir','amberhour','velvetrose'],
+  sparkling:['aperolspritz','french75','mimosa','kirroyale','sbagliato','poinsettia','maesilspritz'],
+  creamy:['whiterussian','blackrussian','mudslide','pinacolada','godfather','amarettosour','makgeollicolada','whitechristmas','snowyespresso'],
+  korean:['sojufizz','sojutonic','yuzuhighball','grapefruitsoju','maesilhighball','maesilspritz','makgeollimojito','makgeollisour','makgeollicolada','yuzumartini','sojunegroni','maesilfashioned'],
+  xmas:['poinsettia','christmasmule','whitechristmas','cranberrysidecar','mistletoemojito','snowyespresso']
 };
-export const FAM_ORDER=['all','sours','stirred','long','agave','gin','house'];
+export const FAM_ORDER=['all','sours','stirred','long','agave','gin','sparkling','creamy','korean','xmas','house'];
 
 /* Modes: story = solo scenario (stages), service = a free night with a goal, practice = no limits, lab = soon. */
 export const MODES=['tale','practice','service'];     // story = the tale, practice = solo cocktail practice, service = a room with friends
@@ -78,6 +82,6 @@ export function saveSession(c){try{localStorage.setItem(KEY,JSON.stringify(c));}
 export function poolFor(cfg,recipes){
   if(cfg.mode==='story'){const ids=stageOf(cfg).recipes;return recipes.filter(r=>ids.indexOf(r.id)>=0);}
   const ids=FAMILIES[cfg.menu];
-  const p=ids?recipes.filter(r=>ids.indexOf(r.id)>=0):recipes.slice();
+  const p=ids?recipes.filter(r=>ids.indexOf(r.id)>=0):recipes.filter(r=>!r.season);   // seasonal drinks only come with their own menu
   return p.length?p:recipes.slice();
 }

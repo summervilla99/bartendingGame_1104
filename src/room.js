@@ -114,6 +114,41 @@ function rugTex(){
     g.globalAlpha=.07;for(let k=0;k<5000;k++){g.fillStyle=Math.random()<.5?'#000':'#c08050';g.fillRect(Math.random()*w,Math.random()*h,2,2);}
   });
 }
+/* wall art styles unlocked as decor: each paints into the same 256x180 canvas */
+const grain=(g,w,h)=>{g.globalAlpha=.08;for(let k=0;k<1500;k++){g.fillStyle=Math.random()<.5?'#000':'#fff';g.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}g.globalAlpha=1;};
+const ART={
+  jazz:(g,w,h,seed)=>{
+    g.fillStyle=['#14100c','#1a110d','#120e0c'][seed%3];g.fillRect(0,0,w,h);
+    const cx=w*(.4+(seed%3)*.08),cy=h*.5,R=h*.4;
+    g.fillStyle='#0a0807';g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.fill();
+    g.strokeStyle='rgba(255,230,190,.09)';g.lineWidth=1;for(let r=R*.35;r<R;r+=3.2){g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.stroke();}
+    g.fillStyle='#c9a066';g.beginPath();g.arc(cx,cy,R*.3,0,Math.PI*2);g.fill();g.fillStyle='#14100c';g.beginPath();g.arc(cx,cy,R*.04,0,Math.PI*2);g.fill();
+    g.fillStyle='#c9a066';g.strokeStyle='#c9a066';g.lineWidth=3;
+    [[.82,.28],[.9,.5]].forEach(([nx,ny])=>{g.beginPath();g.ellipse(w*nx,h*ny+14,7,5,-.4,0,Math.PI*2);g.fill();g.beginPath();g.moveTo(w*nx+6,h*ny+12);g.lineTo(w*nx+6,h*ny-18);g.stroke();});
+    grain(g,w,h);
+  },
+  moon:(g,w,h,seed)=>{
+    const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0e1630');gr.addColorStop(1,'#35203f');g.fillStyle=gr;g.fillRect(0,0,w,h);
+    const mx=w*(.62+(seed%3)*.07),my=h*.32;
+    const gl=g.createRadialGradient(mx,my,4,mx,my,h*.5);gl.addColorStop(0,'rgba(255,240,200,.5)');gl.addColorStop(1,'rgba(255,240,200,0)');g.fillStyle=gl;g.fillRect(0,0,w,h);
+    g.fillStyle='#efe3c4';g.beginPath();g.arc(mx,my,h*.15,0,Math.PI*2);g.fill();
+    g.fillStyle='#0a0710';let x=0;while(x<w){const bw=14+((x*7+seed*11)%22),bh=h*(.22+(((x*13+seed*5)%40)/100));g.fillRect(x,h-bh,bw,bh);g.fillStyle='#0a0710';x+=bw+2;}
+    g.fillStyle='#e9b866';for(let k=0;k<26;k++){g.globalAlpha=.4+((k*37)%60)/100;g.fillRect(((k*53+seed*17)%(w-6)),h*(.68+((k*29)%30)/100),3,4);}g.globalAlpha=1;
+    grain(g,w,h);
+  },
+  cats:(g,w,h,seed)=>{
+    g.fillStyle=['#0f2418','#10261c','#0d2016'][seed%3];g.fillRect(0,0,w,h);
+    g.fillStyle='rgba(201,160,102,.5)';g.beginPath();g.arc(w*.22,h*.26,h*.13,0,Math.PI*2);g.fill();
+    const cx=w*(.5+(seed%3)*.06),by=h*.9;g.fillStyle='#07100a';
+    g.beginPath();g.ellipse(cx,by-h*.2,h*.22,h*.26,0,0,Math.PI*2);g.fill();
+    g.beginPath();g.arc(cx,by-h*.58,h*.15,0,Math.PI*2);g.fill();
+    g.beginPath();g.moveTo(cx-h*.14,by-h*.64);g.lineTo(cx-h*.1,by-h*.82);g.lineTo(cx-h*.02,by-h*.7);g.closePath();g.fill();
+    g.beginPath();g.moveTo(cx+h*.14,by-h*.64);g.lineTo(cx+h*.1,by-h*.82);g.lineTo(cx+h*.02,by-h*.7);g.closePath();g.fill();
+    g.strokeStyle='#07100a';g.lineWidth=8;g.lineCap='round';g.beginPath();g.moveTo(cx+h*.2,by-h*.1);g.bezierCurveTo(cx+h*.5,by-h*.1,cx+h*.42,by-h*.5,cx+h*.3,by-h*.42);g.stroke();
+    g.fillStyle='#e8b04a';[-1,1].forEach(d=>{g.beginPath();g.ellipse(cx+d*h*.06,by-h*.59,h*.028,h*.04,0,0,Math.PI*2);g.fill();});
+    grain(g,w,h);
+  }
+};
 function painting(seed){
   return canvasTex(256,180,(g,w,h)=>{
     g.fillStyle=['#1c1410','#221614','#18120f'][seed%3];g.fillRect(0,0,w,h);
@@ -302,10 +337,12 @@ export function buildRoom(scene){
   const neonGlow=add(glow(5.5,2.2,0xd9a860,.07));neonGlow.position.set(0,4.7,-2.58);
 
   /* art, sconces */
+  const arts=[];
   const frame=(w,h,seed,p)=>{
     const g=new THREE.Group();
     box(w+.16,h+.16,.05,brass,0,0,0,g);box(w+.04,h+.04,.06,trim,0,0,.01,g);
-    const pm=new THREE.Mesh(new THREE.PlaneGeometry(w,h),M(0xffffff,{map:painting(seed),roughness:.9,envMapIntensity:0}));pm.position.z=.045;g.add(pm);
+    const tex=painting(seed);arts.push({tex,seed,classic:tex.image.getContext('2d').getImageData(0,0,256,180)});
+    const pm=new THREE.Mesh(new THREE.PlaneGeometry(w,h),M(0xffffff,{map:tex,roughness:.9,envMapIntensity:0}));pm.position.z=.045;g.add(pm);
     p.add(g);return g;
   };
   const sconce=(p,y)=>{
@@ -514,7 +551,7 @@ export function buildRoom(scene){
   }
   function groundAt(x,z){return Math.hypot(x-STAGE.x,z-STAGE.z)<STAGE.r-.05?STAGE.h:0;}
   /* Hour of the night: lights, window view, neon strength. look comes from session.js TIMES. */
-  let neonK=1,curSky=null,lastLook=null,snow=false;
+  let neonK=1,curSky=null,lastLook=null,snow=false,tint=null;const tintC=new THREE.Color();
   /* snow behind the window glass is painted onto the city texture */
   function paintSnow(g,w,h){
     let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
@@ -526,7 +563,7 @@ export function buildRoom(scene){
   function setTime(look){
     lastLook=look;
     hemi.color.setHex(look.hemi[0]);hemi.groundColor.setHex(look.hemi[1]);hemi.intensity=look.hemi[2];
-    pend.forEach(l=>{l.color.setHex(look.pend[0]);l.intensity=look.pend[1];});
+    pend.forEach(l=>{l.color.setHex(look.pend[0]);if(tint!=null)l.color.lerp(tintC.setHex(tint),.55);l.intensity=look.pend[1];});
     key.color.setHex(look.key[0]);key.intensity=look.key[1];
     bbLight.intensity=look.bb;loungeLight.intensity=look.lounge;stageLight.intensity=look.stage;
     neonK=look.neon;
@@ -541,5 +578,14 @@ export function buildRoom(scene){
       else{st.c.min.x=st.c.max.x=1e4;}
     });
   }
-  return {colliders,animate,groundAt,drawNeon,setTime,setStools,setSnow};
+  /* decor: counter-pendant light colour (null = natural amber) and the wall art style */
+  function setTint(hex){tint=hex==null?null:hex;if(lastLook)setTime(lastLook);}
+  function setArt(style){
+    arts.forEach(a=>{
+      const c=a.tex.image,g=c.getContext('2d');
+      if(ART[style])ART[style](g,c.width,c.height,a.seed);else g.putImageData(a.classic,0,0);
+      a.tex.needsUpdate=true;
+    });
+  }
+  return {colliders,animate,groundAt,drawNeon,setTime,setStools,setSnow,setTint,setArt};
 }

@@ -250,3 +250,12 @@ src/
 - 6~7일 밤 컷: 편지, 단골 총집합, 윤재의 제안, 헬멧, 서랍, 소주, 제목, 연주 / 마스터 귀환(문), 마지막 잔, 3년 전 회상(세피아), 재회, 엔딩 3종(이어짐=피아노에 나란히 앉아 연탄, 좋은 친구=스툴에서 듣기, 엇갈림=빈 스툴과 노트), 열쇠. 새 컷은 `STILLS` 에 추가하고 노드에 연결(테스트가 id/캡션/인물 룩을 검사).
 - **인물 카드/하트 카드**(`src/portrait.js` 흉상 렌더, `main.js` `cutPush/cutFromEvent`): 인물이 입장할 때마다 얼굴 + 이름 + 한 줄 소개(`CHARS[who].intro`), 하트가 바뀔 때(엔진 이벤트 `{k:'heart',who,n,now}`) 얼굴 + ♥ 개수. `bond` 는 서윤 × 윤하 두 얼굴. 스토리 전체(1~7밤)에 적용.
 - 트리는 뒤쪽 왼쪽 구석(카운터 오른쪽 끝 옆, 통로 밖)으로 옮겼다.
+
+## 레시피 확장, 연습 메뉴 선택, 일시정지, 소셜 보너스, 꾸미기, 후일담
+
+- **재료/레시피**: 재료 41종(탭 5개: `spirit`/`liqueur`/`wine`(발효주)/`juice`/`mixer`), 레시피 73종. 한쪽 레일 최대 6병(탭당 12병). 새 재료는 `data.js` + `bottles.js` 의 `V()` 변형. 한국 술 계열(`korean:true`: 소주/막걸리/매실주/유자청), 크리스마스 한정(`season:'xmas'`)은 `FAMILIES.xmas` 메뉴에서만 주문되고 `all` 풀에서는 빠진다. 메뉴 계열 `sparkling`/`creamy`/`korean`/`xmas` 추가. 새 레시피마다 `TIPS` 필수(테스트).
+- **연습 모드 메뉴 선택**: 걷기 화면의 `메뉴에서 고르기`(`#btn-pick`, 혼자 하기 연습만) → 계열 칩 + 전체 레시피 목록(재료 요약 포함). 고르면 `world.js` `orderRecipe` 가 빈 손님 자리에 그 주문을 만든다(`applyOrderEv`). 빈 자리가 없으면 안내.
+- **혼자 하기 일시정지**: 상단 ⏸ 버튼 또는 `P`(Esc 로 계속). `S.userPause` 동안 프레임 dt=0(주문/애니메이션/타이머 정지), 바텐딩 제한시간(`S.barEnd`)은 재개 때 정지한 시간만큼 미룬다. 방(net)에서는 없음.
+- **소셜 보너스**(`game/social.js`, 순수): 같이 건배 = 두 사람이 2.5초 안에 `cheers`, 4.5m 안이면 방장이 팁 +₩2,000(같은 쌍 20초 쿨다운). 한 잔 사기 = 스테이션의 바텐더에게 `gift`(+₩1,500, 보내는 사람당 45초). `world.social={n,cool,toast,gift}`; 화면 효과는 `checkSocialFx` 가 `n` 으로 한 번만. 메시지 `{k:'toast',with}`/`{k:'gift',to}` 는 `parseGameMessage` 가 검증하고 방장이 거리/존재를 다시 확인한다.
+- **가게 꾸미기**(`src/decor.js`, 설정 ⚙ "가게 꾸미기"): 누적 팁(`courte.earned`)으로 조명 색(`room.setTint`)·벽 액자 그림(`room.setArt`: jazz/moon/cats)·코스터(`props.js makeCoaster`, 서빙한 잔 밑) 해금. 선택은 `courte.decor`; 방에서는 방장의 선택이 `session.decor` 로 모두에게 적용되고 방장만 바꾼다. 새 해금은 토스트.
+- **후일담 밤 8~11**(`story/epilogue.js`): 7일 밤 클리어 뒤 열린다(태식 소주병 / 깡이 라이더 / 윤재 첫 월급 / 서윤·윤하 크리스마스 이브). 하트는 해당 손님만 올리고 `bond` 는 건드리지 않는다. 11일 밤은 `bond ≥ 4` 로 분기(스틸 `end_love`/`end_friend`). 엔딩 갤러리에서 본 엔딩마다 `3D 컷 보기`(`ENDINGS[].still`, `start.js` `onStill`)로 스틸을 다시 볼 수 있다.

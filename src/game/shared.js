@@ -4,6 +4,7 @@ import {RECIPE_BY_ID} from './bartending.js';
 import {restore,VERSION} from './world.js';
 import {randRange} from './rng.js';
 import {bonusOf,recordServe,breakCombo,patienceOf} from './bonus.js';
+import {ID_RE} from './social.js';
 
 /* Shared-night rules for a room. The host runs these on its copy of the world and broadcasts snapshots; everyone else only
    sends requests (claim / unclaim / served). Pure and JSON-only, so it is the same code a server would run. */
@@ -140,6 +141,8 @@ export function parseGameMessage(raw){
     out.gar=typeof raw.gar==='string'&&GARNISH.some(g=>g.id===raw.gar)?raw.gar:'none';
     return out;
   }
+  if(k==='toast'){if(typeof raw.with!=='string'||!ID_RE.test(raw.with))return null;out.with=raw.with;return out;}
+  if(k==='gift'){if(typeof raw.to!=='string'||!ID_RE.test(raw.to))return null;out.to=raw.to;return out;}
   if(k==='claim'||k==='unclaim'){if(!SEAT_RE.test(raw.seat))return null;out.seat=raw.seat;return out;}
   if(k==='served'){
     if(!SEAT_RE.test(raw.seat)||!RECIPE_BY_ID[raw.rec])return null;

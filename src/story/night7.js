@@ -110,7 +110,7 @@ export const NIGHT7={n:7,entry:'o1',graph:GRAPH7,title:{ko:'일곱째 밤',en:'T
 /* The endings for the gallery: the same narration the player reads, shown again from the start screen. */
 const endText=ids=>ids.map(id=>GRAPH7[id].text);
 export const ENDINGS=[
-  {id:'ending_love',title:{ko:'이어짐',en:'Together'},hint:{ko:'서윤 × 윤하의 인연이 4 이상',en:'Seoyun × Yunha bond of 4 or more'},text:endText(['end_love','end_love2'])},
-  {id:'ending_friend',title:{ko:'좋은 친구',en:'Dear friends'},hint:{ko:'서윤 × 윤하의 인연이 2~3',en:'Seoyun × Yunha bond of 2–3'},text:endText(['end_friend','end_friend2'])},
-  {id:'ending_apart',title:{ko:'엇갈림',en:'Apart, yet connected'},hint:{ko:'서윤 × 윤하의 인연이 0~1',en:'Seoyun × Yunha bond of 0–1'},text:endText(['end_apart','end_apart2'])}
+  {id:'ending_love',still:'end_love',title:{ko:'이어짐',en:'Together'},hint:{ko:'서윤 × 윤하의 인연이 4 이상',en:'Seoyun × Yunha bond of 4 or more'},text:endText(['end_love','end_love2'])},
+  {id:'ending_friend',still:'end_friend',title:{ko:'좋은 친구',en:'Dear friends'},hint:{ko:'서윤 × 윤하의 인연이 2~3',en:'Seoyun × Yunha bond of 2–3'},text:endText(['end_friend','end_friend2'])},
+  {id:'ending_apart',still:'end_apart',title:{ko:'엇갈림',en:'Apart, yet connected'},hint:{ko:'서윤 × 윤하의 인연이 0~1',en:'Seoyun × Yunha bond of 0–1'},text:endText(['end_apart','end_apart2'])}
 ];

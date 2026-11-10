@@ -36,6 +36,17 @@ export function tickOrders(world,now){
   return ev;
 }
 
+/* Practice: the player picks a drink from the whole menu. A free guest orders it right away (any recipe, not just the night's pool). Returns the same event as tickOrders, or null when no guest is free. */
+export function orderRecipe(world,recipeId,now){
+  const r=RECIPES.find(x=>x.id===recipeId);
+  if(!r)return null;
+  const free=world.seats.filter(s=>s.active&&!s.order&&(!s.reaction||now>s.reaction.until));
+  if(!free.length)return null;
+  const seat=pickFrom(world,free),N=world.night;
+  seat.order={recipeId:r.id,at:now,rush:false};seat.last=r.id;seat.reaction=null;seat.served=null;N.ordered++;world.rev++;
+  return {seatId:seat.id,recipeId:r.id,rush:false};
+}
+
 /* Drink handed over: the seat is free again; the guest reacts for a few seconds and the next order comes a bit sooner. */
 export function releaseSeat(world,seatId,now,stars){
   const seat=world.seats.find(s=>s.id===seatId);
@@ -63,6 +74,7 @@ export function restore(snap){
   if(w.seats.some(s=>s.order&&!ok(s.order.recipeId)))return null;
   if(!Array.isArray(w.stations)||w.stations.length!==STATION_COUNT||typeof w.rev!=='number'||typeof w.fired!=='object'||!w.fired)return null;
   if(snap.drink&&!ok(snap.drink.recipeId))return null;
+  if(w.social!=null&&(typeof w.social!=='object'||Array.isArray(w.social)))delete w.social;
   return {world:w,drink:snap.drink||null};
 }
 export {nextRandom};

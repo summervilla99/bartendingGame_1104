@@ -10,7 +10,8 @@ import {NIGHTS,CHARS as TALE_CHARS} from './story/nights.js';
 import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
-import {makeProp} from './props.js';
+import {makeProp,makeCoaster} from './props.js';
+import {DECOR,DECOR_KINDS,DEFAULT_DECOR,optionOf,loadEarned,addEarned,loadDecor,saveDecor,cleanDecor} from './decor.js';
 import {createFx} from './fx.js';
 import {buildXmas} from './xmas.js';
 import {makeCat} from './cat.js';
@@ -24,7 +25,7 @@ import {buildEnv} from './env.js';
 import {createComposer} from './composer.js';
 import {buildRoom,brass,COUNTER_TOP,STOOL_Z,BAR_ZONE,ROOM} from './room.js';
 import {makeBottle} from './bottles.js';
-import {TIMES,loadSession,saveSession,poolFor,STAGES,stageOf,goalOf,limitOf,DIFFS,clearStage} from './session.js';
+import {TIMES,FAMILIES,FAM_ORDER,loadSession,saveSession,poolFor,STAGES,stageOf,goalOf,limitOf,DIFFS,clearStage} from './session.js';
 import {quip} from './game/quips.js';
 import {patienceOf,breakCombo} from './game/bonus.js';
 import {createZoom} from './zoom.js';
@@ -34,7 +35,8 @@ import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
 import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken,canOrderFrom,dropFor} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,FIRE_COOLDOWN} from './game/shared.js';
-import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
+import {jointToast,giftDrink,pruneSocial,TOAST_RANGE,TOAST_WINDOW_MS} from './game/social.js';
+import {createWorld,tickOrders,orderRecipe,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
 import {createPlayer} from './player.js';
 
@@ -276,7 +278,9 @@ function updateOrders(){
   if(S.paused)return;
   if(net.active){if(isHost())hostTick();return;}
   const ev=tickOrders(S.world,time);
-  if(!ev)return;
+  if(ev)applyOrderEv(ev);
+}
+function applyOrderEv(ev){
   const g=guestById(ev.seatId);
   g.order=RECIPE_BY_ID[ev.recipeId];g.orderAt=time;g.rush=!!ev.rush;
   if(g.drink){scene.remove(g.drink.group);g.drink=null;}
@@ -705,6 +709,7 @@ function showResult(){
     S.claimSeat=null;
   }else settleDrink(S.world,S.drink);
   renderResult();
+  {const e=addEarned(r.tip);if(e.fresh.length)setTimeout(()=>toast(t('decor_new',{name:tr(e.fresh[0].opt.n)}),4200),1800);}
   $('#btn-r-next').disabled=S.tale?false:pendingGuests().filter(x=>x!==g).length<1;
   $('#btn-r-next').textContent=S.tale?t('tale_next'):t('r_next');$('#btn-r-leave').hidden=!!S.tale;
   el.result.hidden=false;
@@ -721,6 +726,7 @@ function spawnDrinkProp(g,d){
   const prop=makeGlass(rc.glass);prop.group.scale.setScalar(.8);
   if(d.drop)prop.group.position.set(d.drop.x,d.drop.y,d.drop.z);else prop.group.position.set(g.x,COUNTER_TOP,.45);       // a cafe table for seats away from the bar
   prop.setLevel(d.ml);prop.setColor(d.col);if(iceOf(rc))prop.setIce(iceOf(rc));
+  if(S.decor&&S.decor.coaster!=='none'){const co=makeCoaster(S.decor.coaster);prop.group.add(co);}
   scene.add(prop.group);if(g.drink)scene.remove(g.drink.group);g.drink=prop;
 }
 function finishService(){
@@ -851,6 +857,43 @@ function playEmote(kind){
     toast(t('toast_cheers'));
   }
 }
+/* two players raising a glass together within a couple of seconds and a few metres: the host pays a tip bonus */
+function checkJointToast(){
+  const e=S.emote;
+  if(!net.active||!e||e.kind!=='cheers'||e.toasted)return;
+  const mine=e.until-EMOTE_MS.cheers;
+  net.peers.forEach((p,id)=>{
+    if(e.toasted||p.emote!=='cheers')return;
+    if(Math.abs((p.emoteUntil-EMOTE_MS.cheers)-mine)>TOAST_WINDOW_MS)return;
+    if(Math.hypot(p.x-player.pos.x,p.z-player.pos.z)>TOAST_RANGE)return;
+    e.toasted=true;sendAct({k:'toast',with:id});
+  });
+}
+/* the gift button: someone is working a station and I am not that person */
+const giftTarget=()=>net.active&&S.world?S.world.stations.find(id=>id&&id!==net.me.id)||null:null;
+let giftHideUntil=0;
+$('#btn-gift').addEventListener('click',()=>{
+  const to=giftTarget();if(!to||performance.now()<giftHideUntil){toast(t('gift_wait'),1800);return;}
+  giftHideUntil=performance.now()+3000;
+  sendAct({k:'gift',to});toast(t('gift_sent',{name:nameOf(to)}),2400);
+});
+/* Show each social event once: the toast to the two who cheered, the gift to the bartender (a sparkle at the station for everyone). */
+function checkSocialFx(w,quiet){
+  const so=w.social;
+  if(!so){S.socialSeen=0;return;}
+  const seen=S.socialSeen||0;S.socialSeen=so.n;
+  if(quiet)return;
+  const tz=so.toast,gf=so.gift;
+  if(tz&&tz.n>seen&&(tz.a===net.me.id||tz.b===net.me.id)){
+    toast(t('toast_joint',{bonus:won(tz.bonus)}),3000);Snd.clink(1);setTimeout(()=>Snd.cheer(2),250);
+    fx.burst({x:player.pos.x,y:1.6,z:player.pos.z,n:40,color:0xffd36a,speed:1.1,up:1.8,gravity:2.6,life:1.1,spread:.2});
+  }
+  if(gf&&gf.n>seen){
+    const st=w.stations.indexOf(gf.b),sx=st>=0?STATION_X[st]:0;
+    fx.burst({x:sx,y:COUNTER_TOP+.3,z:-.6,n:34,color:0xffc060,speed:.9,up:1.6,gravity:2.4,life:1.1,spread:.15});Snd.clink(.8);
+    if(gf.b===net.me.id)toast(t('gift_got',{name:nameOf(gf.a)}),4200);
+  }
+}
 function updatePlayerPose(){
   const nowT=performance.now();
   if(S.seat){
@@ -881,26 +924,65 @@ const myOpenOrder=()=>S.world&&S.world.seats.find(x=>x.customer===net.me.id&&x.o
 function updateOrderBtn(){
   const show=!!(net.active&&canOrderFrom(S.seat)&&S.world&&S.world.session.chairs>0&&!myOpenOrder()&&!S.photo);
   const b=$('#btn-order');if(b.hidden===show)b.hidden=!show;
+  const pk=!!(!net.active&&S.session&&S.session.mode==='practice'&&S.mode==='walk'&&!S.paused&&!S.photo&&!S.userPause),pb=$('#btn-pick');if(pb.hidden===pk)pb.hidden=!pk;
 }
-function openOrderMenu(){
+/* the order menu: friends mode lists the night's pool; solo practice lists every cocktail, filtered by menu family, and the guest orders the one picked */
+S.pickFam='all';
+function fillOrderList(){
   const list=$('#order-list');list.innerHTML='';
-  poolFor(S.world.session,RECIPES).forEach(r=>{
+  const pick=!!S.pickMenu,ids=pick?(FAMILIES[S.pickFam]||null):null;
+  const rs=pick?RECIPES.filter(r=>!ids||ids.indexOf(r.id)>=0):poolFor(S.world.session,RECIPES);
+  rs.forEach(r=>{
     const b=document.createElement('button');b.type='button';b.className='oc';b.dataset.r=r.id;
     const n=document.createElement('b');n.textContent=r.name;
     const m=document.createElement('span');m.className='tk-method m-'+r.method;m.textContent=METHOD_NAME[r.method];
-    const g=document.createElement('small');g.textContent=GLASS_NAME[r.glass];
-    b.append(n,m,g);list.appendChild(b);
+    const g=document.createElement('small');g.textContent=GLASS_NAME[r.glass]+(r.season?' · '+t('fam_xmas'):'');
+    b.append(n,m,g);
+    if(pick){const i=document.createElement('span');i.className='oc-ing';i.textContent=Object.keys(r.parts).map(k=>ING[k].name).join(' · ');b.appendChild(i);}
+    list.appendChild(b);
   });
+}
+function openOrderMenu(pick){
+  S.pickMenu=pick===true;
+  const fams=$('#order-fams');fams.hidden=!S.pickMenu;
+  $('#order-h').textContent=t(S.pickMenu?'pick_title':'order_title');
+  if(S.pickMenu){
+    fams.innerHTML='';
+    FAM_ORDER.forEach(f=>{const b=document.createElement('button');b.type='button';b.className='fchip'+(f===S.pickFam?' on':'');b.dataset.f=f;b.textContent=t('fam_'+f);fams.appendChild(b);});
+  }
+  fillOrderList();
   $('#order-menu').hidden=false;
 }
-$('#btn-order').addEventListener('click',openOrderMenu);
+$('#btn-order').addEventListener('click',()=>openOrderMenu(false));
+$('#btn-pick').addEventListener('click',()=>{if(S.mode==='walk'&&!S.paused)openOrderMenu(true);});
+$('#order-fams').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-f]');if(!b)return;
+  S.pickFam=b.dataset.f;$('#order-fams').querySelectorAll('.fchip').forEach(c=>c.classList.toggle('on',c===b));fillOrderList();$('#order-list').scrollTop=0;
+});
 $('#order-close').addEventListener('click',()=>{$('#order-menu').hidden=true;});
 $('#order-list').addEventListener('click',e=>{
   const b=e.target.closest('button[data-r]');if(!b)return;
   $('#order-menu').hidden=true;
+  if(S.pickMenu){
+    const ev=orderRecipe(S.world,b.dataset.r,time);
+    if(ev){applyOrderEv(ev);toast(t('pick_sent',{drink:RECIPE_BY_ID[b.dataset.r].name}),2600);}else toast(t('pick_full'),3200);
+    return;
+  }
   const r=sendAct({k:'order',rec:b.dataset.r});
   if(!(r&&!r.ok))toast(t('order_sent'),2500);else toast(t('order_full'));
 });
+/* solo pause: freezes game time (orders, animation, the bartending clock) until resumed */
+function setPause(on){
+  if(on===!!S.userPause)return;
+  if(on&&(net.active||S.paused||S.photo||!S.session))return;
+  S.userPause=on;
+  if(on)S.pauseAt=performance.now();
+  else if(S.barEnd&&S.pauseAt)S.barEnd+=performance.now()-S.pauseAt;
+  $('#pause-card').hidden=!on;
+  if(on)stopPour();
+}
+$('#btn-pause').addEventListener('click',()=>setPause(true));
+$('#btn-resume').addEventListener('click',()=>setPause(false));
 /* music: the piano bench opens a picker; in a room the choice is shared */
 S.musicSeen=null;
 function refreshMusicUI(){
@@ -1082,6 +1164,8 @@ function refreshAll(){
 onLang(refreshAll);
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    if(S.userPause){setPause(false);return;}
+    if(!$('#order-menu').hidden){$('#order-menu').hidden=true;return;}
     if(!chatForm.hidden){closeChat();return;}
     if(!histEl.hidden){closeHist();return;}
     if(!$('#photo').hidden){closePhoto();return;}
@@ -1090,6 +1174,8 @@ window.addEventListener('keydown',e=>{
     if(S.mode==='bar'&&el.result.hidden)leaveBar();
   }
   if(typing(e))return;
+  if(e.code==='KeyP'&&!e.repeat){setPause(!S.userPause);return;}
+  if(S.userPause)return;
   if(e.code==='KeyE'&&!e.repeat&&S.mode==='walk'&&!S.paused)doAction();
   if(e.code==='Enter'&&!e.repeat&&net.active){e.preventDefault();openChat();}
   const n=e.code.indexOf('Digit')===0?parseInt(e.code.slice(5),10):0;
@@ -1114,12 +1200,14 @@ if(DEBUG)window.__courte={setStill,STILLS,cutPush,Snd,get net(){return net;},tal
 let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
-  const dt=Math.min(DT_MAX,(now-last)/1000);last=now;time+=dt;
+  const dt=S.userPause?0:Math.min(DT_MAX,(now-last)/1000);last=now;time+=dt;
+  {const pb=$('#btn-pause'),ps=!net.active&&!S.paused&&!!S.session&&!S.photo;if(pb.hidden===ps)pb.hidden=!ps;}
   if(S.mode==='walk'){if(!S.paused){player.update(dt,time);updatePlayerPose();}player.view.off=portraitNow()?.12:0;}
   updatePhoto(dt);
   updateCamera(dt);room.animate(dt,time);xmas.animate(time);fx.update(dt);cat.update(dt,time);
   updateProps(dt);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
+  checkJointToast();{const gb=$('#btn-gift'),sg=!!giftTarget()&&S.mode==='walk'&&!S.paused&&!S.photo;if(gb.hidden===sg)gb.hidden=!sg;}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
   finalPass.uniforms.time.value=time%50;
   composer.render(dt);
@@ -1159,6 +1247,7 @@ function hostTick(){
   let changed=false;
   if(tickOrders(S.world,time))changed=true;
   if(autoServe(S.world,time))changed=true;
+  pruneSocial(S.world,time);
   const fl=fireLate(S.world,time);
   if(fl.changed){changed=true;if(fl.fired.indexOf(net.me.id)>=0){S.firedUntil=performance.now()+FIRE_COOLDOWN*1000;S.claimSeat=null;if(S.mode==='bar')leaveBar();toast(t('fired'),4500);}}
   if(changed)commitWorld();
@@ -1167,6 +1256,7 @@ function hostTick(){
 /* Make the guests, drinks and bubbles match the world. quiet = first snapshot (no cheering for old drinks). */
 function syncSeats(quiet){
   if(!S.world)return;
+  checkSocialFx(S.world,quiet);
   S.world.seats.forEach((seat,i)=>{
     const g=allSeats[i],want=seat.order?seat.order.recipeId:null,have=g.order?g.order.id:null;
     if(g.proxy){g.x=seat.stoolX||g.x;if(seat.customer)g.name=nameOf(seat.customer);}
@@ -1197,6 +1287,7 @@ function adoptWorld(w){
   const newNight=!S.world||w.seed!==S.world.seed;
   S.world=w;S.synced=true;
   if(first||newSession||newNight)adoptSession(w.session);
+  else if(w.session.decor&&JSON.stringify(cleanDecor(w.session.decor))!==JSON.stringify(S.decor))applyDecor(w.session.decor);
   else if(S.session&&(w.session.limit!==S.session.limit||w.session.diff!==S.session.diff)){S.session=Object.assign({},S.session,{limit:w.session.limit,diff:w.session.diff,timer:w.session.limit>0});syncBarTimer();}      // the host changed the time limit
   if(newNight&&!$('#summary').hidden){$('#summary').hidden=true;S.paused=false;player.st.enabled=true;}
   syncSeats(first||newNight);
@@ -1221,7 +1312,13 @@ function handleAct(from,m){
     if(r.ok){commitWorld();}
     return r;
   }
-  if(m.k==='unclaim')releaseClaim(S.world,m.seat,from);
+  if(m.k==='toast'||m.k==='gift'){
+    const near=id=>id===net.me.id?player.pos:net.peers.get(id),a=near(from),b=near(m.k==='toast'?m.with:m.to);
+    if(!a||!b)return;
+    if(m.k==='toast'){if(Math.hypot(a.x-b.x,a.z-b.z)<=TOAST_RANGE+1.5)jointToast(S.world,from,m.with,net.ids(),time);}
+    else giftDrink(S.world,from,m.to,time);
+  }
+  else if(m.k==='unclaim')releaseClaim(S.world,m.seat,from);
   else if(m.k==='served')applyServed(S.world,m.seat,from,m,time);
   if(S.world.rev!==r0)commitWorld();
 }
@@ -1524,7 +1621,7 @@ function applyLook(timeId){
 }
 /* Look, guests and classes for a session config (also used when a room's host sets the night). */
 function adoptSession(cfg){
-  S.session=cfg;S.time=TIMES[cfg.time];setXmas(xmasOn,false);
+  S.session=cfg;S.time=TIMES[cfg.time];setXmas(xmasOn,false);applyDecor(cfg.decor);
   applyLook(cfg.time);
   room.setStools(layoutStools(cfg.chairs||0));
   guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
@@ -1542,7 +1639,7 @@ function adoptSession(cfg){
 function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
-  cfg=Object.assign({},cfg,keep);
+  cfg=Object.assign({},cfg,keep,{decor:loadDecor()});
   setStill(null);Object.keys(taleProps).forEach(removeProp);clearPianist();Object.keys(taleSeat).forEach(k=>delete taleSeat[k]);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
@@ -1710,6 +1807,7 @@ function taleStart(){
 }
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
   onFirstTap:()=>startMusicOnOpen(true),
+  onStill:(id,done)=>{const pc=$('#peek-close');setStill(id);pc.hidden=false;pc.onclick=()=>{setStill(null);pc.hidden=true;done();};},
   getMusic:startMusicChoice,onMusic:g=>setMusic(g,false),          // the first tap on the start screen is the browser's cue to let the music begin
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
@@ -1759,6 +1857,50 @@ $('#btn-book').addEventListener('click',openBook);$('#book-x').addEventListener(
 bookEl.addEventListener('click',e=>{const b=e.target.closest('[data-bt]');if(b){bookTab=b.dataset.bt;renderBook();}});
 window.addEventListener('keydown',e=>{if(e.code==='Escape'&&!bookEl.hidden){closeBook();e.stopPropagation();}},true);
 onLang(()=>{if(!bookEl.hidden)renderBook();});
+/* bar decor: unlocked with lifetime tips; in a room the host's choice is everyone's */
+S.decor=null;
+function applyDecor(d){
+  d=cleanDecor(d);S.decor=d;
+  room.setTint(optionOf('light',d.light).tint);room.setArt(d.frame);
+}
+const decorEl=$('#decor'),decorBody=$('#decor-body');
+const decorLocked=()=>net.active&&!isHost();
+function renderDecor(){
+  const earned=loadEarned(),cur=S.decor||DEFAULT_DECOR;
+  $('#decor-earned').textContent=t('decor_earned',{n:won(earned)});
+  decorBody.textContent='';
+  if(decorLocked()){const p=document.createElement('p');p.className='bk-empty';p.textContent=t('decor_host');decorBody.append(p);}
+  DECOR_KINDS.forEach(k=>{
+    const grp=document.createElement('div');grp.className='dc-grp';
+    const h=document.createElement('h3');h.textContent=t('decor_'+k);grp.append(h);
+    const row=document.createElement('div');row.className='dc-row';
+    DECOR[k].forEach(o=>{
+      const ok=earned>=o.at,b=document.createElement('button');b.type='button';b.className='dc-opt'+(cur[k]===o.id?' on':'')+(ok?'':' locked');
+      b.dataset.k=k;b.dataset.id=o.id;b.disabled=!ok||decorLocked();
+      const sw=document.createElement('i');sw.className='dc-sw dc-'+k+'-'+o.id;if(k==='light'&&o.tint!=null)sw.style.background='#'+o.tint.toString(16).padStart(6,'0');
+      const nm=document.createElement('b');nm.textContent=tr(o.n);
+      const sm=document.createElement('small');sm.textContent=ok?'':'🔒 '+t('decor_locked',{n:won(o.at)});
+      b.append(sw,nm,sm);row.append(b);
+    });
+    grp.append(row);decorBody.append(grp);
+  });
+}
+function openDecor(){decorEl.hidden=false;bookEl.hidden=true;$('#settings').hidden=true;renderDecor();}
+function closeDecor(){decorEl.hidden=true;}
+function equipDecor(kind,id){
+  if(decorLocked()||!optionOf(kind,id)||loadEarned()<optionOf(kind,id).at)return;
+  const d=Object.assign({},S.decor||DEFAULT_DECOR,{[kind]:id});
+  saveDecor(d);applyDecor(d);
+  if(S.world){
+    S.world.session=Object.assign({},S.world.session,{decor:d});S.session=Object.assign({},S.session,{decor:d});S.world.rev++;
+    if(net.active)commitWorld();
+  }
+  renderDecor();
+}
+$('#btn-decor').addEventListener('click',openDecor);$('#decor-x').addEventListener('click',closeDecor);
+decorEl.addEventListener('click',e=>{const b=e.target.closest('button[data-k]');if(b)equipDecor(b.dataset.k,b.dataset.id);});
+window.addEventListener('keydown',e=>{if(e.code==='Escape'&&!decorEl.hidden){closeDecor();e.stopPropagation();}},true);
+onLang(()=>{if(!decorEl.hidden)renderDecor();});
 $('#btn-xmas').addEventListener('click',()=>{setXmas(!xmasOn,true);toast(t(xmasOn?'xmas_toast_on':'xmas_toast_off'),2200);if(xmasOn){Snd.init();Snd.jingle();}});
 setXmas(xmasOn,false);
 /* settings popover (language, units, music) */

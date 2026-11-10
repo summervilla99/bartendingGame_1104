@@ -25,6 +25,10 @@ export const FLAVOR={
   cosmopolitan:{ko:'새콤한 핑크',en:'Tart and pink'},boulevardier:{ko:'위스키 베이스의 쓴 네그로니',en:'A whiskey Negroni'},
   whiskeysour:{ko:'새콤한 위스키',en:'Tart whiskey'},neat:{ko:'얼음 없이 위스키 그대로',en:'Straight whiskey, no ice'},faust:{ko:'달콤한 카시스 뒤에 숨은 독한 럼',en:'Strong rum hiding behind sweet cassis'},velvetrose:{ko:'장미 향의 달콤한 칵테일',en:'Sweet and rosy'},
   courtenoir:{ko:'가게의 이름을 건 쌉쌀하고 진한 한 잔',en:'The house drink: dark and bittersweet'},
+  sojufizz:{ko:'소주에 레몬과 소다, 가볍게',en:'Soju, lemon and soda, light'},sojutonic:{ko:'소주에 토닉, 깔끔하게',en:'Soju with tonic, clean'},sojunegroni:{ko:'소주로 만든 쌉쌀한 네그로니',en:'A Negroni made with soju'},grapefruitsoju:{ko:'달콤한 자몽 소주',en:'Sweet grapefruit soju'},
+  martini:{ko:'진과 베르뭇만, 아주 독한',en:'Just gin and vermouth, very strong'},mudslide:{ko:'크림 리큐르의 디저트 칵테일',en:'A creamy dessert cocktail'},pinacolada:{ko:'파인애플과 크림의 열대 칵테일',en:'Tropical pineapple and cream'},
+  cubalibre:{ko:'럼과 콜라에 라임',en:'Rum and cola with lime'},mexicanmule:{ko:'데킬라와 진저 비어',en:'Tequila and ginger beer'},ginandtonic:{ko:'진과 토닉',en:'Gin and tonic'},seabreeze:{ko:'크랜베리와 자몽의 롱드링크',en:'Cranberry and grapefruit long drink'},goldrush:{ko:'꿀을 넣은 위스키 사워',en:'A honeyed whiskey sour'},ginrickey:{ko:'설탕 없는 진 라임 소다',en:'Sugar-free gin, lime and soda'},
+  poinsettia:{ko:'크랜베리와 프로세코의 크리스마스',en:'Christmas in cranberry and prosecco'},sbagliato:{ko:'진 대신 프로세코를 넣은 네그로니',en:'A Negroni with prosecco'},french75:{ko:'진 사워 위에 거품을 얹은',en:'Gin sour topped with bubbles'},aperolspritz:{ko:'아페롤과 프로세코의 스프리츠',en:'Aperol and prosecco spritz'},longisland:{ko:'네 가지 술이 든 아이스티 모양',en:'Four spirits dressed as iced tea'},maitai:{ko:'두 가지 럼의 열대 칵테일',en:'A two-rum tiki drink'},
   whitenegroni:{ko:'맑고 쌉쌀한 화이트 네그로니',en:'Clear and bitter-floral'},tomcollins:{ko:'레몬과 소다로 길게',en:'Long, lemony and fizzy'}
 };
 

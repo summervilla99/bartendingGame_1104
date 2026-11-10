@@ -5,6 +5,7 @@ import {NIGHT4} from './night4.js';
 import {NIGHT5} from './night5.js';
 import {NIGHT6} from './night6.js';
 import {NIGHT7} from './night7.js';
+import {NIGHT8,NIGHT9,NIGHT10,NIGHT11} from './epilogue.js';
 export {ENDINGS} from './night7.js';
 export {CHARS,FLAVOR} from './chars.js';
-export const NIGHTS=[NIGHT1,NIGHT2,NIGHT3,NIGHT4,NIGHT5,NIGHT6,NIGHT7];
+export const NIGHTS=[NIGHT1,NIGHT2,NIGHT3,NIGHT4,NIGHT5,NIGHT6,NIGHT7,NIGHT8,NIGHT9,NIGHT10,NIGHT11];

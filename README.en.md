@@ -37,16 +37,18 @@ Pick one of three ways to play when the game opens.
 - **Pour**: press and hold an ingredient chip or a bottle on the shelf and it tilts and pours. Amounts are shown in ml and oz together.
 - **Three methods**: anything with juice or syrup is **shaken** (shake the tin so the ice rattles), spirit-only drinks are **stirred** (draw circles with a bar spoon in a mixing glass), and drinks that are not mixed are **built** straight in the glass.
 - **Scoring**: accuracy 70% + how well it was mixed 20% + garnish 10%, which gives one to three stars and a tip.
-- 24 cocktails (3 house originals), 26 ingredients and 11 glasses. Each recipe has its own glass and ice rule, and the order ticket lists the serve, the reason for the method and a tip, so **you can learn as you go even if you have never bartended.**
+- 73 cocktails (3 house originals, 12 Korean-spirit drinks, 6 Christmas specials), 41 ingredients and 11 glasses. In practice mode you can pick any cocktail to make. Each recipe has its own glass and ice rule, and the order ticket lists the serve, the reason for the method and a tip, so **you can learn as you go even if you have never bartended.**
 
 ## Features
 
-- 🎬 **A seven-night story**: dialogue, choices, mood orders (pick a drink for how they feel), relationship hearts, and **three endings** that depend on the Seoyun × Yunha bond. Nights 6 and 7 include 3D still cuts.
+- 🎬 **A seven-night story plus four epilogue nights**: dialogue, choices, mood orders (pick a drink for how they feel), relationship hearts, and **three endings** that depend on the Seoyun × Yunha bond. Nights 6 and 7 include 3D still cuts.
 - 👫 **Online rooms**: you see a friend making a drink live (the bottle tilts, the glass fills, the shaker shakes). Sitting down, chat (with a scrollable history), emotes (cheers, wave, clap, bow, dance, jump) and a photo mode are included.
 - ⏱ **Time limit**: none, 60, 45 or 30 seconds, switchable from the start menu and the in-game settings. Playing solo, the guest leaves; with friends, the bartender is fired.
 - 🎁 **Combos, regulars and rushing guests**: two or more stars in a row earn a combo bonus, three stars twice for the same guest makes them a regular, and a rushing guest tips 1.5×.
 - 📒 **Bar notebook**: guests pin a polaroid to the guestbook when you earn three stars, and you collect a coaster for every cocktail you make.
 - 🐈 **Counter cat**: jumps for joy or turns away depending on how the drink turned out.
+- 🪄 **Bar decor**: unlock light colours, wall art and coasters with lifetime tips; in a room the host's taste shows for everyone.
+- 🥂 **Joint toast and buying a drink**: cheer together for a tip bonus, or send the working bartender a drink.
 - 🎄 **Christmas decor**: a tree, garlands, a wreath, snow and Santa hats (switchable in settings, and not shown in the story).
 - 🎵 **Live music**: jazz, classical and house are synthesised on the fly. Sit at the piano to change the genre.
 - 🌗 **Hours of the night**: golden hour, prime time, last call. Lighting, the view outside, the number of guests and the tip multiplier all change.

@@ -24,6 +24,7 @@
     <div class="top-r">
       <button class="stat roomchip" id="room-chip" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="rc-code"></span><span class="rc-n"></span><span class="rc-cta" data-i18n="inv_chip"></span></button>
       <div class="stat"><span data-i18n="tips"></span><b id="tips">₩0</b></div>
+      <button class="ibtn" id="btn-pause" type="button" data-i18n-aria="pause" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
       <button class="ibtn" id="btn-settings" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="settings_aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </div>
   </header>
@@ -35,6 +36,7 @@
     <div class="srow" id="row-mood" hidden><span data-i18n="set_mood"></span><span class="segs" id="mood-seg"><button class="btn sm" type="button" data-t="golden" data-i18n="time_golden"></button><button class="btn sm" type="button" data-t="prime" data-i18n="time_prime"></button><button class="btn sm" type="button" data-t="last" data-i18n="time_last"></button></span></div>
     <div class="srow" id="row-limit" hidden><span data-i18n="set_limit"></span><span class="segs" id="limit-seg"><button class="btn sm" type="button" data-l="off" data-i18n="limit_off"></button><button class="btn sm" type="button" data-l="easy">60</button><button class="btn sm" type="button" data-l="mid">45</button><button class="btn sm" type="button" data-l="hard">30</button></span></div>
     <div class="srow"><span data-i18n="set_book"></span><button class="btn sm" id="btn-book" type="button" data-i18n="book_open"></button></div>
+    <div class="srow"><span data-i18n="set_decor"></span><button class="btn sm" id="btn-decor" type="button" data-i18n="book_open"></button></div>
     <div class="srow" id="row-xmas"><span data-i18n="set_xmas"></span><button class="btn sm" id="btn-xmas" type="button" aria-pressed="true"></button></div>
     <div class="srow" id="row-npc" hidden><span data-i18n="set_npc"></span><button class="btn sm" id="btn-npc" type="button" aria-pressed="true"></button></div>
     <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><span class="segs"><button class="btn sm" id="btn-room-invite" type="button" data-i18n="inv_settings"></button><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></span></div>
@@ -47,6 +49,8 @@
     <div class="dock">
       <button class="btn lg primary prompt" id="btn-act" type="button" hidden><kbd>E</kbd><span id="act-label"></span></button>
       <button class="btn sm" id="btn-order" type="button" data-i18n="order_btn" hidden></button>
+      <button class="btn sm" id="btn-gift" type="button" data-i18n="gift_btn" hidden></button>
+      <button class="btn sm" id="btn-pick" type="button" data-i18n="pick_btn" hidden></button>
       <button class="btn sm" id="btn-music-pick" type="button" data-i18n="music_pick" hidden></button>
       <button class="btn sm" id="btn-emote" type="button" data-i18n="emote_btn"></button>
       <button class="btn sm" id="btn-dance" type="button" data-i18n="emo_dance"></button>
@@ -129,6 +133,7 @@
   </div>
 
   <div id="still" class="still" hidden aria-hidden="true"><i class="stl-bar top"></i><i class="stl-bar bot"></i><i class="stl-tint"></i><span class="stl-cap"></span></div>
+  <button class="btn primary" id="peek-close" type="button" hidden data-i18n="gal_cut_close"></button>
   <div id="cutin" class="cutin" hidden aria-hidden="true"><div class="cut-pics"></div><div class="cut-txt"><b class="cut-name"></b><span class="cut-sub"></span><span class="cut-hearts"></span></div></div>
   <div id="tale" hidden>
     <div class="tl-box">
@@ -166,6 +171,10 @@
     <header><b id="book-title" data-i18n="book_title"></b><span class="segs"><button class="btn sm on" type="button" data-bt="photos" data-i18n="book_photos"></button><button class="btn sm" type="button" data-bt="coasters" data-i18n="book_coasters"></button></span><button type="button" class="ch-x" id="book-x" data-i18n-aria="chat_hist_close">×</button></header>
     <div class="bk-body" id="book-body"></div>
   </section>
+  <section class="bookpanel glass" id="decor" hidden aria-labelledby="decor-title">
+    <header><b id="decor-title" data-i18n="decor_title"></b><span class="ch-n" id="decor-earned"></span><button type="button" class="ch-x" id="decor-x" data-i18n-aria="chat_hist_close">×</button></header>
+    <div class="bk-body" id="decor-body"></div>
+  </section>
   <section class="chathist glass" id="chat-hist" hidden aria-labelledby="chat-hist-title">
     <header><b id="chat-hist-title" data-i18n="chat_hist_title"></b><span class="ch-n" id="chat-hist-n"></span><button type="button" class="ch-x" id="chat-hist-x" data-i18n-aria="chat_hist_close">×</button></header>
     <div class="ch-list" id="chat-hist-list" role="log" aria-live="polite"></div>
@@ -186,9 +195,17 @@
       </div>
     </div>
   </div>
+  <div class="result" id="pause-card" hidden>
+    <div class="rcard" role="dialog" aria-modal="true">
+      <h2 data-i18n="pause_title"></h2>
+      <p class="rhint" data-i18n="pause_hint"></p>
+      <div class="row"><button class="btn primary" id="btn-resume" type="button" data-i18n="pause_resume"></button></div>
+    </div>
+  </div>
   <div class="result" id="order-menu" hidden>
     <div class="rcard ordercard" role="dialog">
-      <h2 data-i18n="order_title"></h2>
+      <h2 id="order-h" data-i18n="order_title"></h2>
+      <div class="fam-chips" id="order-fams" hidden></div>
       <div class="order-list" id="order-list"></div>
       <div class="row"><button class="btn sm" id="order-close" type="button" data-i18n="photo_close"></button></div>
     </div>

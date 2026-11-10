@@ -75,3 +75,22 @@ function makeKey(){
   return g;
 }
 export const makeProp=kind=>kind==='key'?makeKey():kind==='watchbox'?makeWatchbox():kind==='soju'?makeSoju():kind==='notebook'?makeNotebook():kind==='helmet'?makeHelmet():null;
+
+/* A round coaster (decor): style = leather | brass | emerald | cat. Sits under a served drink. */
+const coasterCache={};
+export function makeCoaster(style){
+  const top=coasterCache[style]||(coasterCache[style]=canvasTex(128,128,(g,w,h)=>{
+    const base={leather:['#4a1514','#7a3a2a'],brass:['#a8803f','#e6c98a'],emerald:['#14402c','#c9a066'],cat:['#14100e','#c9a066']}[style]||['#3a2a20','#c9a066'];
+    g.fillStyle=base[0];g.fillRect(0,0,w,h);
+    g.strokeStyle=base[1];g.lineWidth=3;g.beginPath();g.arc(w/2,h/2,w*.4,0,Math.PI*2);g.stroke();
+    if(style==='leather'){g.setLineDash([5,5]);g.beginPath();g.arc(w/2,h/2,w*.34,0,Math.PI*2);g.stroke();g.setLineDash([]);}
+    g.fillStyle=base[1];g.textAlign='center';g.textBaseline='middle';
+    if(style==='cat'){g.beginPath();g.arc(w/2,h*.56,w*.15,0,Math.PI*2);g.fill();g.beginPath();g.moveTo(w*.38,h*.48);g.lineTo(w*.4,h*.3);g.lineTo(w*.49,h*.42);g.fill();g.beginPath();g.moveTo(w*.62,h*.48);g.lineTo(w*.6,h*.3);g.lineTo(w*.51,h*.42);g.fill();}
+    else{g.font='bold 54px Georgia,serif';g.fillStyle=style==='brass'?'#3a2810':base[1];g.fillText('C',w/2,h/2+3);}
+  }));
+  const g=new THREE.Group();
+  const side=new THREE.MeshStandardMaterial({color:0x1a1210,roughness:.6}),face=new THREE.MeshStandardMaterial({map:top,roughness:.45,metalness:style==='brass'?.5:.1});
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(.115,.115,.008,28),[side,face,side]);
+  m.position.y=.004;g.add(m);
+  return g;
+}
