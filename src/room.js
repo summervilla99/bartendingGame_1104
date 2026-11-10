@@ -3,6 +3,7 @@ import {canvasTex,M,shadows,hdr,lathe} from './three-utils.js';
 import {rand,pick} from './util.js';
 import {BACKBAR,instanceBottles,bottleWidth} from './bottles.js';
 import {makeOutside} from './outside.js';
+import {monetTex,MONET} from './monet.js';
 
 /* Walkable lounge: bar counter at z=0 (bartender side is -z), lounge toward the entrance at +z. */
 export const COUNTER_TOP=1.15,STOOL_Z=1.25,STOOL_X=[-3.7,-2.6,-1.5,1.5,2.6,3.7];
@@ -390,7 +391,24 @@ export function buildRoom(scene){
   };
   /* side walls: u = CZ - z on the left wall, z - CZ on the right */
   const L=z=>CZ-z,R=z=>z-CZ;
-  [[WALLS.back,-7.7,2.5,1.7,1.15,0],[WALLS.back,7.7,2.5,1.7,1.15,1],[WALLS.left,L(2.8),2.55,1.8,1.2,2],[WALLS.right,R(2.8),2.55,1.8,1.2,1],[WALLS.left,L(8.2),2.6,1.4,1.9,0]].forEach(([w,u,y,fw,fh,s])=>frame(fw,fh,s,onWall(w,u,y,.01)));
+  [[WALLS.back,-7.7,2.5,1.7,1.15,0],[WALLS.back,7.7,2.5,1.7,1.15,1]].forEach(([w,u,y,fw,fh,s])=>frame(fw,fh,s,onWall(w,u,y,.01)));
+  /* the two side walls: Monet-style paintings in gilt frames, each with a little brass plaque and a picture light (no extra scene lights: glow sprites only) */
+  const plaqueTex=(txt)=>canvasTex(256,40,(g,w,h)=>{g.fillStyle='#2a1a10';g.fillRect(0,0,w,h);g.fillStyle='#d9b56a';g.font='500 17px "Cormorant Garamond","Gowun Batang",serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,w/2,h/2+1);});
+  const monetFrame=(id,fw,fh,p)=>{
+    const g=new THREE.Group();
+    const gilt=M(0xb8893c,{roughness:.32,metalness:.9,envMapIntensity:1.1});
+    box(fw+.26,fh+.26,.07,gilt,0,0,0,g);box(fw+.12,fh+.12,.08,trim,0,0,.012,g);box(fw+.05,fh+.05,.085,gilt,0,0,.02,g);
+    const tex=monetTex(id,512,Math.round(512*fh/fw));
+    const pm=new THREE.Mesh(new THREE.PlaneGeometry(fw,fh),new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:.42,roughness:.85,envMapIntensity:0}));pm.position.z=.07;g.add(pm);
+    const meta=MONET.find(m=>m.id===id);
+    const pl=new THREE.Mesh(new THREE.PlaneGeometry(.62,.1),new THREE.MeshBasicMaterial({map:plaqueTex(meta.title.ko+' · '+meta.title.en)}));pl.position.set(0,-fh/2-.27,.045);g.add(pl);
+    const lamp=box(Math.min(.7,fw*.4),.03,.03,brass,0,fh/2+.2,.1,g);void lamp;                 // picture light
+    box(.02,.14,.02,brass,0,fh/2+.14,.06,g);
+    const gl=glow(fw*1.1,.6,0xffc880,.2);gl.position.set(0,fh/2+.1,.14);g.add(gl);
+    p.add(g);return g;
+  };
+  [[WALLS.left,L(2.8),'lilies',2.0,1.4],[WALLS.left,L(5.55),'sunrise',1.1,1.5],[WALLS.left,L(8.4),'haystacks',2.4,1.5],
+   [WALLS.right,R(2.8),'bridge',2.0,1.4],[WALLS.right,R(5.45),'poppies',1.1,1.5],[WALLS.right,R(8.4),'dusk',2.4,1.5]].forEach(([w,u,id,fw,fh])=>monetFrame(id,fw,fh,onWall(w,u,2.55,.01)));
   [[WALLS.back,-9.1],[WALLS.back,-6.3],[WALLS.back,6.3],[WALLS.back,9.1],[WALLS.left,L(1.1)],[WALLS.left,L(4.5)],[WALLS.right,R(1.1)],[WALLS.right,R(4.5)],[WALLS.left,L(6.6)],[WALLS.left,L(10.2)],[WALLS.right,R(6.4)],[WALLS.right,R(10.4)],[WALLS.left,L(-1.6)],[WALLS.right,R(-1.6)]].forEach(([w,u])=>sconce(onWall(w,u,0,.01),2.35));
 
   /* record player + plant on the back bar */

@@ -172,6 +172,7 @@ const BAR_STAND=new THREE.Vector3(0,0,-1.05);
 const PRE={bar:{pos:new THREE.Vector3(0,2.5,-2.15),look:new THREE.Vector3(0,1.12,.9),fov:40,off:.1},
   /* portrait phones: higher and steeper so both rails, the work area and the guests fit; scene lifted above the bottom sheet */
   barP:{pos:new THREE.Vector3(0,3.5,-2.1),look:new THREE.Vector3(0,1.15,.25),fov:40,off:.1}};
+S.orbit={yaw:0,pitch:0,tyaw:0,tpitch:0};      // free look while bartending: yaw is a full circle, pitch is limited
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let camFov=55,camOff=0;
 const cam={from:null,t:1,dur:1.1};
 const mouse={x:0,y:0},par={x:0,y:0};
@@ -179,6 +180,7 @@ const talkView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:34,off:.24}
 const stillView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:40,off:.14};
 const photoView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:42,off:0};
 function camTarget(){if(S.photo)return photoView;if(S.still&&S.mode==='walk')return stillView;if(S.talkCam&&S.mode==='walk')return talkView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
+function orbitReset(){S.orbit.tyaw=S.orbit.tpitch=0;}
 function goCam(){cam.from={pos:camPos.clone(),look:camLook.clone(),fov:camFov,off:camOff};cam.t=0;cam.dur=reduceMotion?.01:1.1;}
 function fovFor(v0){
   const a=W/H,hf=2*Math.atan(Math.tan(v0*Math.PI/360)*(16/9));
@@ -193,8 +195,19 @@ function updateCamera(dt){
   }else{camPos.copy(to.pos);camLook.copy(to.look);camFov=to.fov;camOff=to.off;}
   const k=(reduceMotion||S.mode!=='bar')?0:1;
   par.x=lerp(par.x,mouse.x,Math.min(1,dt*3));par.y=lerp(par.y,mouse.y,Math.min(1,dt*3));
-  camera.position.set(camPos.x+par.x*.3*k,camPos.y+par.y*.1*k,camPos.z);
-  camera.lookAt(camLook.x+par.x*.12*k,camLook.y,camLook.z);
+  const ob=S.orbit;
+  if(S.mode==='bar'){ob.yaw=lerp(ob.yaw,ob.tyaw,Math.min(1,dt*10));ob.pitch=lerp(ob.pitch,ob.tpitch,Math.min(1,dt*10));}
+  const orbiting=S.mode==='bar'&&(Math.abs(ob.yaw)>1e-3||Math.abs(ob.pitch)>1e-3);
+  if(orbiting){                                              // spin the camera around the work area on a sphere
+    const vx=camPos.x-camLook.x,vy=camPos.y-camLook.y,vz=camPos.z-camLook.z,r=Math.hypot(vx,vy,vz);
+    const az=Math.atan2(vx,vz)+ob.yaw,el=clamp(Math.asin(vy/r)+ob.pitch,.1,1.5);
+    camera.position.set(camLook.x+r*Math.cos(el)*Math.sin(az),camLook.y+r*Math.sin(el),camLook.z+r*Math.cos(el)*Math.cos(az));
+    camera.lookAt(camLook.x,camLook.y,camLook.z);
+  }else{
+    camera.position.set(camPos.x+par.x*.3*k,camPos.y+par.y*.1*k,camPos.z);
+    camera.lookAt(camLook.x+par.x*.12*k,camLook.y,camLook.z);
+  }
+  const cr=$('#btn-camreset');if(cr){const want=S.mode==='bar'&&(Math.abs(ob.tyaw)>.03||Math.abs(ob.tpitch)>.03);if(cr.hidden===want)cr.hidden=!want;}
   const f=fovFor(camFov/(S.mode==='bar'?S.zoom:1));if(Math.abs(camera.fov-f)>.01){camera.fov=f;camera.updateProjectionMatrix();}
   if(camOff>.001)camera.setViewOffset(W,H,0,Math.round(camOff*H),W,H);
   else if(camera.view&&camera.view.enabled)camera.clearViewOffset();
@@ -372,7 +385,7 @@ let tkPref=null;
 el.ticket.querySelector('summary').addEventListener('click',()=>setTimeout(()=>{tkPref=el.ticket.open;},0));
 function enterBar(g){
   Snd.init();
-  S.mode='bar';S.guest=g;S.recipe=g.order;S.drink=startDrink(S.world,g.seatId,S.claimInfo?S.claimInfo.orderNo:undefined);g.askedOrder=false;
+  S.mode='bar';orbitReset();S.orbit.yaw=S.orbit.pitch=0;S.guest=g;S.recipe=g.order;S.drink=startDrink(S.world,g.seatId,S.claimInfo?S.claimInfo.orderNo:undefined);g.askedOrder=false;
   player.st.enabled=false;player.st.drag=null;
   playerFig.position.copy(BAR_STAND);playerFig.rotation.y=0;poseWalk(playerFig,0,0,time);
   resetBar();
@@ -388,7 +401,7 @@ function enterBar(g){
 function leaveBar(){
   if(S.claimSeat){sendAct({k:'unclaim',seat:S.claimSeat});S.claimSeat=null;}
   S.claimInfo=null;S.barEnd=null;$('#bar-timer').hidden=true;
-  stopPour();bottles.forEach(b=>{b.t=0;b.group.position.copy(b.home);b.group.rotation.set(0,0,0);});clearBarObjects();S.mode='walk';S.stage=null;S.drag=null;
+  stopPour();bottles.forEach(b=>{b.t=0;b.group.position.copy(b.home);b.group.rotation.set(0,0,0);});clearBarObjects();S.mode='walk';orbitReset();S.orbit.yaw=S.orbit.pitch=0;S.stage=null;S.drag=null;
   el.uiBar.hidden=true;el.uiWalk.hidden=false;el.result.hidden=true;
   resetArms(playerFig);
   player.place(.6,-1.5,0,Math.PI);player.st.enabled=true;player.update(0,time);
@@ -559,21 +572,33 @@ function mixProgress(){
 }
 function clientToNdc(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*2-1,y:-((e.clientY-r.top)/r.height)*2+1,cx:e.clientX-r.left,cy:e.clientY-r.top};}
 const raycaster=new THREE.Raycaster();
+const orb={id:null,x:0,y:0},touches=new Map();            // orbit drag state; every finger's last position (for two-finger orbit)
+function orbitBy(dx,dy){const o=S.orbit;o.tyaw-=dx*.0065;o.tpitch=clamp(o.tpitch+dy*.0045,-.9,1.1);}
+let camHinted=false;
+canvas.addEventListener('contextmenu',e=>{if(S.mode==='bar')e.preventDefault();});
 canvas.addEventListener('pointerdown',e=>{
   Snd.init();if(S.mode!=='bar')return;
   const p=clientToNdc(e);
+  touches.set(e.pointerId,[e.clientX,e.clientY]);
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+  const startOrbit=()=>{orb.id=e.pointerId;orb.x=e.clientX;orb.y=e.clientY;if(!camHinted){camHinted=true;try{if(!localStorage.getItem('courte.camhint')){localStorage.setItem('courte.camhint','1');toast(t('cam_hint'),4200);}}catch(_){}}};
+  if(e.button===2||e.button===1||e.shiftKey){startOrbit();return;}          // mouse: right/middle button or Shift+drag always orbits
   if(S.stage==='pour'){
     raycaster.setFromCamera({x:p.x,y:p.y},camera);
     const hit=raycaster.intersectObjects(bottles.filter(b=>b.show&&b.vis>.5).map(b=>b.group),true)[0];
     if(hit){let o=hit.object;while(o&&!o.userData.ingId)o=o.parent;if(o)startPour(o.userData.ingId);}
+    else startOrbit();                                                       // dragging empty space turns the view
   }else if(S.stage==='mix'){
-    S.drag={lastY:p.cy,midY:p.cy,dir:0,acc:0,counted:false,lastAng:null};
-  }
+    S.drag={lastY:p.cy,midY:p.cy,dir:0,acc:0,counted:false,lastAng:null};   // one finger shakes/stirs; two fingers orbit (below)
+  }else startOrbit();
 });
 canvas.addEventListener('pointermove',e=>{
   const p=clientToNdc(e);mouse.x=p.x;mouse.y=p.y;
-  if(S.mode!=='bar'||S.stage!=='mix'||!S.drag)return;
+  const prev=touches.get(e.pointerId);if(prev)touches.set(e.pointerId,[e.clientX,e.clientY]);
+  if(S.mode!=='bar')return;
+  if(orb.id===e.pointerId){orbitBy(e.clientX-orb.x,e.clientY-orb.y);orb.x=e.clientX;orb.y=e.clientY;return;}
+  if(touches.size>=2&&prev){orbitBy((e.clientX-prev[0])*.5,(e.clientY-prev[1])*.5);S.drag=null;return;}    // two fingers: orbit (the pinch zoom runs alongside)
+  if(S.stage!=='mix'||!S.drag)return;
   const d=S.drag;
   if(S.recipe.method==='shake'){
     const dy=p.cy-d.lastY;d.lastY=p.cy;d.midY+=(p.cy-d.midY)*.04;
@@ -596,8 +621,10 @@ canvas.addEventListener('pointermove',e=>{
     d.lastAng=ang;
   }
 });
-function endDrag(){S.drag=null;S.shakeOff=0;stopPour();}
+function endDrag(e){if(e)touches.delete(e.pointerId);if(!e||orb.id===e.pointerId)orb.id=null;S.drag=null;S.shakeOff=0;stopPour();}
 canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercancel',endDrag);
+$('#btn-camreset').addEventListener('click',orbitReset);
+canvas.addEventListener('dblclick',()=>{if(S.mode==='bar')orbitReset();});
 window.addEventListener('pointerup',()=>{stopPour();});
 
 function iceFor(glass){const d=GL[glass];return d?(d.bigIce?1:(d.ice||0)):0;}
