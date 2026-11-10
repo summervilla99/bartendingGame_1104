@@ -32,7 +32,9 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onFirstTap,ge
       return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(ok?'':' soon'),'<b>'+n+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):(def&&!ok?t('night_lock'):''))+'</i>',!ok);
     }).join('');
     const kinds=KINDS.map(id=>opt('kind',id,kind===id,'st-mode','<b>'+t('kind_'+id)+'</b><span class="st-d">'+t('kind_'+id+'_d')+'</span>')).join('');
-    const diffs=Object.keys(DIFFS).map(d=>opt('diff',d,cfg.diff===d,'st-guide',t('diff_'+d))).join('');
+    const timerOn=(kind==='room'?cfg.timers.room:cfg.timers.practice)===true;
+    const limitRow=['off','easy','mid','hard'].map(d=>opt('limit',d,d==='off'?!timerOn:(timerOn&&cfg.diff===d),'st-guide',d==='off'?t('limit_off'):t('diff_'+d))).join('');
+    const limitHtml='<h2>'+t('st_limit')+'</h2><div class="st-row st-diffs">'+limitRow+'</div><p class="st-note">'+t('limit_note')+'</p>';
     const hourMenu='<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div><h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>';
     let body='';
     if(kind==='tale'){
@@ -42,7 +44,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +(confirmReset?'<span class="st-confirm">'+t('tale_reset_q')+' <button type="button" class="btn sm" data-act="reset-yes">'+t('tale_reset_yes')+'</button> <button type="button" class="btn sm" data-act="reset-no">'+t('tale_reset_no')+'</button></span>'
           :'<button type="button" class="btn sm" data-act="reset">'+t('tale_reset')+'</button>')+'</div>';
     }else if(kind==='practice'){
-      body=hourMenu+'<p class="st-note">'+t('practice_note')+'</p>';
+      body=hourMenu+limitHtml;
     }else{
       const sub=['create','join'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
       body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+sub+'</div>');
@@ -53,7 +55,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
           +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div><div class="st-field"><span>'+t('st_npc')+'</span><div class="st-row st-chairs">'+opt('npc','on',onl.npc!==false,'st-guide',t('npc_on'))+opt('npc','off',onl.npc===false,'st-guide',t('npc_off'))+'</div></div></div><p class="st-note">'+t('st_npc_note')+'</p>':'')
           +'<p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
       }
-      if(lock||onl.mode==='create')body+=hourMenu+'<h2>'+t('st_diff')+'</h2><div class="st-row st-diffs">'+diffs+'</div><p class="st-note">'+t('diff_note3')+'</p>';
+      if(lock||onl.mode==='create')body+=hourMenu+limitHtml;
     }
     if(view==='gallery'){
       const tl=loadTale();
@@ -94,9 +96,9 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     if(b.id==='st-go'){
       const locked=roomLock&&roomLock(),kind=kindOf();
       if(!locked&&kind==='room'&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
-      if(kind==='tale'){onl.mode='solo';cfg.mode='tale';cfg.time=TALE_TIME;}
-      else if(kind==='practice'){onl.mode='solo';cfg.mode='practice';}
-      else cfg.mode='service';
+      if(kind==='tale'){onl.mode='solo';cfg.mode='tale';cfg.time=TALE_TIME;cfg.timer=false;}
+      else if(kind==='practice'){onl.mode='solo';cfg.mode='practice';cfg.timer=cfg.timers.practice===true;}
+      else{cfg.mode='service';cfg.timer=cfg.timers.room!==false;}
       err='';hide();onStart(Object.assign({},cfg),locked?{mode:'keep',code:'',name:onl.name}:Object.assign({},onl));return;
     }
     if(b.dataset.k&&!b.disabled){
@@ -111,6 +113,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       else if(k==='chairs')onl.chairs=+v;
       else if(k==='npc')onl.npc=v==='on';
       else if(k==='music'){if(onMusic)onMusic(v);}
+      else if(k==='limit'){const kd=kindOf()==='room'?'room':'practice';if(v==='off')cfg.timers[kd]=false;else{cfg.timers[kd]=true;cfg.diff=v;}}
       else{cfg[k]=v;if(k==='time')previewTime();}
       render();const c2=root.querySelector('.st-card');if(c2)c2.scrollTop=y;
     }
@@ -125,6 +128,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
   function show(){
     view='main';confirmReset=false;
     cfg=Object.assign({},getCfg());cfg.night=nextNight();
+    cfg.timers=Object.assign({room:true,practice:false},cfg.timers);                 // remembered per kind of play
     if(onl.mode!=='solo')cfg.mode='service';                       // joining or creating a room
     else if(cfg.mode!=='tale')cfg.mode='practice';                 // anything else is solo practice
     open=true;root.hidden=false;render();previewTime();const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});

@@ -32,7 +32,12 @@ export const DEFAULT={time:'prime',menu:'all',mode:'tale',guide:'full',diff:'eas
 
 /* Difficulty = how long a drink may take (seconds). Practice has no limit. */
 export const DIFFS={easy:60,mid:45,hard:30};
-export const limitOf=cfg=>(cfg.mode==='practice'||cfg.mode==='tale')?0:(DIFFS[cfg.diff]||DIFFS.easy);
+/* The bartending time limit can be switched on or off (cfg.timer). Default: on with friends, off in practice; the tale never has one. */
+export const limitOf=cfg=>{
+  if(cfg.mode==='tale')return 0;
+  const on=cfg.timer===undefined?cfg.mode!=='practice':!!cfg.timer;
+  return on?(DIFFS[cfg.diff]||DIFFS.easy):0;
+};
 
 /* Scenario: easiest drinks first, then the classics, then the complicated ones. */
 export const STAGES=[

@@ -1146,10 +1146,11 @@ function checkNightEnd(){
   if(worldNightOver(S.world)&&S.mode==='walk'&&!S.paused)showSummary();
 }
 function adoptWorld(w){
-  const first=!S.synced,newSession=!S.session||w.session.time!==S.session.time||w.session.menu!==S.session.menu||w.session.mode!==S.session.mode||w.session.chairs!==S.session.chairs||w.session.limit!==S.session.limit;
+  const first=!S.synced,newSession=!S.session||w.session.time!==S.session.time||w.session.menu!==S.session.menu||w.session.mode!==S.session.mode||w.session.chairs!==S.session.chairs;
   const newNight=!S.world||w.seed!==S.world.seed;
   S.world=w;S.synced=true;
   if(first||newSession||newNight)adoptSession(w.session);
+  else if(S.session&&(w.session.limit!==S.session.limit||w.session.diff!==S.session.diff)){S.session=Object.assign({},S.session,{limit:w.session.limit,diff:w.session.diff,timer:w.session.limit>0});syncBarTimer();}      // the host changed the time limit
   if(newNight&&!$('#summary').hidden){$('#summary').hidden=true;S.paused=false;player.st.enabled=true;}
   syncSeats(first||newNight);
   if(w.session.music&&w.session.music!==S.musicSeen){S.musicSeen=w.session.music;setMusic(w.session.music,true);}
@@ -1251,8 +1252,37 @@ $('#btn-npc').addEventListener('click',()=>{
   S.world.session=Object.assign({},S.world.session,{npcOrders:on});S.world.rev++;commitWorld();
   refreshNpcRow();toast(t(on?'npc_toast_on':'npc_toast_off'),2400);
 });
+/* bartending time limit: off, or 60 / 45 / 30 s. Solo: anyone; in a room: the host. The tale has none. */
+function limitState(){const lim=S.world?S.world.session.limit:0,d=Object.keys(DIFFS).find(k=>DIFFS[k]===lim);return lim>0?(d||'easy'):'off';}
+function refreshLimitRow(){
+  const row=$('#row-limit'),show=!!(S.world&&S.session&&S.session.mode!=='tale'&&(!net.active||isHost()));
+  row.hidden=!show;if(!show)return;
+  const cur=limitState();
+  row.querySelectorAll('[data-l]').forEach(b=>b.classList.toggle('on',b.dataset.l===cur));
+  row.querySelectorAll('[data-l=easy],[data-l=mid],[data-l=hard]').forEach(b=>{b.textContent=DIFFS[b.dataset.l]+t('sec');});
+}
+/* a running bartender follows a change at once: switching it off clears the clock, switching it on starts one */
+function syncBarTimer(){
+  if(S.mode!=='bar'||!S.recipe||!S.world)return;
+  const lim=S.world.session.limit>0?patienceOf(S.world.session.limit,S.guest&&S.guest.rush):0;
+  S.barLimit=lim;
+  if(lim>0&&!S.barEnd&&S.stage&&S.stage!=='result')S.barEnd=performance.now()+lim*1000;
+  if(!lim)S.barEnd=null;
+  $('#bar-timer').hidden=!S.barEnd;
+}
+function setLimit(choice){
+  if(!S.world||(net.active&&!isHost()))return;
+  const lim=choice==='off'?0:DIFFS[choice],diff=choice==='off'?(S.session.diff||'easy'):choice;
+  S.world.session=Object.assign({},S.world.session,{limit:lim,diff,timer:lim>0});
+  S.session=Object.assign({},S.session,{limit:lim,diff,timer:lim>0});
+  S.world.rev++;saveSession(Object.assign({},S.session,{limit:undefined}));
+  if(net.active)commitWorld();
+  syncBarTimer();refreshLimitRow();updateWalkUI();
+  toast(lim>0?t('limit_on_toast',{s:lim}):t('limit_off_toast'),2600);
+}
+$('#limit-seg').addEventListener('click',e=>{const b=e.target.closest('button[data-l]');if(b)setLimit(b.dataset.l);});
 function refreshRoomUI(){
-  refreshNpcRow();
+  refreshNpcRow();refreshLimitRow();
   const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;logBtn.hidden=!net.active;if(!net.active&&(chatLog.length||!histEl.hidden))resetHist();if(!net.active&&!chatForm.hidden)closeChat();
   if(net.active){chip.setAttribute('aria-label',t('inv_aria',{code:net.code,n:net.count}));}
 }
@@ -1265,7 +1295,7 @@ function connectRoom(onl){
   const code=onl.mode==='create'?makeCode():normalizeCode(onl.code);
   net.join(code,name,myLook());setRoomParam(code);
   if(onl.mode==='create'){
-    const limit=DIFFS[S.session.diff]||60,chairs=Math.max(2,Math.min(6,(onl.chairs|0)||4));
+    const limit=limitOf(S.session),chairs=Math.max(2,Math.min(6,(onl.chairs|0)||4));
     S.world.session=Object.assign({},S.world.session,{chairs,limit,npcOrders:onl.npc!==false});
     S.world.seats.forEach((st,i)=>{st.active=i===0;st.order=null;st.claim=null;});
     S.world.hostId=net.me.id;S.world.rev++;S.synced=true;
@@ -1472,7 +1502,7 @@ function applySession(cfg){
   if(net.active){S.world.hostId=net.me.id;}
   S.synced=true;
   adoptSession(cfg);
-  updateWalkUI();
+  updateWalkUI();refreshLimitRow();
   if(net.active)broadcastWorld();
 }
 /* ───────────── tale: dialogue-driven story nights ───────────── */

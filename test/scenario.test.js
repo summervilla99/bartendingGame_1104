@@ -95,3 +95,15 @@ test('the served tip includes combo and rush in a room',()=>{
   assert.equal(r.tip,Math.round(10000*TIMES.prime.tipMult*1.5));
   assert.equal(w.combo,1);assert.equal(w.regulars.g0,1);
 });
+
+test('the bartending time limit can be switched on or off in every mode but the tale',()=>{
+  // defaults: on with friends, off in practice
+  assert.equal(limitOf(cfg({mode:'service',diff:'mid'})),45);
+  assert.equal(limitOf(cfg({mode:'practice',diff:'mid'})),0);
+  // explicit switches win
+  assert.equal(limitOf(cfg({mode:'service',diff:'hard',timer:false})),0);
+  assert.equal(limitOf(cfg({mode:'practice',diff:'hard',timer:true})),30);
+  assert.equal(limitOf(cfg({mode:'practice',diff:'easy',timer:true})),60);
+  // the story never has one
+  assert.equal(limitOf(cfg({mode:'tale',diff:'hard',timer:true})),0);
+});
