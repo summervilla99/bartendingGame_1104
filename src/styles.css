@@ -494,3 +494,6 @@ button.st-night.on{background:linear-gradient(140deg,rgba(29,74,54,.58),rgba(201
 .ch-empty[hidden]{display:none}
 .hist-open .chatfeed{display:none}
 @media (hover:none),(pointer:coarse){.chathist{bottom:calc(max(34px,env(safe-area-inset-bottom,0px)) + 150px)}}
+
+.tk-live{font:600 12px var(--f-ui);font-variant-numeric:tabular-nums;color:var(--brass);margin-top:2px}
+.ticket[open] .tk-live{display:none}

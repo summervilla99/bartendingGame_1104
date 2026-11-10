@@ -370,7 +370,7 @@ function clearBarObjects(){
 }
 function resetBar(){
   clearBarObjects();
-  const r=S.recipe;S.stirAngle=0;S.strainT=0;S.serveT=0;S.pourId=null;S.mixKey=null;S.strainColor=null;S.shakeOff=0;S.strainStream=false;
+  const r=S.recipe;S.stirAngle=0;S.strainT=0;S.serveT=0;S.pourId=null;S.liveId=null;S.mixKey=null;S.strainColor=null;S.shakeOff=0;S.strainStream=false;
   if(r.method==='build'){
     S.vessel=makeGlass(r.glass);S.serv=S.vessel;S.vessel.group.position.copy(VP);
   }else{
@@ -431,6 +431,12 @@ function refreshTicket(){
     const bar=li.querySelector('i');bar.style.width=clamp(ratio/1.5*100,0,100)+'%';
     bar.className=ratio>1.1?'over':(ratio>=.9?'ok':'');
   });
+  const lv=$('#tk-live'),lid=S.pourId||S.liveId;
+  if(S.pourId)S.liveId=S.pourId;
+  if(lid&&(S.drink.poured[lid]||0)>0&&S.stage==='pour'){
+    const tg=r.parts[lid],cur=S.drink.poured[lid];
+    lv.hidden=false;lv.textContent=ING[lid].name+' '+(tg?(S.session&&S.session.guide==='instinct'?fmtVol(cur):fmtRatio(cur,tg)):fmtVol(cur));
+  }else lv.hidden=true;
   let extra=0;Object.keys(S.drink.poured).forEach(id=>{if(!(id in r.parts))extra+=S.drink.poured[id];});
   el.tkExtra.hidden=extra<1;if(extra>=1)el.tkExtra.textContent=t('extra_ing',{v:fmtVol(extra)});
   refreshChips();
