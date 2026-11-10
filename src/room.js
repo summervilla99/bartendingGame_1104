@@ -232,9 +232,36 @@ export function buildRoom(scene){
   const city=nightCity();
   const glassMat=new THREE.MeshBasicMaterial({map:city,color:new THREE.Color(.85,.85,.95)});
   const archGeo=(w,h)=>{const s=new THREE.Shape();s.moveTo(-w/2,0);s.lineTo(w/2,0);s.lineTo(w/2,h-w/2);s.absarc(0,h-w/2,w/2,0,Math.PI,false);s.lineTo(-w/2,0);const g=new THREE.ShapeGeometry(s,24);remapUV(g,w,h,-w/2,0);return g;};
-  [-5.2,5.2].forEach(u=>{
+  /* falling snow outside the big windows (every mode): three scrolling layers of soft flakes at different scales and speeds give depth */
+  const flakeTex=(n,r0,r1,seed)=>{
+    const t=canvasTex(256,512,(g,w,h)=>{
+      let sd=seed;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+      for(let i=0;i<n;i++){
+        const x=rnd()*w,y=rnd()*h,r=r0+rnd()*(r1-r0),a=.35+rnd()*.55;
+        for(const dx of [0,-w,w])for(const dy of [0,-h,h]){            // draw wrapped copies so the texture tiles without a seam
+          const px=x+dx,py=y+dy;if(px<-r||px>w+r||py<-r||py>h+r)continue;
+          const rg=g.createRadialGradient(px,py,0,px,py,r);rg.addColorStop(0,'rgba(255,255,255,'+a+')');rg.addColorStop(.45,'rgba(235,242,255,'+a*.55+')');rg.addColorStop(1,'rgba(235,242,255,0)');
+          g.fillStyle=rg;g.fillRect(px-r,py-r,r*2,r*2);
+        }
+      }
+    });
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+  };
+  const SNOW_LAYERS=[
+    {tex:flakeTex(150,1.2,2.6,11),rep:[1.5,2.4],speed:.018,op:.55,z:.011},
+    {tex:flakeTex(70,2.2,4.2,23),rep:[1.1,1.7],speed:.04,op:.7,z:.013},
+    {tex:flakeTex(22,4.5,9,37),rep:[.8,1.2],speed:.085,op:.55,z:.015}
+  ];
+  const snowFall=[];                                   // {tex, layer, phase} per window and layer
+  [-5.2,5.2].forEach((u,wi)=>{
     const g=onWall(WALLS.front,u,.85,.01);
     g.add(new THREE.Mesh(archGeo(2,3.4),glassMat));
+    SNOW_LAYERS.forEach((L,li)=>{
+      const tx=L.tex.clone();tx.needsUpdate=true;tx.repeat.set(L.rep[0],L.rep[1]);tx.offset.set(wi*.37+li*.21,wi*.5+li*.33);
+      const mat=new THREE.MeshBasicMaterial({map:tx,transparent:true,opacity:L.op,depthWrite:false});
+      const m=new THREE.Mesh(archGeo(2,3.4),mat);m.position.z=L.z;m.renderOrder=2;g.add(m);
+      snowFall.push({tx,mat,L,ph:wi*1.7+li*2.3});
+    });
     box(.06,2.4,.06,trim,0,1.2,.03,g);
     [.9,1.8].forEach(y=>box(2,.05,.05,trim,0,y,.03,g));
     [-1,1].forEach(s=>box(.12,2.4,.12,mahogMid,s*1.04,1.2,.05,g));
@@ -545,6 +572,7 @@ export function buildRoom(scene){
     const flick=.97+.03*Math.sin(t*9)*Math.sin(t*3.1);
     neonMat.color.setScalar(1.15*flick*neonK);neonGlow.material.opacity=.12*flick*neonK;
     candles.forEach(c=>{const f=.85+.15*Math.sin(t*13+c.ph)*Math.sin(t*7.3+c.ph*2);c.fl.scale.set(f,1.8*f,f);c.gl.material.opacity=.35*f;});
+    snowFall.forEach(f=>{f.tx.offset.y+=f.L.speed*dt;f.tx.offset.x+=Math.sin(t*.35+f.ph)*f.L.speed*.5*dt;});
     const dp=dustGeo.attributes.position.array;
     for(let i=0;i<DUST;i++){dp[i*3+1]+=dt*.03;dp[i*3]+=Math.sin(t*.3+dustSeed[i])*dt*.02;if(dp[i*3+1]>4.9)dp[i*3+1]=.6;}
     dustGeo.attributes.position.needsUpdate=true;
@@ -562,6 +590,7 @@ export function buildRoom(scene){
   function setSnow(on){snow=!!on;if(lastLook){curSky=null;setTime(lastLook);}}
   function setTime(look){
     lastLook=look;
+    snowFall.forEach(f=>{f.mat.opacity=f.L.op*(look.sky==='golden'?.45:1);});
     hemi.color.setHex(look.hemi[0]);hemi.groundColor.setHex(look.hemi[1]);hemi.intensity=look.hemi[2];
     pend.forEach(l=>{l.color.setHex(look.pend[0]);if(tint!=null)l.color.lerp(tintC.setHex(tint),.55);l.intensity=look.pend[1];});
     key.color.setHex(look.key[0]);key.intensity=look.key[1];
