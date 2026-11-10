@@ -14,6 +14,7 @@ export function newState(night,save){
 function addHearts(st,who,n){
   const cur=st.hearts[who]||0,next=Math.max(0,Math.min(MAX_HEARTS,cur+n));
   st.hearts[who]=next;st.gain[who]=(st.gain[who]||0)+(next-cur);
+  if(next!==cur)st.events.push({k:'heart',who,n:next-cur,now:next});          // the screen shows a small heart card
 }
 function applyFx(st,o){
   if(o.hearts)Object.keys(o.hearts).forEach(w=>addHearts(st,w,o.hearts[w]));
@@ -45,7 +46,7 @@ export function view(st,graph){
   if(st.node==='@lead')return {kind:'say',who:st.lead.who,text:st.lead.text,face:st.lead.face};
   const n=graph[st.node];
   if(!n)return {kind:'end'};
-  if(n.t==='say')return {kind:'say',who:n.who,text:n.text,face:n.face||'neutral'};
+  if(n.t==='say')return {kind:'say',who:n.who,text:n.text,face:n.face||'neutral',still:n.still};
   if(n.t==='choice')return {kind:'choice',opts:n.opts.map(o=>({text:o.text}))};
   if(n.t==='recommend'||n.t==='order'){
     if(st.order)return {kind:'wait',order:st.order,who:n.who};

@@ -14,6 +14,9 @@ import {makeProp} from './props.js';
 import {createFx} from './fx.js';
 import {buildXmas} from './xmas.js';
 import {makeCat} from './cat.js';
+import {portraitOf} from './portrait.js';
+import {createStillStage} from './still-stage.js';
+import {STILLS} from './story/stills.js';
 import {loadBook,saveBook,recordServe} from './book.js';
 import {setSantaHats,makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
@@ -58,8 +61,8 @@ function cyl(rt,rb,h,mat,x,y,z,parent,seg){const m=new THREE.Mesh(new THREE.Cyli
 /* ───────────── room ───────────── */
 const room=buildRoom(scene);
 const fx=createFx(scene),xmas=buildXmas(scene);
-const treeCol={min:new THREE.Vector3(-8.1,0,-.7),max:new THREE.Vector3(-6.5,2.4,.9)},treeBox={min:treeCol.min.clone(),max:treeCol.max.clone()};
-room.colliders.push(treeCol);                       // the tree stands at the right end of the bar (as the bartender sees it); solid only while shown
+const treeCol={min:new THREE.Vector3(-9.85,0,-1.8),max:new THREE.Vector3(-8.15,2.4,-.1)},treeBox={min:treeCol.min.clone(),max:treeCol.max.clone()};
+room.colliders.push(treeCol);                       // the tree stands in the back-left corner beside the bar's right end (bartender's view), clear of the walkway; solid only while shown
 const cat=makeCat();cat.group.position.set(-4.55,COUNTER_TOP,.12);cat.group.userData.baseY=COUNTER_TOP;cat.group.rotation.y=.35;scene.add(cat.group);
 /* Christmas decoration: on by default, remembered once the player switches it */
 const XMAS_KEY='courte.xmas';
@@ -171,8 +174,9 @@ const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();let camFov=55,camOf
 const cam={from:null,t:1,dur:1.1};
 const mouse={x:0,y:0},par={x:0,y:0};
 const talkView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:34,off:.24};
+const stillView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:40,off:.14};
 const photoView={pos:new THREE.Vector3(),look:new THREE.Vector3(),fov:42,off:0};
-function camTarget(){if(S.photo)return photoView;if(S.talkCam&&S.mode==='walk')return talkView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
+function camTarget(){if(S.photo)return photoView;if(S.still&&S.mode==='walk')return stillView;if(S.talkCam&&S.mode==='walk')return talkView;return S.mode==='bar'?(portraitNow()?PRE.barP:PRE.bar):player.view;}
 function goCam(){cam.from={pos:camPos.clone(),look:camLook.clone(),fov:camFov,off:camOff};cam.t=0;cam.dur=reduceMotion?.01:1.1;}
 function fovFor(v0){
   const a=W/H,hf=2*Math.atan(Math.tan(v0*Math.PI/360)*(16/9));
@@ -1105,7 +1109,7 @@ resize();
 /* ───────────── loop ───────────── */
 /* ?debug exposes state on window.__courte; ?debug&dtmax=0.2 lets slow (software-GL) machines advance faster per frame. */
 const QS=new URLSearchParams(location.search),DEBUG=QS.has('debug'),DEBUG_SEED=(DEBUG&&QS.has('seed'))?(parseInt(QS.get('seed'),10)>>>0):null,DT_MAX=(DEBUG&&parseFloat(QS.get('dtmax')))||.05;
-if(DEBUG)window.__courte={Snd,get net(){return net;},taleServe:st=>{guests.forEach(g=>{g.order=null;});taleAfterServe(st);},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
+if(DEBUG)window.__courte={setStill,STILLS,cutPush,Snd,get net(){return net;},taleServe:st=>{guests.forEach(g=>{g.order=null;});taleAfterServe(st);},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
 let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
@@ -1538,7 +1542,7 @@ function applySession(cfg){
   saveSession(cfg);
   const old=S.world,keep=net.active&&old?{chairs:old.session.chairs,limit:old.session.limit}:{chairs:0,limit:limitOf(cfg)};
   cfg=Object.assign({},cfg,keep);
-  Object.keys(taleProps).forEach(removeProp);clearPianist();Object.keys(taleSeat).forEach(k=>delete taleSeat[k]);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
+  setStill(null);Object.keys(taleProps).forEach(removeProp);clearPianist();Object.keys(taleSeat).forEach(k=>delete taleSeat[k]);S.tale=null;S.talkCam=null;taleUI.hide();playerFig.visible=true;el.uiWalk.hidden=S.mode!=='walk';
   S.world=createWorld(cfg,DEBUG_SEED,time);S.drink=null;S.recipe=null;S.claimSeat=null;S.claimInfo=null;
   if(old)S.world.rev=old.rev+1;
   if(net.active){S.world.hostId=net.me.id;}
@@ -1606,8 +1610,60 @@ function clearPianist(){
 }
 const taleSeat={};                 // where each story character currently sits (an entrance may override the default seat)
 const taleGuest=who=>{const s=taleSeat[who]||TALE_CHARS[who].seat;return s==='piano'?pianist:guests[+s.slice(1)];};
+
+/* ───── still cuts and heart / intro cards ───── */
+const stillEl=$('#still');
+const anchorOf=at=>{
+  if(at&&at[0]==='g'&&guests[+at.slice(1)])return {x:guests[+at.slice(1)].x,z:0,yaw:0,y:0};
+  if(at==='piano'){const s=SEATS.find(x=>x.kind==='piano');return {x:s.x,z:s.z,yaw:s.yaw,y:s.y};}
+  return {x:0,z:0,yaw:0,y:0};
+};
+function stillHide(on){
+  guests.forEach(g=>{g.fig.visible=on?false:g.active;});
+  if(pianist.fig)pianist.fig.visible=!on;
+  bartender.visible=!on;
+  Object.values(taleProps).forEach(p=>{p.group.visible=!on;});
+}
+const stillStage=createStillStage({scene,STILLS,CHARS:TALE_CHARS,anchorOf,makeCharacter,poseSit,reachArm,setFace,makeProp,hideOthers:stillHide});
+function setStill(id){
+  if(id===undefined)return;
+  if(!id){
+    if(!S.still)return;
+    stillStage.clear();S.still=null;stillEl.classList.remove('on');stillEl.dataset.tone='';
+    setTimeout(()=>{if(!S.still)stillEl.hidden=true;},600);goCam();return;
+  }
+  if(stillStage.id===id)return;
+  const v=stillStage.show(id);if(!v)return;
+  stillView.pos.copy(v.pos);stillView.look.copy(v.look);stillView.fov=v.fov;stillView.off=v.off;
+  S.still=stillView;stillEl.hidden=false;stillEl.dataset.tone=v.tone;
+  stillEl.querySelector('.stl-cap').textContent=tr(v.cap);
+  requestAnimationFrame(()=>stillEl.classList.add('on'));goCam();
+}
+const cutin={el:$('#cutin'),q:[],busy:false};
+function cutPush(c){cutin.q.push(c);if(cutin.q.length>4)cutin.q.shift();cutNext();}
+function cutNext(){
+  if(cutin.busy||!cutin.q.length||!S.tale)return;
+  const c=cutin.q.shift();cutin.busy=true;
+  const e=cutin.el,pics=e.querySelector('.cut-pics');pics.textContent='';
+  c.who.forEach(w=>{const u=portraitOf(w,TALE_CHARS[w]&&TALE_CHARS[w].look,c.face);if(u){const i=document.createElement('img');i.src=u;i.alt='';pics.appendChild(i);}});
+  e.querySelector('.cut-name').textContent=c.name;e.querySelector('.cut-sub').textContent=c.sub;e.querySelector('.cut-hearts').textContent=c.hearts||'';
+  e.className='cutin'+(c.heart?' heart':'');e.hidden=false;
+  requestAnimationFrame(()=>e.classList.add('on'));
+  setTimeout(()=>{e.classList.remove('on');setTimeout(()=>{e.hidden=true;cutin.busy=false;cutNext();},300);},c.heart?2300:2700);
+}
+function cutFromEvent(e){
+  const MAXH=5;
+  if(e.k==='enter'){const ch=TALE_CHARS[e.who];if(ch&&ch.look)cutPush({who:[e.who],face:'neutral',name:tr(ch.name),sub:ch.intro?tr(ch.intro):''});}
+  else if(e.k==='heart'){
+    const bond=e.who==='bond',ch=TALE_CHARS[e.who];if(!bond&&!(ch&&ch.look))return;
+    cutPush({who:bond?['seoyun','yunha']:[e.who],face:e.n>0?'smile':'sad',heart:true,name:tr(ch.name),
+      sub:t(bond?(e.n>0?'cut_bond':'cut_bond_down'):(e.n>0?'cut_up':'cut_down')),hearts:'♥'.repeat(e.now)+'♡'.repeat(Math.max(0,MAXH-e.now))+'  '+(e.n>0?'+':'')+e.n});
+  }
+}
 function taleEvents(){
   taleDrain(S.tale.st).forEach(e=>{
+    cutFromEvent(e);
+    if(e.k==='heart')return;
     if(e.k==='enter')taleSeat[e.who]=e.seat||TALE_CHARS[e.who].seat;
     if(e.k==='music'){if(Snd.on){if(!musicBefore)musicBefore=Snd.genre;Snd.setGenre(e.genre);}return;}
     const g=taleGuest(e.who);
@@ -1624,6 +1680,8 @@ function taleStep(){
   const T=S.tale;if(!T)return;
   taleEvents();
   const v=taleView(T.st,T.graph);
+  if(v.kind==='wait'||v.kind==='over'||v.kind==='close')setStill(null);
+  if(v.kind==='say')setStill(v.still);
   if(v.kind==='wait')return taleOrder(v);
   S.paused=true;player.st.enabled=false;el.uiWalk.hidden=true;el.act.hidden=true;S.actionKey='';playerFig.visible=false;
   if(v.kind==='say'&&TALE_CHARS[v.who]&&TALE_CHARS[v.who].seat){const g=taleGuest(v.who);if(g.active){setTalkCam(g);setFace(g.fig,v.face);}}

@@ -545,3 +545,30 @@ body.xmas #start .st-card{position:relative;z-index:1}
 .bk-coaster b{font:600 11.5px/1.25 var(--f-ui)}.bk-coaster small{font-size:10px;color:var(--text-3)}
 .bk-coaster.locked .bk-disc{background:#2a1e1a;color:var(--text-3);box-shadow:inset 0 0 0 3px rgba(255,255,255,.06)}
 .bk-coaster.locked b{color:var(--text-3)}
+
+/* story still cuts: letterbox bars, a caption and an optional tint */
+.still{position:absolute;inset:0;z-index:12;pointer-events:none}
+.still[hidden]{display:none}
+.stl-bar{position:absolute;left:0;right:0;height:0;background:#050302;transition:height .5s ease}
+.stl-bar.top{top:0}.stl-bar.bot{bottom:0}
+.still.on .stl-bar{height:8.5vh}
+.stl-tint{position:absolute;inset:0;opacity:0;transition:opacity .6s}
+.still[data-tone=sepia] .stl-tint{opacity:1;-webkit-backdrop-filter:sepia(.75) saturate(.8) contrast(1.05);backdrop-filter:sepia(.75) saturate(.8) contrast(1.05);background:rgba(120,80,40,.12)}
+.still[data-tone=cool] .stl-tint{opacity:1;-webkit-backdrop-filter:saturate(.7) hue-rotate(-12deg);backdrop-filter:saturate(.7) hue-rotate(-12deg);background:rgba(40,70,120,.1)}
+.stl-cap{position:absolute;left:0;right:0;top:calc(8.5vh + 10px);text-align:center;font:italic 500 15px var(--f-serif);color:#f1e3c4;letter-spacing:.02em;text-shadow:0 1px 8px rgba(0,0,0,.7);opacity:0;transition:opacity .6s .3s}
+.still.on .stl-cap{opacity:.95}
+/* character intro and heart cards */
+.cutin{position:absolute;left:50%;top:calc(max(14px,env(safe-area-inset-top,0px)) + 62px);transform:translate(-50%,-8px);z-index:17;display:flex;align-items:center;gap:12px;padding:8px 18px 8px 8px;border-radius:18px;background:linear-gradient(180deg,rgba(32,18,14,.88),rgba(14,8,6,.92));border:1px solid var(--line-2);box-shadow:0 12px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .28s,transform .28s;pointer-events:none;max-width:calc(100vw - 24px)}
+.cutin[hidden]{display:none}
+.cutin.on{opacity:1;transform:translate(-50%,0)}
+.cut-pics{display:flex}
+.cut-pics img{width:56px;height:67px;object-fit:cover;border-radius:12px;background:radial-gradient(circle at 50% 30%,#5a3a2a,#1c100c)}
+.cut-pics img+img{margin-left:-12px;box-shadow:-3px 0 8px rgba(0,0,0,.4)}
+.cut-txt{display:flex;flex-direction:column;gap:2px;min-width:0;word-break:keep-all}
+.cut-name{font:600 17px var(--f-serif);color:var(--text)}
+.cut-sub{font:500 11.5px var(--f-ui);color:var(--text-2)}
+.cut-hearts{font:700 14px var(--f-ui);color:#e8708a;letter-spacing:.06em}
+.cutin.heart{border-color:rgba(232,112,138,.55)}
+.cutin.heart.on .cut-hearts{animation:cutpop .5s ease-out}
+@keyframes cutpop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.still.on ~ .cutin{top:calc(8.5vh + 44px)}

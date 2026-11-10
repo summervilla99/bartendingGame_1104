@@ -2,17 +2,17 @@
 export const CHARS={
   me:{name:{ko:'하랑',en:'Harang'},seat:null},
   bond:{name:{ko:'서윤 × 윤하의 인연',en:'Seoyun × Yunha bond'}},
-  kkangi:{name:{ko:'강태산',en:'Kang Taesan'},seat:'g1',tone:'#c9b27a',prop:'helmet',
+  kkangi:{name:{ko:'강태산',en:'Kang Taesan'},intro:{ko:'말과 속마음이 반대인 헬멧 손님',en:'The helmet guest whose words say the opposite of what they mean'},seat:'g1',tone:'#c9b27a',prop:'helmet',
     look:{name:'깡이',skin:0xc9936f,top:0x1b1b1e,shirt:0xdcd7cc,pants:0x1c2230,hair:0x0d0b0b,slick:true,glasses:0x0b0b0c,earring:0xd8d8dc,necklace:0xd4af37,shoes:0xf0efe9,lip:0x6a2a26,w:1.08,h:1.01,sheen:true}},
-  yoonjae:{name:{ko:'도윤재',en:'Do Yoonjae'},seat:'g2',tone:'#9fb4d9',prop:'watchbox',
+  yoonjae:{name:{ko:'도윤재',en:'Do Yoonjae'},intro:{ko:'제일 비싼 것만 찾는 재벌 3세',en:'The heir who only asks for the most expensive thing'},seat:'g2',tone:'#9fb4d9',prop:'watchbox',
     look:{name:'윤재',skin:0xeed1b8,top:0x1b2848,shirt:0xf5f2ea,tie:0x9a7a2e,pants:0x1b2848,hair:0x3a281e,slick:true,lapel:0x121c38,watch:true,sheen:true,shoes:0x1a1010,lip:0x7a3a34,w:.95,h:1.04}},
-  master:{name:{ko:'마스터',en:'The Master'},seat:'g1',tone:'#c9a066',prop:'key',
+  master:{name:{ko:'마스터',en:'The Master'},intro:{ko:'Coda의 주인, 20년 동안 이 문을 연 사람',en:'Coda’s owner, who opened this door for twenty years'},seat:'g1',tone:'#c9a066',prop:'key',
     look:{name:'마스터',skin:0xe2bd9c,top:0x3b2b24,shirt:0xe9e0cc,tie:0x6b2a2a,pants:0x2a2420,hair:0xe6e2dc,bald:true,glasses:0x6a5a3a,lapel:0x2a1c16,watch:true,belly:true,shoes:0x1c1410,lip:0x7a3a34,w:1.02,h:.97}},
-  yunha:{name:{ko:'윤하',en:'Yunha'},seat:'piano',tone:'#d9a3b8',
+  yunha:{name:{ko:'윤하',en:'Yunha'},intro:{ko:'밤마다 피아노 앞에 앉는 사람',en:'The one who sits at the piano every night'},seat:'piano',tone:'#d9a3b8',
     look:{name:'윤하',skin:0xeac6a8,top:0x2a1a30,pants:0x2a1a30,hair:0x6b3a28,long:true,dress:true,sheen:true,earring:0xd9b46a,lip:0xa03a48,w:.9,h:1.0,shoes:0x15101a}},
-  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
+  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},intro:{ko:'노트를 펼치고 이긴 날을 세는 손님',en:'The guest who opens her notebook and counts the days she won'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
     look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
-  taesik:{name:{ko:'박태식',en:'Park Taesik'},seat:'g1',tone:'#d9a486',prop:'soju',
+  taesik:{name:{ko:'박태식',en:'Park Taesik'},intro:{ko:'열지 못한 소주병을 가진 부장님',en:'The manager with a soju bottle he cannot open'},seat:'g1',tone:'#d9a486',prop:'soju',
     look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
 };
 /* One short flavour line per drink, shown on the recommendation buttons. */

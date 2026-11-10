@@ -101,8 +101,9 @@ const NODES=[
 
 const FACE={m2:'smile',m3:'neutral',m_x1:'sad',m_x2:'angry',m_a:'smile',m_b:'neutral',m_m:'sad',m_r3:'smile',m_r2:'smile',m_r1:'neutral',m_c:'neutral',m_e:'sad',m_f:'neutral',
   pr2:'surprised',pr3:'smile',pr_x1:'sad',pr_x2:'surprised',pr_a:'smile',pr_b:'surprised',pr_c:'surprised'};
+const STILL={'m1': 'door', 'm2': null, 'm_b': 'lastglass', 'm_c': null, 'm_e': 'flashback', 'm_g': null, 'pr_a': 'reunion', 'end_love': 'end_love', 'end_friend': 'end_friend', 'end_apart': 'end_apart', 'epi': null, 'k1': 'key', 'k2': 'key', 'cl1': null};
 export const GRAPH7={};
-NODES.forEach(n=>{GRAPH7[n.id]=n;if(FACE[n.id]&&!n.face)n.face=FACE[n.id];});
+NODES.forEach(n=>{GRAPH7[n.id]=n;if(n.id in STILL)n.still=STILL[n.id];if(FACE[n.id]&&!n.face)n.face=FACE[n.id];});
 export const NIGHT7={n:7,entry:'o1',graph:GRAPH7,title:{ko:'일곱째 밤',en:'The Seventh Night'},
   desc:{ko:'마스터의 마지막 밤, 그리고 제목이 생긴 곡의 이야기.',en:'The Master’s last night, and the story behind the piece that now has a title.'}};
 

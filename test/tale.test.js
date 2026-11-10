@@ -39,7 +39,7 @@ test('a full playthrough: hearts, flags, events', () => {
   const st=newState(1,null); begin(st,G,NIGHT1.entry);
   let guard=0, enters=[];
   while(view(st,G).kind!=='close' && guard++<100){
-    drainEvents(st).forEach(e=>enters.push(e.k+':'+e.who));
+    drainEvents(st).filter(e=>e.k!=='heart').forEach(e=>enters.push(e.k+':'+e.who));
     const v=view(st,G);
     if(v.kind==='say') advance(st,G);
     else if(v.kind==='choice') pick(st,G,G[st.node].opts.findIndex(o=>o.right));
@@ -96,4 +96,11 @@ test('retry restores hearts from before the guest', () => {
   begin(st,G,'c3'); pick(st,G,0); while(view(st,G).kind==='say') advance(st,G);
   assert.equal(view(st,G).kind,'over'); retry(st,G);
   assert.equal(st.hearts.taesik,1); assert.equal(st.node,'ts1');
+});
+
+test('hearts raise events with the new total',()=>{
+  const g={e:{t:'enter',who:'a',next:'s'},s:{t:'say',who:'a',text:{ko:'x',en:'x'},next:'c',hearts:{a:2}},c:{t:'close',title:{ko:'c',en:'c'},note:{ko:'n',en:'n'}}};
+  const st=newState(1);begin(st,g,'e');
+  const h=drainEvents(st).filter(e=>e.k==='heart');
+  assert.deepEqual(h,[{k:'heart',who:'a',n:2,now:2}]);
 });

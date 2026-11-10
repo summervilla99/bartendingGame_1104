@@ -121,3 +121,21 @@ test('the ending gallery lists every ending of night 7 with text in both languag
   ENDINGS.forEach(e => { assert.ok(flags.has(e.id), e.id+' is set by the night'); assert.ok(bi(e.title)&&bi(e.hint)); assert.ok(e.text.length>=2); e.text.forEach(x=>assert.ok(bi(x))); });
   assert.equal(new Set(ENDINGS.map(e=>e.id)).size,3);
 });
+
+import {STILLS} from '../src/story/stills.js';
+import {CHARS as CHARS_ALL} from '../src/story/chars.js';
+test('every still named by a node exists, with ko/en captions and known characters',()=>{
+  for(const n of NIGHTS){
+    for(const node of Object.values(n.graph)){
+      if(node.still)assert.ok(STILLS[node.still],'unknown still '+node.still+' in night '+n.n);
+    }
+  }
+  for(const [id,s] of Object.entries(STILLS)){
+    assert.ok(s.cap&&s.cap.ko&&s.cap.en,'caption '+id);
+    assert.ok(s.cam&&s.cam.pos&&s.cam.look,'camera '+id);
+    (s.figs||[]).forEach(f=>assert.ok(CHARS_ALL[f.who]&&CHARS_ALL[f.who].look,'figure '+f.who+' in '+id));
+  }
+});
+test('every story character has an intro line in both languages',()=>{
+  for(const [k,c] of Object.entries(CHARS_ALL)){if(!c.look)continue;assert.ok(c.intro&&c.intro.ko&&c.intro.en,'intro '+k);}
+});

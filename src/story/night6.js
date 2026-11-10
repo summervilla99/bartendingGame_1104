@@ -141,7 +141,8 @@ const NODES=[
 
 const FACE={ts1:'sad',ts_x1:'sad',ts_x2:'surprised',ts_a:'neutral',all0:'surprised',all1:'neutral',all2:'neutral',all4:'smile',yj_x1:'sad',yj_x2:'surprised',yj_a:'smile',s3:'angry',k_x1:'angry',k_x2:'smile',k_a:'smile',
   yh1:'sad',yh_x1:'sad',yh_x2:'surprised',yh_a:'smile',d4:'smile',d5:'smile',d7:'smile',t_r3:'smile',t_r2:'smile',t_r1:'neutral',t_m:'sad',cp2:'smile',cp3:'surprised',cp4:'sad',cp_x1:'sad',cp_x2:'surprised',cp_a:'smile',cp_b:'smile',cp_d:'sad',cp_e:'sad'};
+const STILL={'o2': 'letter', 'o3': null, 'all3': 'regulars', 'all4': 'offer', 'yj_a': null, 's3': 'helmet', 'k_a': null, 'd1': 'drawer', 'd5': null, 'd6': 'soju', 'cp1': null, 'cp_a': 'title', 'cp_c': 'playing', 'cp_d': null};
 export const GRAPH6={};
-NODES.forEach(n=>{GRAPH6[n.id]=n;if(FACE[n.id])n.face=FACE[n.id];});
+NODES.forEach(n=>{GRAPH6[n.id]=n;if(n.id in STILL)n.still=STILL[n.id];if(FACE[n.id])n.face=FACE[n.id];});
 export const NIGHT6={n:6,entry:'o1',graph:GRAPH6,title:{ko:'여섯째 밤',en:'The Sixth Night'},
   desc:{ko:'월세 세 배, 피아노 의자의 서랍, 그리고 제목이 생긴 곡.',en:'Triple rent, a drawer in the piano bench, and a piece that finally gets a title.'}};
