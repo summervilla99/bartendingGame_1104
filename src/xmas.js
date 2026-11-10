@@ -14,7 +14,7 @@ export function buildXmas(scene){
   const add=(m,p)=>{(p||root).add(m);return m;};
 
   /* tree */
-  const tree=new THREE.Group();tree.position.set(-8.8,0,9.1);tree.scale.setScalar(1.2);root.add(tree);
+  const tree=new THREE.Group();tree.position.set(-7.3,0,.12);tree.scale.setScalar(1.2);root.add(tree);
   add(new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.4,10),M(0x3a2214)),tree).position.y=.2;
   const skirt=add(new THREE.Mesh(new THREE.CylinderGeometry(.62,.66,.05,28),red),tree);skirt.position.y=.03;
   const tiers=[[.78,.95,.35],[.62,.85,.85],[.48,.75,1.3],[.34,.65,1.72]];

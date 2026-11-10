@@ -58,12 +58,18 @@ function cyl(rt,rb,h,mat,x,y,z,parent,seg){const m=new THREE.Mesh(new THREE.Cyli
 /* ───────────── room ───────────── */
 const room=buildRoom(scene);
 const fx=createFx(scene),xmas=buildXmas(scene);
+const treeCol={min:new THREE.Vector3(-8.1,0,-.7),max:new THREE.Vector3(-6.5,2.4,.9)},treeBox={min:treeCol.min.clone(),max:treeCol.max.clone()};
+room.colliders.push(treeCol);                       // the tree stands at the right end of the bar (as the bartender sees it); solid only while shown
 const cat=makeCat();cat.group.position.set(-4.55,COUNTER_TOP,.12);cat.group.userData.baseY=COUNTER_TOP;cat.group.rotation.y=.35;scene.add(cat.group);
 /* Christmas decoration: on by default, remembered once the player switches it */
 const XMAS_KEY='courte.xmas';
 let xmasOn=(()=>{try{return localStorage.getItem(XMAS_KEY)!=='off';}catch(_){return true;}})();
 function setXmas(on,save){
-  xmasOn=!!on;xmas.setOn(xmasOn);cat.setXmas(xmasOn);setSantaHats(xmasOn);room.setSnow(xmasOn);document.body.classList.toggle('xmas',xmasOn);
+  xmasOn=!!on;
+  const show=xmasOn&&!(S.session&&S.session.mode==='tale');           // the story keeps its own quiet look
+  xmas.setOn(show);cat.setXmas(show);setSantaHats(show);room.setSnow(show);document.body.classList.toggle('xmas',show);
+  treeCol.min.copy(show?treeBox.min:new THREE.Vector3(1e4,0,1e4));treeCol.max.copy(show?treeBox.max:new THREE.Vector3(1e4+.1,.1,1e4+.1));
+  const row=document.getElementById('row-xmas');if(row)row.hidden=!!(S.session&&S.session.mode==='tale');
   const b=document.getElementById('btn-xmas');if(b){b.textContent=t(xmasOn?'xmas_on':'xmas_off');b.setAttribute('aria-pressed',xmasOn?'true':'false');}
   if(save){try{localStorage.setItem(XMAS_KEY,xmasOn?'on':'off');}catch(_){}}
 }
@@ -1513,7 +1519,7 @@ function applyLook(timeId){
 }
 /* Look, guests and classes for a session config (also used when a room's host sets the night). */
 function adoptSession(cfg){
-  S.session=cfg;S.time=TIMES[cfg.time];
+  S.session=cfg;S.time=TIMES[cfg.time];setXmas(xmasOn,false);
   applyLook(cfg.time);
   room.setStools(layoutStools(cfg.chairs||0));
   guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
