@@ -115,6 +115,10 @@ export function makeGarnish(kind){
   }else if(kind==='mint'){
     const lm=M(0x2f8a3a,{roughness:.55,emissive:0x0c2a10,side:THREE.DoubleSide});
     [[0,0,.5],[.02,.012,-.4],[-.015,.024,.1]].forEach(([x,y,r])=>{const l=new THREE.Mesh(new THREE.SphereGeometry(.026,10,8),lm);l.scale.set(1,.12,.62);l.position.set(x,y,0);l.rotation.set(.3,r,.4);g.add(l);});
+  }else if(kind==='beans'){
+    const bm=M(0x2a160c,{roughness:.35,emissive:0x0e0603,envMapIntensity:.8});
+    [[0,0,.2],[.03,.018,-.5],[-.03,.02,.9]].forEach(([x,z,r],i)=>{const b=new THREE.Mesh(new THREE.SphereGeometry(.013,12,10),bm);b.scale.set(1.3,.8,.95);b.position.set(x,0,z);b.rotation.y=r;g.add(b);
+      const l=new THREE.Mesh(new THREE.BoxGeometry(.02,.0015,.0035),M(0x0a0402));l.position.set(x,.0105,z);l.rotation.y=r;g.add(l);});
   }else if(kind==='cherry'){
     const c=new THREE.Mesh(new THREE.SphereGeometry(.022,16,12),M(0xb0102a,{roughness:.18,emissive:0x34000a,envMapIntensity:1.2}));
     const s=new THREE.Mesh(new THREE.CylinderGeometry(.003,.003,.07,6),M(0x3a2a14));s.position.set(.012,.04,0);s.rotation.z=-.3;

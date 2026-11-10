@@ -13,6 +13,8 @@ import {createTaleUI} from './tale-ui.js';
 import {makeProp} from './props.js';
 import {createFx} from './fx.js';
 import {buildXmas} from './xmas.js';
+import {makeCat} from './cat.js';
+import {loadBook,saveBook,recordServe} from './book.js';
 import {setSantaHats,makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
 import {buildEnv} from './env.js';
@@ -56,11 +58,12 @@ function cyl(rt,rb,h,mat,x,y,z,parent,seg){const m=new THREE.Mesh(new THREE.Cyli
 /* ───────────── room ───────────── */
 const room=buildRoom(scene);
 const fx=createFx(scene),xmas=buildXmas(scene);
+const cat=makeCat();cat.group.position.set(-4.55,COUNTER_TOP,.12);cat.group.userData.baseY=COUNTER_TOP;cat.group.rotation.y=.35;scene.add(cat.group);
 /* Christmas decoration: on by default, remembered once the player switches it */
 const XMAS_KEY='courte.xmas';
 let xmasOn=(()=>{try{return localStorage.getItem(XMAS_KEY)!=='off';}catch(_){return true;}})();
 function setXmas(on,save){
-  xmasOn=!!on;xmas.setOn(xmasOn);setSantaHats(xmasOn);room.setSnow(xmasOn);document.body.classList.toggle('xmas',xmasOn);
+  xmasOn=!!on;xmas.setOn(xmasOn);cat.setXmas(xmasOn);setSantaHats(xmasOn);room.setSnow(xmasOn);document.body.classList.toggle('xmas',xmasOn);
   const b=document.getElementById('btn-xmas');if(b){b.textContent=t(xmasOn?'xmas_on':'xmas_off');b.setAttribute('aria-pressed',xmasOn?'true':'false');}
   if(save){try{localStorage.setItem(XMAS_KEY,xmasOn?'on':'off');}catch(_){}}
 }
@@ -221,7 +224,7 @@ INGR.forEach(ing=>{
 const garnEls={};
 GARNISH.forEach(gn=>{
   const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.id=gn.id;
-  b.innerHTML='<span class="sw" style="background:'+({none:'#d6c3a0',orange:'#e0802a',lime:'#9cc24a',lemon:'#f0d23a',mint:'#3f9a4a',cherry:'#8a1020'}[gn.id])+'"></span><span class="nm"></span><span class="ml">&nbsp;</span>';b.querySelector('.nm').textContent=gn.name;
+  b.innerHTML='<span class="sw" style="background:'+({none:'#d6c3a0',orange:'#e0802a',lime:'#9cc24a',lemon:'#f0d23a',mint:'#3f9a4a',cherry:'#8a1020',beans:'#3a1f12'}[gn.id])+'"></span><span class="nm"></span><span class="ml">&nbsp;</span>';b.querySelector('.nm').textContent=gn.name;
   b.addEventListener('click',()=>{Snd.init();chooseGarnish(gn.id);});
   el.gChips.appendChild(b);garnEls[gn.id]=b;
 });
@@ -502,7 +505,11 @@ function updateBottles(dt){
       stream.material.color.setRGB.apply(stream.material.color,ING[S.pourId].rgb);
       const len=Math.max(.02,tipY-surf);stream.scale.set(1,len,1);stream.position.set(VP.x,surf+len/2,VP.z);
       Snd.pour(true,S.drink.total/v.cap);
-      if(S.drink.total>=v.cap-.01){toast(t('toast_full'));stopPour();}
+      if(S.drink.total>=v.cap-.01){
+        toast(t('toast_full'));
+        const c=blendColor()||[.8,.6,.3];fx.burst({x:VP.x,y:v.group.position.y+(v.rimY||.1),z:VP.z,n:26,color:new THREE.Color(c[0],c[1],c[2]).getHex(),speed:.35,up:1.1,gravity:5,life:.7,spread:.03});Snd.splash();   // it brims over
+        stopPour();
+      }
     }else Snd.pour(false);
   }else if(S.stage==='strain'){
     showStream=S.strainStream;
@@ -637,9 +644,12 @@ function chooseGarnish(id,silent){
   S.garnishObj=null;
   if(id!=='none'){
     const go=makeGarnish(id);
-    if(id==='cherry')go.position.set(.02,sv.level+.005,0);else go.position.set(sv.rimR*.82,sv.rimY+.005,0);
+    if(id==='cherry'||id==='beans')go.position.set(.02,sv.level+.005,0);else go.position.set(sv.rimR*.82,sv.rimY+.005,0);
     sv.group.add(go);S.garnishObj=go;
-    if(!silent)Snd.plop();
+    if(!silent){
+      if(id==='orange'){const w=new THREE.Vector3();go.getWorldPosition(w);fx.flame(w.x,w.y+.05,w.z,.7);Snd.flame();}   // flamed orange peel
+      else Snd.plop();
+    }
   }
 }
 
@@ -689,6 +699,11 @@ function showResult(){
   $('#btn-r-next').textContent=S.tale?t('tale_next'):t('r_next');$('#btn-r-leave').hidden=!!S.tale;
   el.result.hidden=false;
   Snd.clink(1);
+  if(r.stars>=2){fx.burst({x:clamp(g.x,-1.8,1.8),y:COUNTER_TOP+.45,z:.5,n:r.stars>=3?70:34,rainbow:r.stars>=3,color:0xffd36a,speed:1.4,up:2.4,gravity:3.2,life:1.3,spread:.1});Snd.cheer(r.stars);}
+  {const nb=loadBook(),who=S.tale?null:g.name,rec=S.drink.recipeId,got=recordServe(nb,S.tale?g.name:who,rec,r.stars);saveBook(nb);
+    const nm=RECIPE_BY_ID[rec]?RECIPE_BY_ID[rec].name:rec;
+    if(got.photo)toast(t('book_new_photo',{who:g.name}),3200);else if(got.coaster)toast(t('book_new_coaster',{name:nm}),3000);else if(got.best)toast(t('book_best',{name:nm}),2600);}
+  cat.react(r.stars);if(r.stars!==2)Snd.meow(r.stars);
   g.cheer=1.2;
 }
 function spawnDrinkProp(g,d){
@@ -1091,7 +1106,7 @@ function frame(now){
   const dt=Math.min(DT_MAX,(now-last)/1000);last=now;time+=dt;
   if(S.mode==='walk'){if(!S.paused){player.update(dt,time);updatePlayerPose();}player.view.off=portraitNow()?.12:0;}
   updatePhoto(dt);
-  updateCamera(dt);room.animate(dt,time);xmas.animate(time);fx.update(dt);
+  updateCamera(dt);room.animate(dt,time);xmas.animate(time);fx.update(dt);cat.update(dt,time);
   updateProps(dt);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
@@ -1389,7 +1404,7 @@ function updateRemoteBar(id,r,t){
   /* garnish on the serving glass */
   if(m.gar!==b.garnId){
     if(b.garn&&b.garn.parent)b.garn.parent.remove(b.garn);b.garn=null;b.garnId=m.gar;
-    if(m.gar!=='none'){const go=makeGarnish(m.gar);if(m.gar==='cherry')go.position.set(.02,tgt.level+.005,0);else go.position.set(tgt.rimR*.82,tgt.rimY+.005,0);tgt.group.add(go);b.garn=go;}
+    if(m.gar!=='none'){const go=makeGarnish(m.gar);if(m.gar==='cherry'||m.gar==='beans')go.position.set(.02,tgt.level+.005,0);else go.position.set(tgt.rimR*.82,tgt.rimY+.005,0);tgt.group.add(go);b.garn=go;}
   }
   /* the bottle being poured: tilted above the vessel, a stream down to the liquid */
   const pour=m.stage==='pour'?m.pour:'';
@@ -1641,6 +1656,44 @@ function openStart(){
   S.paused=true;player.st.enabled=false;$('#summary').hidden=true;startUI.show();
 }
 $('#btn-night').addEventListener('click',openStart);
+/* bar notebook: polaroid guestbook + coaster collection */
+const bookEl=$('#book'),bookBody=$('#book-body');let bookTab='photos';
+function hue(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))%360;return h;}
+function renderBook(){
+  const b=loadBook();bookBody.textContent='';
+  bookEl.querySelectorAll('[data-bt]').forEach(x=>x.classList.toggle('on',x.dataset.bt===bookTab));
+  const mk=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
+  if(bookTab==='photos'){
+    if(!b.photos.length){bookBody.append(mk('p','bk-empty',t('book_empty_photos')));return;}
+    const wall=mk('div','bk-wall');
+    b.photos.forEach((p,i)=>{
+      const rc=RECIPE_BY_ID[p.rec];if(!rc)return;
+      const c=mk('figure','bk-photo');c.style.setProperty('--rot',((i*37%9)-4)+'deg');
+      const img=mk('div','bk-img');img.style.setProperty('--h',hue(p.rec));img.append(mk('span','bk-glass','🍸'));
+      const d=new Date(p.ts||0);
+      c.append(mk('i','bk-tape'),img,mk('b','',rc.name),mk('span','bk-who',t('book_who',{who:p.who})),mk('em','bk-stars','★★★'),mk('small','',isNaN(d)?'':d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')));
+      wall.append(c);
+    });
+    bookBody.append(wall);
+  }else{
+    const have=RECIPES.filter(r=>b.coasters[r.id]).length;
+    bookBody.append(mk('p','bk-count',t('book_count',{n:have,m:RECIPES.length})));
+    const grid=mk('div','bk-grid');
+    RECIPES.forEach(r=>{
+      const c=b.coasters[r.id],el2=mk('div','bk-coaster'+(c?'':' locked'));
+      el2.style.setProperty('--h',hue(r.id));
+      el2.append(mk('span','bk-disc',c?r.name.slice(0,1):'?'),mk('b','',c?r.name:'???'),mk('small','',c?'★'.repeat(c.best)+' · '+t('book_made',{n:c.n}):''));
+      grid.append(el2);
+    });
+    bookBody.append(grid);
+  }
+}
+function openBook(){bookEl.hidden=false;$('#settings').hidden=true;renderBook();}
+function closeBook(){bookEl.hidden=true;}
+$('#btn-book').addEventListener('click',openBook);$('#book-x').addEventListener('click',closeBook);
+bookEl.addEventListener('click',e=>{const b=e.target.closest('[data-bt]');if(b){bookTab=b.dataset.bt;renderBook();}});
+window.addEventListener('keydown',e=>{if(e.code==='Escape'&&!bookEl.hidden){closeBook();e.stopPropagation();}},true);
+onLang(()=>{if(!bookEl.hidden)renderBook();});
 $('#btn-xmas').addEventListener('click',()=>{setXmas(!xmasOn,true);toast(t(xmasOn?'xmas_toast_on':'xmas_toast_off'),2200);if(xmasOn){Snd.init();Snd.jingle();}});
 setXmas(xmasOn,false);
 /* settings popover (language, units, music) */

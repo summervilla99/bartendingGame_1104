@@ -181,6 +181,35 @@ export const Snd=(function(){
       if(!ctx)return;const t=ctx.currentTime;
       for(let i=0;i<7;i++){const tt=t+i*.075+rand(0,.02),f=3400+rand(0,900);tone(f,tt,.35,'sine',.03);tone(f*1.51,tt,.25,'sine',.02);hit(tt,.05,6000,.025);}
     },
+    /* orange peel flare: a quick breathy whoosh with a crackle on top */
+    flame(){
+      if(!ctx)return;const t=ctx.currentTime,s2=ctx.createBufferSource();s2.buffer=noise;
+      const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=.9;f.frequency.setValueAtTime(500,t);f.frequency.exponentialRampToValueAtTime(2400,t+.35);
+      const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12,t+.06);g.gain.exponentialRampToValueAtTime(.0001,t+.5);
+      s2.connect(f);f.connect(g);g.connect(master);s2.start(t,Math.random());s2.stop(t+.55);
+      for(let i=0;i<5;i++)hit(t+.05+i*rand(.03,.06),.015,4000,.05);
+    },
+    /* a glass brimming over: a wet splash */
+    splash(){
+      if(!ctx)return;const t=ctx.currentTime,s2=ctx.createBufferSource();s2.buffer=noise;
+      const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1800;f.Q.value=.7;
+      const g=ctx.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+.22);
+      s2.connect(f);f.connect(g);g.connect(master);s2.start(t,Math.random());s2.stop(t+.25);
+      tone(520,t,.12,'sine',.04);tone(340,t+.06,.1,'sine',.03);
+    },
+    /* a good serve: a short ascending sparkle (taller for three stars) */
+    cheer(stars){
+      if(!ctx)return;const t=ctx.currentTime,n=stars>=3?6:3,sc=[0,4,7,12,16,19];
+      for(let i=0;i<n;i++){const f=mtof(72+sc[i]);tone(f,t+i*.07,.5,'triangle',.04);tone(f*2,t+i*.07,.3,'sine',.015);}
+    },
+    /* a small meow: a gliding voice through a vowel-ish band-pass (happy = rising, grumpy = falling) */
+    meow(stars){
+      if(!ctx)return;const t=ctx.currentTime,o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(),up=stars>=3;
+      o.type='sawtooth';o.frequency.setValueAtTime(up?520:640,t);o.frequency.linearRampToValueAtTime(up?940:420,t+.18);o.frequency.linearRampToValueAtTime(up?700:300,t+.42);
+      f.type='bandpass';f.Q.value=3;f.frequency.setValueAtTime(900,t);f.frequency.linearRampToValueAtTime(up?2000:1100,t+.2);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.06,t+.06);g.gain.linearRampToValueAtTime(.045,t+.25);g.gain.exponentialRampToValueAtTime(.0001,t+.46);
+      o.connect(f);f.connect(g);g.connect(master);o.start(t);o.stop(t+.5);
+    },
     pause(){if(ctx&&ctx.state==='running')ctx.suspend();if(media&&!media.paused)media.pause();},
     resume(){if(ctx&&ctx.state!=='running')ctx.resume();if(media&&media.paused)media.play().catch(()=>{});}
   };

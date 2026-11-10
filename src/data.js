@@ -55,7 +55,7 @@ export const RECIPES=[
   R('americano','아메리카노 칵테일','Americano','build','rocks',{campari:30,vermouth:30,soda:60},'orange'),
   R('cosmopolitan','코스모폴리탄','Cosmopolitan','shake','martini',{vodka:40,triple:15,lime:15,cranberry:30},'orange'),
   R('moscowmule','모스코 뮬','Moscow Mule','build','mug',{vodka:45,lime:15,ginger:120},'lime'),
-  R('espressomartini','에스프레소 마티니','Espresso Martini','shake','martini',{vodka:50,coffee:20,espresso:30,syrup:10},'none'),
+  R('espressomartini','에스프레소 마티니','Espresso Martini','shake','martini',{vodka:50,coffee:20,espresso:30,syrup:10},'beans'),
   R('tommys','토미스 마가리타','Tommy\'s Margarita','shake','rocks',{tequila:60,lime:30,agave:15},'lime'),
   R('whitenegroni','화이트 네그로니','White Negroni','stir','tumbler',{gin:45,blanc:30,gentian:15},'lemon'),
   R('mezcalnegroni','메스칼 네그로니','Mezcal Negroni','stir','tumbler',{mezcal:30,campari:30,vermouth:30},'orange'),
@@ -111,7 +111,7 @@ export function ratioOf(r){
 export const VESSEL_CAP={mixing: 250, rocks: 200, collins: 300, mug: 330, martini: 150, tumbler: 260, fashioned: 200, margarita: 200, nick: 130, highball: 220, coupe: 150, tin: 220};
 export const GARNISH=withName([
   {id:'none',n:N('없음','None')},{id:'orange',n:N('오렌지 필','Orange peel')},{id:'lime',n:N('라임 휠','Lime wheel')},
-  {id:'lemon',n:N('레몬 휠','Lemon wheel')},{id:'mint',n:N('민트','Mint')},{id:'cherry',n:N('체리','Cherry')}
+  {id:'lemon',n:N('레몬 휠','Lemon wheel')},{id:'mint',n:N('민트','Mint')},{id:'cherry',n:N('체리','Cherry')},{id:'beans',n:N('커피콩','Coffee beans')}
 ]);
 export const GARNISH_NAME=locMap(Object.fromEntries(GARNISH.map(g=>[g.id,g.n])));
 export const GLASS_NAME=locMap({

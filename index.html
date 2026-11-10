@@ -34,6 +34,7 @@
     <div class="srow" id="row-genre"><span data-i18n="set_genre"></span><span class="segs" id="genre-seg"><button class="btn sm" type="button" data-g="jazz" data-i18n="mus_jazz"></button><button class="btn sm" type="button" data-g="house" data-i18n="mus_house"></button><button class="btn sm" type="button" data-g="classical" data-i18n="mus_classical"></button></span></div>
     <div class="srow" id="row-mood" hidden><span data-i18n="set_mood"></span><span class="segs" id="mood-seg"><button class="btn sm" type="button" data-t="golden" data-i18n="time_golden"></button><button class="btn sm" type="button" data-t="prime" data-i18n="time_prime"></button><button class="btn sm" type="button" data-t="last" data-i18n="time_last"></button></span></div>
     <div class="srow" id="row-limit" hidden><span data-i18n="set_limit"></span><span class="segs" id="limit-seg"><button class="btn sm" type="button" data-l="off" data-i18n="limit_off"></button><button class="btn sm" type="button" data-l="easy">60</button><button class="btn sm" type="button" data-l="mid">45</button><button class="btn sm" type="button" data-l="hard">30</button></span></div>
+    <div class="srow"><span data-i18n="set_book"></span><button class="btn sm" id="btn-book" type="button" data-i18n="book_open"></button></div>
     <div class="srow" id="row-xmas"><span data-i18n="set_xmas"></span><button class="btn sm" id="btn-xmas" type="button" aria-pressed="true"></button></div>
     <div class="srow" id="row-npc" hidden><span data-i18n="set_npc"></span><button class="btn sm" id="btn-npc" type="button" aria-pressed="true"></button></div>
     <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><span class="segs"><button class="btn sm" id="btn-room-invite" type="button" data-i18n="inv_settings"></button><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></span></div>
@@ -159,6 +160,10 @@
     <button class="btn sm" type="button" data-e="bow" data-i18n="emo_bow"></button>
   </div>
   <div class="chatfeed" id="chatfeed" aria-live="polite"></div>
+  <section class="bookpanel glass" id="book" hidden aria-labelledby="book-title">
+    <header><b id="book-title" data-i18n="book_title"></b><span class="segs"><button class="btn sm on" type="button" data-bt="photos" data-i18n="book_photos"></button><button class="btn sm" type="button" data-bt="coasters" data-i18n="book_coasters"></button></span><button type="button" class="ch-x" id="book-x" data-i18n-aria="chat_hist_close">×</button></header>
+    <div class="bk-body" id="book-body"></div>
+  </section>
   <section class="chathist glass" id="chat-hist" hidden aria-labelledby="chat-hist-title">
     <header><b id="chat-hist-title" data-i18n="chat_hist_title"></b><span class="ch-n" id="chat-hist-n"></span><button type="button" class="ch-x" id="chat-hist-x" data-i18n-aria="chat_hist_close">×</button></header>
     <div class="ch-list" id="chat-hist-list" role="log" aria-live="polite"></div>
