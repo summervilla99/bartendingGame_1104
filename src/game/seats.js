@@ -42,5 +42,5 @@ export const PHOTO_SPOTS=[
   {id:'piano',x:6.5,z:6.7,face:Math.PI,name:{ko:'피아노 앞',en:'By the piano'}},
   {id:'windowR',x:5.2,z:10.2,face:Math.PI,name:{ko:'창가',en:'By the window'}},
   {id:'windowL',x:-5.2,z:10.2,face:Math.PI,name:{ko:'창가',en:'By the window'}},
-  {id:'sign',x:0,z:3.0,face:0,name:{ko:'네온 사인 앞',en:'Under the sign'}}
+  {id:'sign',x:0,z:3.0,face:0,name:{ko:'간판 앞',en:'Under the sign'}}
 ];

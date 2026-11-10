@@ -12,7 +12,7 @@ html,body{margin:0;padding:0;overscroll-behavior:none}
   --f-serif:'Cormorant Garamond','Gowun Batang','Noto Serif KR','Apple SD Gothic Neo',serif;
   --f-display:var(--f-serif);
   --f-body:var(--f-ui);
-  --f-neon:'Yellowtail','Brush Script MT',cursive;
+  --f-neon:'Marcellus','Cormorant Garamond','Gowun Batang',serif;      /* the Bar Coda wordmark */
   --blur:blur(18px) saturate(1.35);
   color-scheme:dark;
 }
@@ -58,7 +58,7 @@ button{font:inherit;color:inherit}
   padding-top:max(14px,env(safe-area-inset-top,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));pointer-events:none;z-index:5}
 .top>*{pointer-events:auto}
 .brand{line-height:1;pointer-events:none}
-.neon{display:block;font:30px/1 var(--f-neon);color:#f6dcd2;text-shadow:0 0 6px rgba(194,59,94,.5),0 0 18px rgba(194,59,94,.28)}
+.neon{display:block;font:400 26px/1 var(--f-neon);letter-spacing:.16em;color:#e1c585;background:linear-gradient(180deg,#f3dfab 0%,#d9b46b 55%,#a98242 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .brand-sub{display:block;margin-top:7px;font:600 10px var(--f-ui);letter-spacing:.3em;color:var(--brass)}
 .night{margin-top:7px;font:600 10.5px var(--f-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--brass);white-space:nowrap}
 .brand:has(.night:not([hidden])) .brand-sub{display:none}
@@ -227,7 +227,7 @@ button{font:inherit;color:inherit}
   .rcard{max-height:92dvh;overflow:auto}
 }
 @media (max-width:640px){
-  .neon{font-size:26px}
+  .neon{font-size:21px}
   .brand-sub{display:none}
   .stat span{display:none}
   .stat{padding:9px 14px}

@@ -925,7 +925,7 @@ function capturePhoto(spot){
   const pad=Math.round(Math.min(w,h)*.045),bar=pad*2.5;
   const gr=g.createLinearGradient(0,h-bar*1.6,0,h);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');
   g.fillStyle=gr;g.fillRect(0,h-bar*1.6,w,bar*1.6);
-  g.textBaseline='middle';g.textAlign='left';g.fillStyle='#f6dcd2';g.font=Math.round(pad*1.5)+'px Yellowtail,"Brush Script MT",cursive';
+  g.textBaseline='middle';g.textAlign='left';g.fillStyle='#e6c98a';g.font=Math.round(pad*1.25)+'px Marcellus,"Cormorant Garamond",serif';
   g.fillText('Bar Coda',pad,h-pad*1.35);
   g.textAlign='right';g.fillStyle='#c9a066';g.font='600 '+Math.round(pad*.5)+'px "DM Sans","Noto Sans KR",sans-serif';
   const bits=[tr(spot.name),new Date().toLocaleDateString(getLang()==='ko'?'ko-KR':'en-US',{year:'numeric',month:'short',day:'numeric'})];
@@ -1465,6 +1465,6 @@ requestAnimationFrame(frame);
 
 /* fonts: repaint canvas text once the web fonts arrive */
 if(document.fonts&&document.fonts.load){
-  Promise.all([document.fonts.load('150px Yellowtail'),document.fonts.load('56px "Black Han Sans"','Coda 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
+  Promise.all([document.fonts.load('112px Marcellus','Bar Coda'),document.fonts.load('56px "Black Han Sans"','Coda 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
   document.fonts.ready.then(()=>{room.drawNeon();paintAllLabels();});
 }

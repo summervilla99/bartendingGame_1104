@@ -278,19 +278,23 @@ export function buildRoom(scene){
   const neonTex=new THREE.CanvasTexture(neonCanvas);
   function drawNeon(){
     const g=neonCanvas.getContext('2d');g.clearRect(0,0,1024,300);
-    g.textAlign='center';g.textBaseline='alphabetic';
-    g.font='150px Yellowtail,"Brush Script MT",cursive';
-    [30,14,5].forEach(b=>{g.shadowColor='#e0507a';g.shadowBlur=b;g.fillStyle='#f08aa4';g.fillText('Bar Coda',512,190);});
-    g.shadowBlur=0;g.fillStyle='#ffe6e6';g.fillText('Bar Coda',512,190);
-    g.font='34px "Black Han Sans","Apple SD Gothic Neo",sans-serif';
-    g.shadowColor='#d9a060';g.shadowBlur=12;g.fillStyle='#f2d8b0';
-    g.fillText('L  I  S  T  E  N  I  N  G    L  O  U  N  G  E',512,262);
+    /* a brass-lettered sign on dark green enamel: double hairline frame, wide-tracked wordmark */
+    const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();};
+    const plate=g.createLinearGradient(0,30,0,270);plate.addColorStop(0,'#24402f');plate.addColorStop(1,'#122219');
+    rr(30,30,964,240,16);g.fillStyle=plate;g.fill();
+    g.strokeStyle='#d6b26a';g.lineWidth=3;rr(46,46,932,208,10);g.stroke();
+    g.strokeStyle='rgba(214,178,106,.55)';g.lineWidth=1.2;rr(56,56,912,188,6);g.stroke();
+    g.textAlign='left';g.textBaseline='alphabetic';g.font='112px Marcellus,"Cormorant Garamond",serif';
+    const word='Bar Coda',sp=20,chars=[...word],widths=chars.map(c=>g.measureText(c).width),total=widths.reduce((a,b)=>a+b,0)+sp*(chars.length-1);
+    const gold=g.createLinearGradient(0,100,0,190);gold.addColorStop(0,'#f6e3b2');gold.addColorStop(.6,'#dcb76f');gold.addColorStop(1,'#a98242');
+    g.fillStyle=gold;let x=512-total/2;chars.forEach((c,i)=>{g.fillText(c,x,172);x+=widths[i]+sp;});
+    g.strokeStyle='rgba(214,178,106,.7)';g.lineWidth=1.4;g.beginPath();g.moveTo(392,212);g.lineTo(632,212);g.stroke();
     neonTex.needsUpdate=true;
   }
   drawNeon();
-  const neonMat=new THREE.MeshBasicMaterial({map:neonTex,transparent:true,toneMapped:false,color:new THREE.Color(1.15,1.15,1.15),depthWrite:false});
+  const neonMat=new THREE.MeshBasicMaterial({map:neonTex,transparent:true,toneMapped:false,color:new THREE.Color(1,1,1),depthWrite:false});
   const neon=add(new THREE.Mesh(new THREE.PlaneGeometry(3.4,1),neonMat));neon.position.set(0,4.72,-2.55);
-  const neonGlow=add(glow(5.5,2.2,0xc23b5e,.12));neonGlow.position.set(0,4.7,-2.58);
+  const neonGlow=add(glow(5.5,2.2,0xd9a860,.07));neonGlow.position.set(0,4.7,-2.58);
 
   /* art, sconces */
   const frame=(w,h,seed,p)=>{
