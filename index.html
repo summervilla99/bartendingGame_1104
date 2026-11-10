@@ -22,7 +22,7 @@
   <header class="top">
     <div class="brand"><span class="neon">Bar Coda</span><span class="brand-sub">LISTENING LOUNGE</span><div class="night" id="night-stat" hidden><span id="night-lb"></span><b id="night-prog"></b></div></div>
     <div class="top-r">
-      <button class="stat roomchip" id="room-chip" type="button" hidden></button>
+      <button class="stat roomchip" id="room-chip" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="rc-code"></span><span class="rc-n"></span><span class="rc-cta" data-i18n="inv_chip"></span></button>
       <div class="stat"><span data-i18n="tips"></span><b id="tips">₩0</b></div>
       <button class="ibtn" id="btn-settings" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="settings_aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </div>
@@ -33,7 +33,7 @@
     <div class="srow"><span data-i18n="set_zoom"></span><input id="zoom-range" type="range" min="60" max="180" step="5" value="100" aria-label="zoom"></div>
     <div class="srow" id="row-genre"><span data-i18n="set_genre"></span><span class="segs" id="genre-seg"><button class="btn sm" type="button" data-g="jazz" data-i18n="mus_jazz"></button><button class="btn sm" type="button" data-g="house" data-i18n="mus_house"></button><button class="btn sm" type="button" data-g="classical" data-i18n="mus_classical"></button></span></div>
     <div class="srow" id="row-mood" hidden><span data-i18n="set_mood"></span><span class="segs" id="mood-seg"><button class="btn sm" type="button" data-t="golden" data-i18n="time_golden"></button><button class="btn sm" type="button" data-t="prime" data-i18n="time_prime"></button><button class="btn sm" type="button" data-t="last" data-i18n="time_last"></button></span></div>
-    <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></div>
+    <div class="srow" id="row-room" hidden><span data-i18n="set_room"></span><span class="segs"><button class="btn sm" id="btn-room-invite" type="button" data-i18n="inv_settings"></button><button class="btn sm" id="btn-room-leave" type="button" data-i18n="room_leave"></button></span></div>
     <div class="srow"><span data-i18n="set_music"></span><button class="btn sm" id="btn-music" type="button" aria-pressed="false"><span class="ic" aria-hidden="true">♪</span><span class="lb" id="music-lb"></span></button></div>
   </div>
 
@@ -129,6 +129,20 @@
       <p class="tl-text" id="tl-text"></p>
       <div class="tl-opts" id="tl-opts"></div>
       <span class="tl-next" id="tl-next" aria-hidden="true">▾</span>
+    </div>
+  </div>
+
+  <div class="invite" id="invite" hidden role="dialog" aria-labelledby="inv-title">
+    <div class="icard">
+      <button class="inv-x" id="inv-close" type="button" data-i18n-aria="inv_close">×</button>
+      <p class="inv-eyebrow" id="inv-title" data-i18n="inv_title"></p>
+      <button class="inv-code" id="inv-code" type="button" aria-describedby="inv-hint"></button>
+      <p class="inv-hint" id="inv-hint" data-i18n="inv_hint"></p>
+      <input class="inv-link" id="inv-link" type="text" readonly aria-label="invite link">
+      <div class="inv-row">
+        <button class="btn primary" id="inv-copy" type="button" data-i18n="inv_copy"></button>
+        <button class="btn" id="inv-share" type="button" data-i18n="inv_share" hidden></button>
+      </div>
     </div>
   </div>
 

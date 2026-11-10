@@ -857,8 +857,19 @@ function refreshMusicUI(){
   document.querySelectorAll('#genre-seg [data-g]').forEach(b=>b.classList.toggle('on',b.dataset.g===g&&Snd.on));
   document.querySelectorAll('#mood-seg [data-t]').forEach(b=>b.classList.toggle('on',!!S.world&&b.dataset.t===S.world.session.time));
 }
+const MUSIC_PREF='courte.music';          // 'off' once the player turned the music off; absent means on
+const musicPref=()=>{try{return localStorage.getItem(MUSIC_PREF);}catch(_){return null;}};
+const saveMusicPref=on=>{try{if(on)localStorage.removeItem(MUSIC_PREF);else localStorage.setItem(MUSIC_PREF,'off');}catch(_){}};
+/* The bar opens with music unless the player turned it off. Called from the tap on 'Open the bar' (browsers only allow sound after a tap). */
+let musicHinted=false;
+function startMusicOnOpen(){
+  if(musicPref()==='off'||Snd.on)return;
+  Snd.init();
+  if(Snd.music(true)){refreshMusic();refreshMusicUI();if(!musicHinted){musicHinted=true;toast(t('music_auto'),3800);}}
+}
 function setMusic(g,remote){
-  if(g==='off'){if(Snd.on){Snd.music(false);refreshMusic();}refreshMusicUI();return;}
+  if(g==='off'){saveMusicPref(false);if(Snd.on){Snd.music(false);refreshMusic();}refreshMusicUI();return;}
+  saveMusicPref(true);
   Snd.init();Snd.setGenre(g);
   if(!remote||Snd.on){if(Snd.music(true))refreshMusic();}
   refreshMusicUI();
@@ -973,7 +984,7 @@ $('#btn-r-next').addEventListener('click',()=>{
 function refreshMusic(){$('#music-lb').textContent=t(Snd.on?'music_off':'music_on');el.music.setAttribute('aria-pressed',Snd.on?'true':'false');}
 el.music.addEventListener('click',()=>{
   const on=!Snd.on;if(!Snd.music(on)){toast(t('toast_nosound'));return;}
-  refreshMusic();
+  saveMusicPref(on);refreshMusic();
 });
 $('#btn-lang').addEventListener('click',()=>setLang(getLang()==='ko'?'en':'ko'));
 /* Re-render every piece of dynamic text (language or unit change). */
@@ -991,6 +1002,7 @@ window.addEventListener('keydown',e=>{
     if(!chatForm.hidden){closeChat();return;}
     if(!$('#photo').hidden){closePhoto();return;}
     if(!emoPop.hidden){emoPop.hidden=true;return;}
+    if(!inviteEl.hidden){closeInvite();return;}
     if(S.mode==='bar'&&el.result.hidden)leaveBar();
   }
   if(typing(e))return;
@@ -1014,7 +1026,7 @@ resize();
 /* ───────────── loop ───────────── */
 /* ?debug exposes state on window.__courte; ?debug&dtmax=0.2 lets slow (software-GL) machines advance faster per frame. */
 const QS=new URLSearchParams(location.search),DEBUG=QS.has('debug'),DEBUG_SEED=(DEBUG&&QS.has('seed'))?(parseInt(QS.get('seed'),10)>>>0):null,DT_MAX=(DEBUG&&parseFloat(QS.get('dtmax')))||.05;
-if(DEBUG)window.__courte={get net(){return net;},taleServe:st=>{guests.forEach(g=>{g.order=null;});taleAfterServe(st);},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
+if(DEBUG)window.__courte={Snd,get net(){return net;},taleServe:st=>{guests.forEach(g=>{g.order=null;});taleAfterServe(st);},snapshot:()=>snapshot(S.world,S.drink),S,enterBar,leaveBar,guests,npcs,player,doAction,RECIPES,makeGlass,makeShaker,scene,COUNTER_TOP,setTab,setLang};
 let last=performance.now(),firstFrame=true;
 function frame(now){
   requestAnimationFrame(frame);
@@ -1189,8 +1201,8 @@ setInterval(()=>{
   }
 },1000);
 function refreshRoomUI(){
-  const chip=$('#room-chip');chip.hidden=!net.active;$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;if(!net.active&&!chatForm.hidden)closeChat();
-  if(net.active){chip.textContent=net.code+' · '+net.count+(isHost()?' ★':'');chip.setAttribute('aria-label',t('room_aria',{code:net.code,n:net.count}));}
+  const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;if(!net.active&&!chatForm.hidden)closeChat();
+  if(net.active){chip.setAttribute('aria-label',t('inv_aria',{code:net.code,n:net.count}));}
 }
 function connectRoom(onl){
   if(onl.mode==='keep')return;
@@ -1209,6 +1221,7 @@ function connectRoom(onl){
   }
   else{S.synced=false;S.syncWait=0;S.world.hostId=null;net.sendGame({k:'need'});}
   toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
+  if(onl.mode==='create')setTimeout(openInvite,700);                 // the host's first job is to invite someone
 }
 const STATION_X=[-.9,.9];
 const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0,st:S.seat?SEATS.indexOf(S.seat)+1:0});
@@ -1251,11 +1264,29 @@ function syncRemotes(dt,t){
   remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();r.chat.remove();remotes.delete(id);}});
   if(S.myChat&&nowT<S.myChat.until)place(myChatEl,playerFig.position.x,playerFig.position.y+1.95,playerFig.position.z,4);else myChatEl.style.display='none';
 }
-$('#room-chip').addEventListener('click',()=>{
+/* ── invite: one card, three ways in (the chip, the settings row, and automatically when you open a room) ── */
+const inviteUrl=()=>{const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('room',net.code);return u.toString();};
+const inviteEl=$('#invite');
+function openInvite(){
   if(!net.active)return;
-  const u=new URL(location.href);u.search='';u.searchParams.set('room',net.code);const url=u.toString();
-  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast(t('room_copied')),()=>toast(url,4000));
-});
+  $('#inv-code').textContent=net.code;$('#inv-link').value=inviteUrl();
+  $('#inv-share').hidden=!navigator.share;
+  inviteEl.hidden=false;
+}
+function closeInvite(){inviteEl.hidden=true;}
+async function copyText(txt){
+  try{await navigator.clipboard.writeText(txt);return true;}
+  catch(_){try{const i=$('#inv-link');i.value=txt;i.select();i.setSelectionRange(0,txt.length);const ok=document.execCommand('copy');i.value=inviteUrl();return ok;}catch(__){return false;}}
+}
+function flashLabel(btn,key){const lb=btn.dataset.lb||(btn.dataset.lb=btn.textContent);btn.textContent=t(key);clearTimeout(btn._t);btn._t=setTimeout(()=>{btn.textContent=lb;delete btn.dataset.lb;},1700);}
+$('#room-chip').addEventListener('click',openInvite);
+$('#btn-room-invite').addEventListener('click',()=>{toggleSettings(false);openInvite();});
+$('#inv-close').addEventListener('click',closeInvite);
+$('#inv-copy').addEventListener('click',async e=>{const btn=e.currentTarget,ok=await copyText(inviteUrl());if(ok)flashLabel(btn,'inv_copied');else{$('#inv-link').select();toast(inviteUrl(),4200);}});      // keep the button: currentTarget is gone after the await
+$('#inv-code').addEventListener('click',async()=>{const ok=await copyText(net.code);toast(ok?t('inv_code_copied'):net.code,2200);});
+$('#inv-share').addEventListener('click',()=>{try{navigator.share({title:'Bar Coda',text:t('inv_share_text',{code:net.code}),url:inviteUrl()}).catch(()=>{});}catch(_){}});
+$('#inv-link').addEventListener('focus',e=>e.target.select());
+
 /* Back to the classic solo bar (six stools, the usual guests, no time limit). */
 function leaveRoom(){
   if(S.mode==='bar')leaveBar();
@@ -1412,7 +1443,7 @@ const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
-  onStart:(cfg,onl)=>{if(cfg.mode==='tale'&&net.active){cfg=Object.assign({},cfg,{mode:'service'});toast(t('tale_online'),3600);}applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);if(cfg.mode==='tale'){taleStart();return;}if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
+  onStart:(cfg,onl)=>{if(cfg.mode==='tale'&&net.active){cfg=Object.assign({},cfg,{mode:'service'});toast(t('tale_online'),3600);}applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);startMusicOnOpen();if(cfg.mode==='tale'){taleStart();return;}if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
 function openStart(){
   if(S.mode!=='walk')return;
   if(net.active&&!isHost()){toast(t('host_only'));return;}

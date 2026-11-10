@@ -2,13 +2,37 @@ import {rand,pick} from './util.js';
 
 /* Procedural SFX (pour / clink / shake) and a small swing-jazz generator. No audio files. */
 export const Snd=(function(){
-  let ctx=null,master=null,noise=null,pourG=null,musicG=null,musicOn=false,timer=null,next=0,step=0;
+  /* Music is mixed about 15 dB louder than the raw synth level (it measured -37 dBFS) and a compressor keeps peaks in check. */
+  const MUSIC_LEVEL=3.4;
+  let media=null,wired=false;
+  let ctx=null,master=null,meter=null,noise=null,pourG=null,musicG=null,musicOn=false,timer=null,next=0,step=0;
   const mtof=n=>440*Math.pow(2,(n-69)/12);
+  /* iPhone Safari: Web Audio is silenced by the ringer switch unless the page's audio session is 'playback'.
+     A looping silent <audio> element (started from a tap) and navigator.audioSession both move it there. */
+  function silentWav(){
+    const n=1600,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,s)=>{for(let i=0;i<s.length;i++)b[o+i]=s.charCodeAt(i);};
+    w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,16000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n,true);
+    let s='';for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return 'data:audio/wav;base64,'+btoa(s);
+  }
+  function unlockMedia(){
+    try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(_){}
+    if(media)return;
+    try{media=new Audio();media.setAttribute('playsinline','');media.src=silentWav();media.loop=true;media.volume=1;const p=media.play();if(p&&p.catch)p.catch(()=>{media=null;});}catch(_){media=null;}
+  }
+  /* any tap or key brings a suspended / interrupted context back (phone calls, lock screen, tab switches) */
+  function wireResume(){
+    if(wired)return;wired=true;
+    ['pointerdown','touchend','click','keydown'].forEach(e=>window.addEventListener(e,()=>{if(ctx&&ctx.state!=='running')ctx.resume();if(media&&media.paused)media.play().catch(()=>{});},{passive:true,capture:true}));
+  }
   function init(){
-    if(ctx){if(ctx.state==='suspended')ctx.resume();return;}
+    unlockMedia();wireResume();
+    if(ctx){if(ctx.state!=='running')ctx.resume();return;}
     try{
       const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-      ctx=new AC();master=ctx.createGain();master.gain.value=.85;master.connect(ctx.destination);
+      ctx=new AC();master=ctx.createGain();master.gain.value=.85;
+      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=12;comp.ratio.value=6;comp.attack.value=.004;comp.release.value=.25;
+      master.connect(comp);comp.connect(ctx.destination);
+      meter=ctx.createAnalyser();meter.fftSize=2048;comp.connect(meter);
       const len=ctx.sampleRate*2;noise=ctx.createBuffer(1,len,ctx.sampleRate);
       const d=noise.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
       const src=ctx.createBufferSource();src.buffer=noise;src.loop=true;
@@ -80,10 +104,12 @@ export const Snd=(function(){
     init,
     get on(){return musicOn;},
     get genre(){return genre;},
+    rms(){if(!meter)return 0;const d=new Float32Array(meter.fftSize);meter.getFloatTimeDomainData(d);let s=0;for(let i=0;i<d.length;i++)s+=d[i]*d[i];return Math.sqrt(s/d.length);},
+    debug(){return {on:musicOn,genre,state:ctx?ctx.state:'none',time:ctx?+ctx.currentTime.toFixed(2):0,next:+next.toFixed(2),step,gain:musicG?+musicG.gain.value.toFixed(3):null,master:master?+master.gain.value.toFixed(2):null,timer:!!timer};},
     setGenre(g){if(!GEN[g])return;genre=g;step=0;if(ctx)next=ctx.currentTime+.1;},
     music(on){
       init();if(!ctx)return false;musicOn=on;
-      if(on){next=ctx.currentTime+.1;step=0;musicG.gain.setTargetAtTime(.55,ctx.currentTime,.4);clearInterval(timer);timer=setInterval(sched,100);}
+      if(on){next=ctx.currentTime+.1;step=0;musicG.gain.setTargetAtTime(MUSIC_LEVEL,ctx.currentTime,.4);clearInterval(timer);timer=setInterval(sched,100);}
       else{musicG.gain.setTargetAtTime(0,ctx.currentTime,.3);clearInterval(timer);}
       return true;
     },
@@ -91,7 +117,7 @@ export const Snd=(function(){
     clink(v){if(!ctx)return;const t=ctx.currentTime;tone(2500+rand(0,500),t,.55,'sine',.1*(v||1));tone(3900+rand(0,500),t+.01,.4,'sine',.06*(v||1));},
     shake(){if(!ctx)return;const t=ctx.currentTime;hit(t,.1,1400,.12);if(Math.random()<.5)tone(3000+rand(0,800),t,.15,'sine',.03);},
     stir(){if(!ctx)return;tone(3200+rand(0,900),ctx.currentTime,.25,'sine',.04);},
-    pause(){if(ctx&&ctx.state==='running')ctx.suspend();},
-    resume(){if(ctx&&ctx.state==='suspended')ctx.resume();}
+    pause(){if(ctx&&ctx.state==='running')ctx.suspend();if(media&&!media.paused)media.pause();},
+    resume(){if(ctx&&ctx.state!=='running')ctx.resume();if(media&&media.paused)media.play().catch(()=>{});}
   };
 })();
