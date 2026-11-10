@@ -144,7 +144,9 @@ export function buildRoom(scene){
   const trim=M(0x1e0d08,{roughness:.55,envMapIntensity:.3});
   const leather=M(0x5e1a17,{roughness:.38,envMapIntensity:.6});
   const cognac=M(0x6e3018,{roughness:.4,envMapIntensity:.55});
-  const velvet=M(0x4a1216,{roughness:.95,envMapIntensity:.1,side:THREE.DoubleSide});
+  const velvet=M(0x1b4a35,{roughness:.95,envMapIntensity:.1,side:THREE.DoubleSide});          // deep forest-green drapes
+  const greenLeather=M(0x1d4a36,{roughness:.38,envMapIntensity:.6});                             // banquettes and lounge chairs
+  const greenGlass=new THREE.MeshStandardMaterial({color:0x1f7a4d,emissive:new THREE.Color(0x1f8a58).multiplyScalar(.55),roughness:.12,transparent:true,opacity:.9,side:THREE.DoubleSide,envMapIntensity:1});
   const lacquer=M(0x070505,{roughness:.12,envMapIntensity:1.2});
   const warmBulb=new THREE.MeshBasicMaterial({color:hdr(0xffc890,3)});
   const amberStrip=new THREE.MeshBasicMaterial({color:hdr(0xff9a4a,1.6)});
@@ -391,8 +393,8 @@ export function buildRoom(scene){
     const x0=s<0?ROOM.x0:ROOM.x1,z0=.9,z1=4.7,len=z1-z0,cz=(z0+z1)/2;
     const g=grp(x0-s*.32,0,cz,s<0?Math.PI/2:-Math.PI/2);
     box(len,.36,.6,trim,0,.18,0,g);
-    box(len,.12,.56,leather,0,.42,.02,g);
-    const n=Math.floor(len/.15),im=new THREE.InstancedMesh(channelGeo,leather,n),m4=new THREE.Matrix4(),q=new THREE.Quaternion().setFromEuler(new THREE.Euler(-.12,0,0));
+    box(len,.12,.56,greenLeather,0,.42,.02,g);
+    const n=Math.floor(len/.15),im=new THREE.InstancedMesh(channelGeo,greenLeather,n),m4=new THREE.Matrix4(),q=new THREE.Quaternion().setFromEuler(new THREE.Euler(-.12,0,0));
     for(let i=0;i<n;i++){m4.compose(new THREE.Vector3(-len/2+.075+i*.15,.88,-.22),q,new THREE.Vector3(1,1,.7));im.setMatrixAt(i,m4);}
     im.castShadow=true;g.add(im);
     box(len,.04,.1,mahogMid,0,1.29,-.24,g);
@@ -404,13 +406,23 @@ export function buildRoom(scene){
   const armchair=(x,z,ry)=>{
     const g=grp(x,0,z,ry);
     [[-.34,-.3],[.34,-.3],[-.34,.3],[.34,.3]].forEach(([a,b])=>cyl(.02,.015,.12,brass,a,.06,b,g,8));
-    box(.86,.2,.8,cognac,0,.2,0,g);
-    box(.62,.12,.66,cognac,0,.36,.05,g);
-    const bk=box(.86,.62,.16,cognac,0,.66,-.33,g);bk.rotation.x=-.12;
-    [-1,1].forEach(s=>{box(.14,.3,.78,cognac,s*.37,.45,0,g);box(.16,.04,.8,cognac,s*.37,.61,0,g);});
+    box(.86,.2,.8,greenLeather,0,.2,0,g);
+    box(.62,.12,.66,greenLeather,0,.36,.05,g);
+    const bk=box(.86,.62,.16,greenLeather,0,.66,-.33,g);bk.rotation.x=-.12;
+    [-1,1].forEach(s=>{box(.14,.3,.78,greenLeather,s*.37,.45,0,g);box(.16,.04,.8,greenLeather,s*.37,.61,0,g);});
     shadows(g,true,true);
     col(x-.48,x+.48,z-.48,z+.48,0,1);
   };
+  /* banker's lamp: brass base, half-cylinder green glass shade, warm bulb inside (no extra scene light) */
+  const bankersLamp=(x,y,z,ry,sc,p)=>{
+    const g=grp(x,y,z,ry,p);g.scale.setScalar(sc||1);
+    cyl(.1,.125,.03,brass,0,.015,0,g,24);cyl(.016,.016,.24,brass,0,.15,0,g,10);
+    box(.3,.016,.03,brass,0,.27,0,g);
+    const shade=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.36,24,1,true,0,Math.PI),greenGlass);shade.rotation.z=Math.PI/2;shade.position.y=.28;g.add(shade);
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(.03,10,8),warmBulb);bulb.position.y=.31;g.add(bulb);
+    return g;
+  };
+  bankersLamp(-5.4,1.15,.28,0,1.5);bankersLamp(5.4,1.15,.28,0,1.5);bankersLamp(-5.18,.76,6.5,.6,1);
   armchair(-6.2,6.6,Math.PI/2);armchair(-4.4,6.6,-Math.PI/2);
   table(-5.3,6.6,.3);
   armchair(-6.2,8.2,Math.PI/2);
