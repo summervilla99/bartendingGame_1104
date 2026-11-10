@@ -54,7 +54,7 @@ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0b0504);
 scene.fog=new THREE.FogExp2(0x120806,0.024);
-const camera=new THREE.PerspectiveCamera(50,W/H,.08,60);
+const camera=new THREE.PerspectiveCamera(50,W/H,.08,1300);
 const {composer,finalPass}=createComposer(renderer,scene,camera,W,H,PR);
 buildEnv(renderer,scene);
 
