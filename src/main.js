@@ -1701,7 +1701,7 @@ function setTalkCam(g){
     talkView.pos.set(6.2,2.8,9.4);talkView.look.set(7.05,1.7,7.7);   // in front of her and high, to see her face over the piano lid       // from her side: the grand piano is in front of her, so a front view looks at its lid
   }else if(g){
     const x=g.fig.position.x;
-    talkView.pos.set(x*.62+.2,1.7,-.45);talkView.look.set(x,1.4,1.25);
+    talkView.pos.set(x*.62+.2,1.84,-.45);talkView.look.set(x,1.56,1.25);
   }
   if(S.talkCam===g)return;
   S.talkCam=g||null;goCam();

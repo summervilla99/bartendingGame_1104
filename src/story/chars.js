@@ -10,8 +10,8 @@ export const CHARS={
     look:{name:'마스터',skin:0xe2bd9c,top:0x3b2b24,shirt:0xe9e0cc,tie:0x6b2a2a,pants:0x2a2420,hair:0xe6e2dc,bald:true,glasses:0x6a5a3a,lapel:0x2a1c16,watch:true,belly:true,shoes:0x1c1410,lip:0x7a3a34,w:1.02,h:.97}},
   yunha:{name:{ko:'윤하',en:'Yunha'},intro:{ko:'밤마다 피아노 앞에 앉는 사람',en:'The one who sits at the piano every night'},seat:'piano',tone:'#d9a3b8',
     look:{name:'윤하',skin:0xeac6a8,top:0x2a1a30,pants:0x2a1a30,hair:0x6b3a28,long:true,dress:true,sheen:true,earring:0xd9b46a,lip:0xa03a48,w:.9,h:1.0,shoes:0x15101a}},
-  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},intro:{ko:'노트를 펼치고 이긴 날을 세는 손님',en:'The guest who opens her notebook and counts the days she won'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
-    look:{name:'서윤',skin:0xf0d2ba,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x8a2a34,w:.9,h:1.03}},
+  seoyun:{name:{ko:'한서윤',en:'Han Seoyun'},intro:{ko:'30대 중후반쯤으로 보이는 손님. 왠지 모를 고독함을 지니고 있다.',en:'A guest in her mid-to-late thirties, with a loneliness she does not explain.'},seat:'g2',tone:'#e7c9a0',prop:'notebook',
+    look:{name:'서윤',mature:true,skin:0xecd0b8,top:0x15151b,shirt:0xf7f2ea,pants:0x15151b,hair:0x180f12,bob:true,sheen:true,lapel:0x0b0b0f,earring:0xf3eee4,necklace:0xc9a066,shoes:0x0b0b0d,lip:0x7a3640,w:.9,h:1.03}},
   taesik:{name:{ko:'박태식',en:'Park Taesik'},intro:{ko:'열지 못한 소주병을 가진 부장님',en:'The manager with a soju bottle he cannot open'},seat:'g1',tone:'#d9a486',prop:'soju',
     look:{name:'태식',skin:0xd9957c,top:0x6b6c71,shirt:0xe9e4d8,tie:0x7a2a2a,loose:true,pants:0x47484d,hair:0x8c8a86,bald:true,lapel:0x55565b,glasses:0x2b2b2e,watch:true,belly:true,shoes:0x2a1c14,lip:0x7a3a34,w:1.12,h:.97}}
 };
