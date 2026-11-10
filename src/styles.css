@@ -598,3 +598,13 @@ body.xmas #start .st-card{position:relative;z-index:1}
 .st-peek{opacity:0;pointer-events:none}
 #peek-close{position:fixed;left:50%;bottom:calc(max(28px,env(safe-area-inset-bottom,0px)) + 8px);transform:translateX(-50%);z-index:60}
 .st-end .btn{margin-top:8px}
+
+/* waiting for friends (host alone in a room) */
+.waitbar{position:absolute;left:50%;top:calc(max(14px,env(safe-area-inset-top,0px)) + 62px);transform:translateX(-50%);z-index:12;width:min(340px,calc(100% - 32px));border-radius:16px;padding:0;overflow:hidden}
+.wb-head{appearance:none;cursor:pointer;width:100%;display:flex;align-items:center;gap:8px;padding:11px 14px;min-height:44px;background:none;border:0;color:var(--text);font:600 13px var(--f-ui);text-align:left}
+.wb-head b{flex:1}.wb-head i{font-style:normal;transition:transform .2s}
+.wb-dot{width:8px;height:8px;border-radius:50%;background:var(--amber,#e8a050);animation:wbp 1.6s ease-in-out infinite}
+@keyframes wbp{50%{opacity:.35}}
+.wb-body{padding:0 14px 12px}.wb-body p{margin:0 0 10px;font:500 13px/1.45 var(--f-ui);color:var(--text-2)}
+.wb-body .row{display:flex;gap:8px;justify-content:flex-end}
+.waitbar.collapsed .wb-body{display:none}.waitbar.collapsed .wb-head i{transform:rotate(-90deg)}

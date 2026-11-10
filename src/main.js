@@ -869,6 +869,16 @@ function checkJointToast(){
     e.toasted=true;sendAct({k:'toast',with:id});
   });
 }
+/* host alone in a room: a collapsible banner that invites them to make cocktails while waiting */
+S.waitOpen=true;
+{const wb=$('#waitbar');
+  $('#wb-toggle').addEventListener('click',()=>{S.waitOpen=!S.waitOpen;wb.classList.toggle('collapsed',!S.waitOpen);$('#wb-toggle').setAttribute('aria-expanded',String(S.waitOpen));});
+  $('#wb-invite').addEventListener('click',()=>openInvite());
+  $('#wb-make').addEventListener('click',()=>{const g=pendingGuests()[0];if(g&&S.mode==='walk')beginBartending(g);else toast(t('wait_none'),2200);});}
+function updateWaitBar(){
+  const wb=$('#waitbar'),show=net.active&&isHost()&&net.count<=1&&S.mode==='walk'&&!S.paused&&!S.photo;
+  if(wb.hidden===show)wb.hidden=!show;
+}
 /* the gift button: someone is working a station and I am not that person */
 const giftTarget=()=>net.active&&S.world?S.world.stations.find(id=>id&&id!==net.me.id)||null:null;
 let giftHideUntil=0;
@@ -1207,7 +1217,7 @@ function frame(now){
   updateCamera(dt);room.animate(dt,time);xmas.animate(time);fx.update(dt);cat.update(dt,time);
   updateProps(dt);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
-  checkJointToast();{const gb=$('#btn-gift'),sg=!!giftTarget()&&S.mode==='walk'&&!S.paused&&!S.photo;if(gb.hidden===sg)gb.hidden=!sg;}
+  checkJointToast();updateWaitBar();{const gb=$('#btn-gift'),sg=!!giftTarget()&&S.mode==='walk'&&!S.paused&&!S.photo;if(gb.hidden===sg)gb.hidden=!sg;}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
   finalPass.uniforms.time.value=time%50;
   composer.render(dt);

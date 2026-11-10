@@ -28,6 +28,10 @@
       <button class="ibtn" id="btn-settings" type="button" aria-haspopup="true" aria-expanded="false" data-i18n-aria="settings_aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
     </div>
   </header>
+  <aside class="waitbar glass" id="waitbar" hidden>
+    <button class="wb-head" id="wb-toggle" type="button" aria-expanded="true"><span class="wb-dot"></span><b data-i18n="wait_title"></b><i>▾</i></button>
+    <div class="wb-body" id="wb-body"><p data-i18n="wait_text"></p><div class="row"><button class="btn sm" id="wb-invite" type="button" data-i18n="inv_settings"></button><button class="btn primary sm" id="wb-make" type="button" data-i18n="wait_make"></button></div></div>
+  </aside>
   <div class="pop" id="settings" hidden>
     <div class="srow"><span data-i18n="set_lang"></span><button class="btn sm" id="btn-lang" type="button" data-i18n-aria="lang_aria"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>
     <div class="srow"><span data-i18n="set_night"></span><button class="btn sm" id="btn-night" type="button" data-i18n="night_btn"></button></div>
