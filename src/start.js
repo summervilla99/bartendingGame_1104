@@ -27,9 +27,12 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
       return opt('menu',id,cfg.menu===id,'st-fam',t('fam_'+id)+'<em>'+n+'</em>'+(T.suggest===id?'<u>'+t('suggested')+'</u>':''));
     }).join('');
     const tale=loadTale();
+    /* a waxing moon for night n of seven (the epilogues get a small star): fits the 'night' theme better than a bare numeral */
+    const moon=(n,cls)=>'<b class="'+(cls||'')+' moon" style="--d:'+(1-Math.min(n,7)/7).toFixed(2)+'" aria-hidden="true"></b>';
+    const star=cls=>'<b class="'+(cls||'')+' star" aria-hidden="true">✦</b>';
     const nightBtn=(def)=>{
       const n=def.n,done=tale.done[n],ok=isNightOpen(n,tale);
-      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(def.epilogue?' epi':'')+(ok?'':' soon'),'<b>'+(def.epilogue?'+':n)+'</b><span>'+(def.epilogue?tr(def.title).replace(/^(후일담|Epilogue)\s*[·:]\s*/,''):tr(def.title))+'</span><i>'+(done?t('tale_done_tag'):(!ok?t('night_lock'):''))+'</i>',!ok);
+      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(def.epilogue?' epi':'')+(ok?'':' soon'),(def.epilogue?star():moon(n))+'<span>'+(def.epilogue?tr(def.title).replace(/^(후일담|Epilogue)\s*[·:]\s*/,''):tr(def.title))+'</span><i>'+(done?t('tale_done_tag'):(!ok?t('night_lock'):''))+'</i>',!ok);
     };
     const nights=NIGHTS.filter(d=>!d.epilogue).map(nightBtn).join('');
     const epis=NIGHTS.filter(d=>d.epilogue).map(nightBtn).join('');
@@ -94,7 +97,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +(kind==='tale'?'':'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button>');
       root.innerHTML='<div class="st-card st-compact" role="dialog" aria-labelledby="st-h">'+head
         +'<h1 id="st-h">'+t(all?'st_replay':'st_next')+'</h1><p class="st-sub">'+t('st_next_note',{n:dn})+'</p>'
-        +'<button class="btn lg primary st-go st-next" id="st-next" type="button"><span>'+t('st_next_n',{n:nn,title:def?tr(def.title):''})+'</span></button>'
+        +'<button class="st-next" id="st-next" type="button">'+(def&&def.epilogue?star('sn-n'):moon(nn,'sn-n'))+'<span class="sn-t"><em>'+t(def&&def.epilogue?'epi_h':'sn_next')+'</em>'+esc(def?tr(def.title).replace(/^(후일담|Epilogue)\s*[·:]\s*/,''):'')+'</span><i class="sn-go" aria-hidden="true">→</i></button>'
         +'<button class="btn sm st-more" id="st-more" type="button" aria-expanded="'+(more?'true':'false')+'">'+t(more?'st_more_close':'st_more_open')+' <i>'+(more?'▴':'▾')+'</i></button>'
         +(more?'<div class="st-moreBody">'+full+'</div>':'')+'</div>';
       return;
