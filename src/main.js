@@ -876,7 +876,7 @@ S.waitOpen=true;
   $('#wb-invite').addEventListener('click',()=>openInvite());
   $('#wb-make').addEventListener('click',()=>{const g=pendingGuests()[0];if(g&&S.mode==='walk')beginBartending(g);else toast(t('wait_none'),2200);});}
 function updateWaitBar(){
-  const wb=$('#waitbar'),show=net.active&&isHost()&&net.count<=1&&S.mode==='walk'&&!S.paused&&!S.photo;
+  const wb=$('#waitbar'),show=net.active&&isHost()&&net.count<=1&&Object.values(PUBLIC_CODES).indexOf(net.code)<0&&S.mode==='walk'&&!S.paused&&!S.photo;
   if(wb.hidden===show)wb.hidden=!show;
 }
 /* the gift button: someone is working a station and I am not that person */
