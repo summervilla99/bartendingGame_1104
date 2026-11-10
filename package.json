@@ -1,8 +1,8 @@
 {
-  "name": "courte-studio",
+  "name": "bar-coda",
   "version": "0.1.0",
   "private": true,
-  "description": "Courte Studio - 3D 라운지 바텐딩 게임",
+  "description": "Bar Coda - 3D 리스닝 라운지 바텐딩 게임",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -58,7 +58,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     if(view==='gallery'){
       const tl=loadTale();
       root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
-        +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
+        +'<div class="st-head"><span class="neon">Bar Coda</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
         +'<h1 id="st-h">'+t('gal_title')+'</h1><p class="st-sub">'+t('gal_sub')+'</p>'
         +'<div class="st-gallery">'+ENDINGS.map(e=>{
           const ok=!!tl.endings[e.id];
@@ -68,7 +68,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       return;
     }
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
-      +'<div class="st-head"><span class="neon">Courte Studio</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
+      +'<div class="st-head"><span class="neon">Bar Coda</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
       +'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'
       +body

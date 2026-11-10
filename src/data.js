@@ -61,7 +61,7 @@ export const RECIPES=[
   R('mezcalnegroni','메스칼 네그로니','Mezcal Negroni','stir','tumbler',{mezcal:30,campari:30,vermouth:30},'orange'),
   R('neat','위스키 니트','Whiskey Neat','build','nick',{bourbon:60},'none',{noIce:true}),
   R('faust','파우스트','Faust','stir','fashioned',{overproof:30,rum:30,cassis:15},'none'),
-  R('courtenoir','쿠르트 누아','Courte Noir','stir','nick',{bourbon:40,coffee:20,vermouth:20,bitters:2},'cherry',
+  R('courtenoir','코다 누아','Coda Noir','stir','nick',{bourbon:40,coffee:20,vermouth:20,bitters:2},'cherry',
     {house:true,story:N('마지막 한 시간을 위한 쌉쌀하고 진한 스터. 마호가니 홀의 어둠을 닮았어요.','A rich, bittersweet stir for the last hour of the night, named for the dark mahogany room.')}),
   R('amberhour','앰버 아워','Amber Hour','shake','coupe',{tequila:40,aperol:20,grapefruit:30,lime:15,syrup:10},'orange',
     {house:true,story:N('해 질 녘 황금빛을 담은 데킬라 사워. 자몽의 쌉쌀함이 노을처럼 번져요.','A golden-hour tequila sour where grapefruit bitterness melts like a sunset.')}),

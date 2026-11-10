@@ -34,7 +34,7 @@ const NODES=[
   {id:'rec_ms',t:'recommend',who:'master',hint:{ko:'마스터의 마지막 잔 · 가게의 이름을 건 한 잔',en:'The Master’s last drink · a glass that carries the bar’s name'},fail:'m_m',
    cands:[
     cand('mojito','miss','……이건 내 이름을 건 잔이 아니야.','…This isn’t a glass that carries my name.'),
-    cand('courtenoir','good','……쿠르트 누아. 이 가게를 열던 밤에 처음 만든 술이야. 어떻게 알았나.','…Courte Noir. The first drink I made the night this place opened. How did you know?'),
+    cand('courtenoir','good','……코다 누아. 이 가게를 열던 밤에 처음 만든 술이야. 어떻게 알았나.','…Coda Noir. The first drink I made the night this place opened. How did you know?'),
     cand('manhattan','ok','무난하군. 나쁘진 않아. 나쁘진 않지만 가게의 이름은 아니야.','Safe. Not bad. But it isn’t the name of this place.'),
     cand('daiquiri','miss','이건 젊은 날의 술이군. 오늘은 아니야.','A drink of youth. Not tonight.'),
     cand('oldfashioned','good','단순한 걸 고르는 놈이 좋은 바텐더지. 이건 내 손 같구먼.','Anyone who chooses the simple one is a good bartender. This feels like my own hand.'),

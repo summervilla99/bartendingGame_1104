@@ -280,11 +280,11 @@ export function buildRoom(scene){
     const g=neonCanvas.getContext('2d');g.clearRect(0,0,1024,300);
     g.textAlign='center';g.textBaseline='alphabetic';
     g.font='150px Yellowtail,"Brush Script MT",cursive';
-    [30,14,5].forEach(b=>{g.shadowColor='#e0507a';g.shadowBlur=b;g.fillStyle='#f08aa4';g.fillText('Courte Studio',512,190);});
-    g.shadowBlur=0;g.fillStyle='#ffe6e6';g.fillText('Courte Studio',512,190);
+    [30,14,5].forEach(b=>{g.shadowColor='#e0507a';g.shadowBlur=b;g.fillStyle='#f08aa4';g.fillText('Bar Coda',512,190);});
+    g.shadowBlur=0;g.fillStyle='#ffe6e6';g.fillText('Bar Coda',512,190);
     g.font='34px "Black Han Sans","Apple SD Gothic Neo",sans-serif';
     g.shadowColor='#d9a060';g.shadowBlur=12;g.fillStyle='#f2d8b0';
-    g.fillText('B  A  R    &    L  O  U  N  G  E',512,262);
+    g.fillText('L  I  S  T  E  N  I  N  G    L  O  U  N  G  E',512,262);
     neonTex.needsUpdate=true;
   }
   drawNeon();

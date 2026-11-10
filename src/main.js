@@ -926,7 +926,7 @@ function capturePhoto(spot){
   const gr=g.createLinearGradient(0,h-bar*1.6,0,h);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');
   g.fillStyle=gr;g.fillRect(0,h-bar*1.6,w,bar*1.6);
   g.textBaseline='middle';g.textAlign='left';g.fillStyle='#f6dcd2';g.font=Math.round(pad*1.5)+'px Yellowtail,"Brush Script MT",cursive';
-  g.fillText('Courte Studio',pad,h-pad*1.35);
+  g.fillText('Bar Coda',pad,h-pad*1.35);
   g.textAlign='right';g.fillStyle='#c9a066';g.font='600 '+Math.round(pad*.5)+'px "DM Sans","Noto Sans KR",sans-serif';
   const bits=[tr(spot.name),new Date().toLocaleDateString(getLang()==='ko'?'ko-KR':'en-US',{year:'numeric',month:'short',day:'numeric'})];
   if(net.active)bits.push(net.code);
@@ -944,11 +944,11 @@ function closePhoto(){
 $('#btn-photo-close').addEventListener('click',closePhoto);
 $('#btn-photo-save').addEventListener('click',()=>{
   if(!S.photo||!S.photo.img)return;
-  const a=document.createElement('a');a.href=S.photo.img;a.download='courte-studio-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();a.remove();toast(t('toast_saved'));
+  const a=document.createElement('a');a.href=S.photo.img;a.download='bar-coda-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();a.remove();toast(t('toast_saved'));
 });
 $('#btn-photo-share').addEventListener('click',async()=>{
   if(!S.photo||!S.photo.img)return;
-  try{const blob=await (await fetch(S.photo.img)).blob();await navigator.share({files:[new File([blob],'courte-studio.jpg',{type:'image/jpeg'})],title:'Courte Studio'});}catch(_){}
+  try{const blob=await (await fetch(S.photo.img)).blob();await navigator.share({files:[new File([blob],'bar-coda.jpg',{type:'image/jpeg'})],title:'Bar Coda'});}catch(_){}
 });
 
 /* ───────────── events ───────────── */
@@ -1465,6 +1465,6 @@ requestAnimationFrame(frame);
 
 /* fonts: repaint canvas text once the web fonts arrive */
 if(document.fonts&&document.fonts.load){
-  Promise.all([document.fonts.load('150px Yellowtail'),document.fonts.load('56px "Black Han Sans"','Courte 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
+  Promise.all([document.fonts.load('150px Yellowtail'),document.fonts.load('56px "Black Han Sans"','Coda 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
   document.fonts.ready.then(()=>{room.drawNeon();paintAllLabels();});
 }
