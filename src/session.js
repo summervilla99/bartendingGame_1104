@@ -17,6 +17,7 @@ export const TALE_TIME='prime';          // the tale always happens at the same 
 /* Menu families = which recipes the guests order. null = everything. */
 export const FAMILIES={
   all:null,
+  classic:['negroni','daiquiri','oldfashioned','margarita','manhattan','whiskeysour','boulevardier','tomcollins','mojito','americano','cosmopolitan','moscowmule','martini','sidecar','gimlet','whiterussian','blackrussian','french75','aperolspritz','mimosa','kirroyale','cubalibre','ginandtonic','pinacolada','maitai','longisland','paloma','espressomartini'],
   sours:['daiquiri','margarita','tommys','gimlet','whiskeysour','cosmopolitan','amberhour','velvetrose','espressomartini'],
   stirred:['negroni','faust','oldfashioned','manhattan','boulevardier','whitenegroni','mezcalnegroni','courtenoir'],
   long:['highball','paloma','tomcollins','mojito','moscowmule','americano'],
@@ -28,7 +29,7 @@ export const FAMILIES={
   korean:['sojufizz','sojutonic','yuzuhighball','grapefruitsoju','maesilhighball','maesilspritz','makgeollimojito','makgeollisour','makgeollicolada','yuzumartini','sojunegroni','maesilfashioned'],
   xmas:['poinsettia','christmasmule','whitechristmas','cranberrysidecar','mistletoemojito','snowyespresso']
 };
-export const FAM_ORDER=['all','sours','stirred','long','agave','gin','sparkling','creamy','korean','xmas','house'];
+export const FAM_ORDER=['classic','all','sours','stirred','long','agave','gin','sparkling','creamy','korean','xmas','house'];
 
 /* Modes: story = solo scenario (stages), service = a free night with a goal, practice = no limits, lab = soon. */
 export const MODES=['tale','practice','service','story'];     // story = the tale, practice = solo cocktail practice, service = a room with friends

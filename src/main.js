@@ -5,6 +5,7 @@ import {M,lathe} from './three-utils.js';
 import {INGR,ING,RECIPES,GARNISH,GARNISH_NAME,GLASS_NAME,METHOD_NAME,CATS,serveOf,ratioOf} from './data.js';
 import {t,tr,getLang,setLang,onLang,applyDom} from './i18n.js';
 import {fmtVol,fmtRatio} from './units.js';
+import {detailOf,SECTION_TITLES} from './notes.js';
 import {makeGlass,makeGarnish,makeShaker,GL} from './glass.js';
 import {NIGHTS,CHARS as TALE_CHARS} from './story/nights.js';
 import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleAdvance,pick as talePick,served as taleServedEv,drainEvents as taleDrain,retry as taleRetry} from './story/engine.js';
@@ -965,20 +966,71 @@ function updateOrderBtn(){
   const pk=!!(!net.active&&S.session&&S.session.mode==='practice'&&S.mode==='walk'&&!S.paused&&!S.photo&&!S.userPause),pb=$('#btn-pick');if(pb.hidden===pk)pb.hidden=!pk;
 }
 /* the order menu: friends mode lists the night's pool; solo practice lists every cocktail, filtered by menu family, and the guest orders the one picked */
-S.pickFam='all';
+S.pickFam='classic';
 function fillOrderList(){
   const list=$('#order-list');list.innerHTML='';
   const pick=!!S.pickMenu,ids=FAMILIES[S.pickFam]||null;
   const rs=(pick?RECIPES:poolFor(S.world.session,RECIPES)).filter(r=>!ids||ids.indexOf(r.id)>=0);
   rs.forEach(r=>{
-    const b=document.createElement('button');b.type='button';b.className='oc';b.dataset.r=r.id;
+    const b=document.createElement('div');b.setAttribute('role','button');b.tabIndex=0;b.className='oc';b.dataset.r=r.id;
     const n=document.createElement('b');n.textContent=r.name;
     const m=document.createElement('span');m.className='tk-method m-'+r.method;m.textContent=METHOD_NAME[r.method];
     const g=document.createElement('small');g.textContent=GLASS_NAME[r.glass]+(r.season?' · '+t('fam_xmas'):'');
     b.append(n,m,g);
-    if(pick){const i=document.createElement('span');i.className='oc-ing';i.textContent=Object.keys(r.parts).map(k=>ING[k].name).join(' · ');b.appendChild(i);}
+    const i=document.createElement('span');i.className='oc-ing';i.textContent=Object.keys(r.parts).map(k=>ING[k].name).join(' · ');b.appendChild(i);
     list.appendChild(b);
   });
+}
+/* a card has three states: small -> (tap) recipe -> (tap again) the full guide */
+function expandCard(b){
+  const list=$('#order-list');
+  list.querySelectorAll('.oc.open').forEach(o=>{o.classList.remove('open');const p=o.querySelector('.oc-panel');if(p)p.remove();const h=o.querySelector('.oc-ing');if(h)h.hidden=false;});
+  const r=RECIPE_BY_ID[b.dataset.r];if(!r)return;
+  b.classList.add('open');const ing=b.querySelector('.oc-ing');if(ing)ing.hidden=true;
+  const p=document.createElement('div');p.className='oc-panel';
+  const rows=document.createElement('div');rows.className='oc-rows';
+  Object.keys(r.parts).forEach(k=>{const row=document.createElement('div');row.className='oc-row';const a=document.createElement('span');a.textContent=ING[k].name;const v=document.createElement('i');v.textContent=fmtVol(r.parts[k]);row.append(a,v);rows.appendChild(row);});
+  const meta=document.createElement('div');meta.className='oc-meta';
+  meta.textContent=[GARNISH_NAME[r.garnish],t('serve_'+serveOf(r.glass))].filter(Boolean).join(' · ');
+  const hint=document.createElement('div');hint.className='oc-hint';hint.textContent=t('rc_tap');
+  const acts=document.createElement('div');acts.className='oc-acts';
+  const ob=document.createElement('button');ob.type='button';ob.className='btn primary sm';ob.dataset.act='order';ob.textContent=t('order_btn');
+  const mb=document.createElement('button');mb.type='button';mb.className='btn sm';mb.dataset.act='more';mb.textContent=t('rc_more');
+  acts.append(ob,mb);p.append(rows,meta,hint,acts);b.appendChild(p);
+  b.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function openDetail(id){
+  const r=RECIPE_BY_ID[id];if(!r)return;
+  S.detailId=id;
+  $('#rd-h').textContent=r.name;
+  const bd=$('#rd-badges');bd.innerHTML='';
+  const mk=(cls,txt)=>{const x=document.createElement('span');x.className=cls;x.textContent=txt;bd.appendChild(x);};
+  mk('tk-method m-'+r.method,METHOD_NAME[r.method]);mk('k-chip',GLASS_NAME[r.glass]);mk('k-chip',t('serve_'+serveOf(r.glass)));
+  const ra=ratioOf(r);if(ra)mk('k-chip',t('k_ratio')+' '+ra);
+  const body=$('#rd-body');body.innerHTML='';
+  const sec=(title,build)=>{const d=document.createElement('div');d.className='rd-sec';const h=document.createElement('h3');h.textContent=title;d.appendChild(h);build(d);body.appendChild(d);};
+  if(r.story)sec(t('rc_story'),d=>{const p=document.createElement('p');p.className='rd-story';p.textContent=tr(r.story);d.appendChild(p);});
+  sec(t('rc_ing'),d=>{const rows=document.createElement('div');rows.className='oc-rows';
+    Object.keys(r.parts).forEach(k=>{const row=document.createElement('div');row.className='oc-row';const a=document.createElement('span');a.textContent=ING[k].name;const v=document.createElement('i');v.textContent=fmtVol(r.parts[k]);row.append(a,v);rows.appendChild(row);});
+    const gr=document.createElement('div');gr.className='oc-row';const ga=document.createElement('span');ga.textContent=GARNISH_NAME[r.garnish];gr.appendChild(ga);rows.appendChild(gr);d.appendChild(rows);});
+  const dt=detailOf(r);
+  [['steps','ol'],['watch','ul'],['taste','ul'],['mistake','ul']].forEach(([k,tag])=>{
+    if(!dt[k]||!dt[k].length)return;
+    sec(tr(SECTION_TITLES[k]),d=>{const l=document.createElement(tag);dt[k].forEach(x=>{const li=document.createElement('li');li.textContent=tr(x);l.appendChild(li);});d.appendChild(l);});
+  });
+  if(r.tip)sec(t('know_title'),d=>{const p=document.createElement('p');p.textContent=tr(r.tip);d.appendChild(p);});
+  body.scrollTop=0;$('#recipe-detail').hidden=false;
+}
+function closeDetail(){$('#recipe-detail').hidden=true;S.detailId=null;}
+function doOrder(id){
+  $('#recipe-detail').hidden=true;$('#order-menu').hidden=true;
+  if(S.pickMenu){
+    const ev=orderRecipe(S.world,id,time);
+    if(ev){applyOrderEv(ev);toast(t('pick_sent',{drink:RECIPE_BY_ID[id].name}),2600);}else toast(t('pick_full'),3200);
+    return;
+  }
+  const r=sendAct({k:'order',rec:id});
+  if(!(r&&!r.ok))toast(t('order_sent'),2500);else toast(t('order_full'));
 }
 function openOrderMenu(pick){
   S.pickMenu=pick===true;
@@ -1000,18 +1052,17 @@ $('#order-fams').addEventListener('click',e=>{
   const b=e.target.closest('button[data-f]');if(!b)return;
   S.pickFam=b.dataset.f;$('#order-fams').querySelectorAll('.fchip').forEach(c=>c.classList.toggle('on',c===b));fillOrderList();$('#order-list').scrollTop=0;
 });
-$('#order-close').addEventListener('click',()=>{$('#order-menu').hidden=true;});
-$('#order-list').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-r]');if(!b)return;
-  $('#order-menu').hidden=true;
-  if(S.pickMenu){
-    const ev=orderRecipe(S.world,b.dataset.r,time);
-    if(ev){applyOrderEv(ev);toast(t('pick_sent',{drink:RECIPE_BY_ID[b.dataset.r].name}),2600);}else toast(t('pick_full'),3200);
-    return;
-  }
-  const r=sendAct({k:'order',rec:b.dataset.r});
-  if(!(r&&!r.ok))toast(t('order_sent'),2500);else toast(t('order_full'));
-});
+$('#order-close').addEventListener('click',()=>{$('#order-menu').hidden=true;closeDetail();});
+function orderCardClick(e){
+  const act=e.target.closest('button[data-act]'),b=e.target.closest('.oc[data-r]');if(!b)return;
+  if(act){if(act.dataset.act==='order')doOrder(b.dataset.r);else openDetail(b.dataset.r);return;}
+  if(b.classList.contains('open'))openDetail(b.dataset.r);else expandCard(b);       // tap once: recipe; tap again: the full guide
+}
+$('#order-list').addEventListener('click',orderCardClick);
+$('#order-list').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('oc')){e.preventDefault();orderCardClick(e);}});
+$('#rd-close').addEventListener('click',closeDetail);
+$('#rd-order').addEventListener('click',()=>{if(S.detailId)doOrder(S.detailId);});
+$('#recipe-detail').addEventListener('click',e=>{if(e.target.id==='recipe-detail')closeDetail();});
 /* solo pause: freezes game time (orders, animation, the bartending clock) until resumed */
 function setPause(on){
   if(on===!!S.userPause)return;
@@ -1206,6 +1257,7 @@ onLang(refreshAll);
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(S.userPause){setPause(false);return;}
+    if(!$('#recipe-detail').hidden){closeDetail();return;}
     if(!$('#order-menu').hidden){$('#order-menu').hidden=true;return;}
     if(!chatForm.hidden){closeChat();return;}
     if(!histEl.hidden){closeHist();return;}

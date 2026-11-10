@@ -138,3 +138,17 @@ test('a restored world continues the same order sequence',()=>{
   for(let t=20;t<80;t+=.05){const x=tickOrders(a,t),y=tickOrders(b,t);if(x)la.push(x.recipeId);if(y)lb.push(y.recipeId);}
   assert.deepEqual(la,lb);
 });
+
+test('every recipe has detailed notes in both languages; classic family is real', async ()=>{
+  const {detailOf}=await import('../src/notes.js');
+  const {RECIPES}=await import('../src/data.js');
+  for(const r of RECIPES){
+    const d=detailOf(r);
+    for(const k of ['steps','watch','taste','mistake']){
+      assert.ok(d[k]&&d[k].length,r.id+' has no '+k);
+      for(const x of d[k]){assert.ok(x.ko&&x.en,r.id+' '+k+' missing a language');}
+    }
+  }
+  assert.ok(FAMILIES.classic.every(id=>RECIPES.some(r=>r.id===id&&!r.season)),'classic ids must exist and not be seasonal');
+  assert.equal(FAM_ORDER[0],'classic');
+});
