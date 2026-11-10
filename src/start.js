@@ -29,7 +29,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
     const tale=loadTale();
     const nightBtn=(def)=>{
       const n=def.n,done=tale.done[n],ok=isNightOpen(n,tale);
-      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(def.epilogue?' epi':'')+(ok?'':' soon'),'<b>'+(def.epilogue?'+':n)+'</b><span>'+tr(def.title)+'</span><i>'+(done?t('tale_done_tag'):(!ok?t('night_lock'):''))+'</i>',!ok);
+      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(def.epilogue?' epi':'')+(ok?'':' soon'),'<b>'+(def.epilogue?'+':n)+'</b><span>'+(def.epilogue?tr(def.title).replace(/^(후일담|Epilogue)\s*[·:]\s*/,''):tr(def.title))+'</span><i>'+(done?t('tale_done_tag'):(!ok?t('night_lock'):''))+'</i>',!ok);
     };
     const nights=NIGHTS.filter(d=>!d.epilogue).map(nightBtn).join('');
     const epis=NIGHTS.filter(d=>d.epilogue).map(nightBtn).join('');
