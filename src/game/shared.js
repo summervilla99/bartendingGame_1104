@@ -1,4 +1,4 @@
-import {ING} from '../data.js';
+import {ING,GARNISH} from '../data.js';
 import {TIMES} from '../session.js';
 import {RECIPE_BY_ID} from './bartending.js';
 import {restore,VERSION} from './world.js';
@@ -8,6 +8,7 @@ import {bonusOf,recordServe,breakCombo,patienceOf} from './bonus.js';
 /* Shared-night rules for a room. The host runs these on its copy of the world and broadcasts snapshots; everyone else only
    sends requests (claim / unclaim / served). Pure and JSON-only, so it is the same code a server would run. */
 export const MUSIC=['jazz','house','classical','off'];
+export const BAR_STAGES=['pour','mix','strain','garnish','serve'];
 export const NPC_SERVE_AFTER=30,MAX_TIP=3*3000+1000,SEAT_RE=/^g[0-7]$/,FIRE_COOLDOWN=30,FIRE_GRACE=3;
 
 export const tipFor=(session,rawTip)=>Math.round(rawTip*TIMES[session.time].tipMult);
@@ -50,19 +51,19 @@ export function expireClaims(world,activeIds){
 function finishSeat(world,seat,served,now){
   if(seat.claim)world.stations[seat.claim.station]=null;
   seat.claim=null;seat.order=null;seat.reaction={stars:served.stars,until:now+7};
-  world.rev++;seat.served=Object.assign({rev:world.rev,x:seat.stoolX||0,to:seat.customer||null},served);
-  seat.customer=null;
+  world.rev++;seat.served=Object.assign({rev:world.rev,x:seat.stoolX||0,to:seat.customer||null,drop:seat.drop||null},served);
+  seat.customer=null;seat.drop=null;
   world.nextOrderAt=Math.min(world.nextOrderAt,now+randRange(world,2.5,5));
 }
 
 /* A seated player orders from the menu. Takes the first free customer seat (g4-g7). */
-export function placeOrder(world,from,rec,stoolX,now,pool){
+export function placeOrder(world,from,rec,stoolX,now,pool,drop){
   if(!(world.session.chairs>0))return {ok:false,reason:'solo'};
   if(!pool.some(r=>r.id===rec))return {ok:false,reason:'menu'};
   if(world.seats.some(s=>s.customer===from))return {ok:false,reason:'busy'};
   const seat=world.seats.find((s,i)=>i>=4&&!s.order&&!s.customer);
   if(!seat)return {ok:false,reason:'full'};
-  seat.customer=from;seat.stoolX=stoolX;seat.order={recipeId:rec,at:now};seat.reaction=null;seat.served=null;
+  seat.customer=from;seat.stoolX=stoolX;seat.drop=drop||null;seat.order={recipeId:rec,at:now};seat.reaction=null;seat.served=null;
   world.night.ordered++;world.rev++;
   return {ok:true,seatId:seat.id};
 }
@@ -128,6 +129,17 @@ export function parseGameMessage(raw){
   if(k==='need')return out;
   if(k==='music'){if(MUSIC.indexOf(raw.genre)<0)return null;out.genre=raw.genre;return out;}
   if(k==='order'){if(!RECIPE_BY_ID[raw.rec])return null;out.rec=raw.rec;return out;}
+  if(k==='bar'){                                           // a friend's bartending, shown at their station: purely visual, never changes the night
+    if(raw.off===true){out.off=true;return out;}
+    if(!RECIPE_BY_ID[raw.rec]||BAR_STAGES.indexOf(raw.stage)<0)return null;
+    out.rec=raw.rec;out.stage=raw.stage;
+    out.v=num(raw.v,0,500)?raw.v:0;out.s=num(raw.s,0,500)?raw.s:0;
+    out.col=Array.isArray(raw.col)&&raw.col.length===3&&raw.col.every(c=>num(c,0,1))?raw.col:null;
+    out.pour=typeof raw.pour==='string'&&ING[raw.pour]?raw.pour:'';
+    out.drag=raw.drag===true;out.mix=num(raw.mix,0,1)?raw.mix:0;out.srv=num(raw.srv,0,1)?raw.srv:0;
+    out.gar=typeof raw.gar==='string'&&GARNISH.some(g=>g.id===raw.gar)?raw.gar:'none';
+    return out;
+  }
   if(k==='claim'||k==='unclaim'){if(!SEAT_RE.test(raw.seat))return null;out.seat=raw.seat;return out;}
   if(k==='served'){
     if(!SEAT_RE.test(raw.seat)||!RECIPE_BY_ID[raw.rec])return null;

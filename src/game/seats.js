@@ -18,6 +18,16 @@ SEATS.push(mk('piano','piano',7.1,7.7,-.6,.18,.6,7.7,6.7,{ko:'피아노 의자',
 SEATS.push(mk('lounge0','chair',-6.2,6.6,Math.PI/2,-.46,.25,-6.2,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
 SEATS.push(mk('lounge1','chair',-4.4,6.6,-Math.PI/2,-.46,.25,-4.4,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
 export const LOUNGE_SEAT_IDS=['lounge0','lounge1'];
+/* Ordering works from every seat except the piano bench. A bar stool gets its drink on the counter; any other seat gets it on the nearest cafe table (top at y .76). */
+const TABLES=[[-8.85,1.8],[-8.85,3.8],[8.85,1.8],[8.85,3.8],[-5.3,6.6]];
+export const canOrderFrom=s=>!!s&&s.kind!=='piano';
+export function dropFor(seat){
+  if(!seat||seat.kind==='stool')return null;
+  let best=TABLES[0],bd=1e9;
+  TABLES.forEach(t=>{const d=Math.hypot(t[0]-seat.x,t[1]-seat.z);if(d<bd){bd=d;best=t;}});
+  const dx=seat.x-best[0],dz=seat.z-best[1],l=Math.hypot(dx,dz)||1;
+  return {x:+(best[0]+dx/l*.16).toFixed(2),y:.78,z:+(best[1]+dz/l*.16).toFixed(2)};          // a little toward the seat, away from the candle
+}
 export function setLoungeTaken(flags){LOUNGE_SEAT_IDS.forEach((id,i)=>{const s=SEATS.find(x=>x.id===id);if(s)s.npc=!!flags[i];});}
 export const SEAT_MAX=SEATS.length;
 export const seatByWireId=n=>(Number.isInteger(n)&&n>=1&&n<=SEAT_MAX)?SEATS[n-1]:null;

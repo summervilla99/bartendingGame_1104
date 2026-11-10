@@ -476,3 +476,21 @@ button.st-night.on{background:linear-gradient(140deg,rgba(29,74,54,.58),rgba(201
 
 .st-music{display:flex;flex-wrap:wrap;gap:8px}
 .st-music .st-opt{min-width:74px;text-align:center}
+
+/* ── chat history ── */
+.cl-badge{display:inline-grid;place-items:center;min-width:16px;height:16px;margin-left:6px;padding:0 4px;border-radius:99px;background:var(--rose);color:#fff;font:700 10px/1 var(--f-ui);font-style:normal}
+.cl-badge[hidden]{display:none}
+.chathist{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(max(24px,env(safe-area-inset-bottom,0px)) + 84px);width:min(380px,calc(100vw - 24px));max-height:min(46dvh,420px);display:flex;flex-direction:column;border-radius:20px;z-index:13;overflow:hidden;word-break:keep-all;background:linear-gradient(180deg,rgba(22,48,37,.9),rgba(12,20,16,.94));border:1px solid rgba(143,190,160,.3)}
+.chathist[hidden]{display:none}
+.chathist header{display:flex;align-items:center;gap:8px;padding:10px 12px 8px 16px;border-bottom:1px solid var(--forest-line,rgba(143,190,160,.26));font:700 12.5px var(--f-ui);color:var(--brass)}
+.chathist .ch-n{font:600 11px var(--f-ui);color:var(--text-3);font-variant-numeric:tabular-nums}
+.chathist .ch-x{margin-left:auto;width:40px;height:40px;appearance:none;border:0;background:none;color:var(--text-3);font:300 26px/1 var(--f-ui);cursor:pointer}
+.ch-list{overflow:auto;padding:8px 14px 12px;display:flex;flex-direction:column;gap:7px;-webkit-overflow-scrolling:touch;-webkit-user-select:text;user-select:text}
+.ch-list .hl{font:500 13px/1.45 var(--f-ui);color:var(--text);overflow-wrap:anywhere}
+.ch-list .hl time{display:inline-block;margin-right:7px;font:500 10px var(--f-ui);color:var(--text-3);font-variant-numeric:tabular-nums}
+.ch-list .hl b{font-weight:700;color:var(--brass);margin-right:6px}
+.ch-list .hl.me b{color:var(--amber)}
+.ch-empty{margin:0;padding:18px 16px 22px;text-align:center;font-size:12.5px;color:var(--text-3)}
+.ch-empty[hidden]{display:none}
+.hist-open .chatfeed{display:none}
+@media (hover:none),(pointer:coarse){.chathist{bottom:calc(max(34px,env(safe-area-inset-bottom,0px)) + 150px)}}

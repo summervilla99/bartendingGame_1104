@@ -194,3 +194,27 @@ test('a friends room can switch the NPC guest\'s orders off',()=>{
   assert.ok(nOn>0,'the NPC guest orders by default');assert.equal(nOff,0);
   assert.ok(off.seats.every(s=>!s.order));
 });
+
+test('an order from a sofa or lounge chair is delivered to the nearest cafe table; the piano bench cannot order',async()=>{
+  const {SEATS,dropFor,canOrderFrom}=await import('../src/game/seats.js');
+  const w=createWorld(Object.assign({},DEFAULT,{time:'prime',mode:'service',chairs:4,limit:45}),5,0);
+  const sofa=SEATS.find(s=>s.id==='benchL2.8'),stool=SEATS.find(s=>s.id==='stool0'),piano=SEATS.find(s=>s.kind==='piano');
+  assert.equal(canOrderFrom(piano),false);assert.equal(canOrderFrom(sofa),true);assert.equal(canOrderFrom(stool),true);
+  assert.equal(dropFor(stool),null);
+  const drop=dropFor(sofa);assert.ok(drop&&Math.abs(drop.x+8.85)<.3&&drop.y===.78);
+  const pool=RECIPES.slice(0,4),rec=pool[0].id;
+  const r=placeOrder(w,'p1',rec,drop.x,1,pool,drop);assert.ok(r.ok);
+  const seat=w.seats.find(s=>s.id===r.seatId);assert.deepEqual(seat.drop,drop);
+  const claim=claimSeat(w,seat.id,'bart',2);assert.ok(claim.ok);
+  const done=applyServed(w,seat.id,'bart',{rec,stars:3,final:.95,tip:3000,ml:90,col:[.5,.2,.1]},3);
+  assert.ok(done);assert.deepEqual(seat.served.drop,drop);assert.equal(seat.drop,null);      // the served drink remembers where to land
+});
+test('the bartending message is validated: unknown recipes, stages and out-of-range values are dropped or cleaned',()=>{
+  const ok=parseGameMessage({t:'g',id:'a',k:'bar',rec:RECIPES[0].id,stage:'pour',v:60,s:0,col:[.5,.1,.1],pour:'gin',drag:true,mix:.5,srv:0,gar:'lime'});
+  assert.ok(ok&&ok.pour==='gin'&&ok.drag===true&&ok.gar==='lime');
+  assert.equal(parseGameMessage({t:'g',id:'a',k:'bar',rec:'nope',stage:'pour'}),null);
+  assert.equal(parseGameMessage({t:'g',id:'a',k:'bar',rec:RECIPES[0].id,stage:'hack'}),null);
+  const dirty=parseGameMessage({t:'g',id:'a',k:'bar',rec:RECIPES[0].id,stage:'mix',v:99999,col:[9,0,0],pour:'<img>',gar:'x'});
+  assert.equal(dirty.v,0);assert.equal(dirty.col,null);assert.equal(dirty.pour,'');assert.equal(dirty.gar,'none');
+  assert.deepEqual(parseGameMessage({t:'g',id:'a',k:'bar',off:true}),{k:'bar',id:'a',off:true});
+});

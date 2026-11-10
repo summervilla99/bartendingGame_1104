@@ -11,7 +11,7 @@ export function createWorld(session,seed,now){
   const T=TIMES[session.time],s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
   return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,fired:{},combo:0,regulars:{},stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
     night:{served:0,ordered:0,stars:0,tips:0,best:null},
-    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:i<4&&(session.chairs>0?i===0:T.guests.indexOf(i)>=0),order:null,last:null,reaction:null,claim:null,served:null,customer:null,stoolX:0}))};
+    seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:i<4&&(session.chairs>0?i===0:T.guests.indexOf(i)>=0),order:null,last:null,reaction:null,claim:null,served:null,customer:null,stoolX:0,drop:null}))};
 }
 
 export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.order.at-b.order.at);

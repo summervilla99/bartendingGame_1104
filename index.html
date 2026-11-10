@@ -49,6 +49,7 @@
       <button class="btn sm" id="btn-dance" type="button" data-i18n="emo_dance"></button>
       <button class="btn sm" id="btn-jump" type="button" data-i18n="emo_jump"></button>
       <button class="btn sm" id="btn-chat" type="button" data-i18n="chat_btn" hidden></button>
+      <button class="btn sm" id="btn-chat-log" type="button" aria-expanded="false" hidden><span data-i18n="chat_log"></span><i class="cl-badge" id="chat-badge" hidden></i></button>
       <p class="hint" id="walk-hint" data-i18n-html="hint_kb"></p>
     </div>
   </section>
@@ -156,6 +157,11 @@
     <button class="btn sm" type="button" data-e="bow" data-i18n="emo_bow"></button>
   </div>
   <div class="chatfeed" id="chatfeed" aria-live="polite"></div>
+  <section class="chathist glass" id="chat-hist" hidden aria-labelledby="chat-hist-title">
+    <header><b id="chat-hist-title" data-i18n="chat_hist_title"></b><span class="ch-n" id="chat-hist-n"></span><button type="button" class="ch-x" id="chat-hist-x" data-i18n-aria="chat_hist_close">×</button></header>
+    <div class="ch-list" id="chat-hist-list" role="log" aria-live="polite"></div>
+    <p class="ch-empty" id="chat-hist-empty" data-i18n="chat_hist_empty"></p>
+  </section>
   <form class="chatbar glass" id="chat-form" hidden autocomplete="off">
     <input class="st-input" id="chat-input" maxlength="100" data-i18n-ph="chat_ph" autocomplete="off" enterkeyhint="send">
     <button class="btn primary sm" type="submit" data-i18n="chat_send"></button>

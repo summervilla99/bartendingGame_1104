@@ -25,7 +25,7 @@ import {createStart} from './start.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
-import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken} from './game/seats.js';
+import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken,canOrderFrom,dropFor} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,FIRE_COOLDOWN} from './game/shared.js';
 import {createWorld,tickOrders,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
 import {startDrink,pourStep,clearPour,shakeStroke,stirTurn,setGarnish,serveDrink as gameServe,settleDrink,pourVesselOf,RECIPE_BY_ID} from './game/bartending.js';
@@ -673,7 +673,8 @@ function showResult(){
 }
 function spawnDrinkProp(g,d){
   const rc=RECIPE_BY_ID[d.recipeId];
-  const prop=makeGlass(rc.glass);prop.group.scale.setScalar(.8);prop.group.position.set(g.x,COUNTER_TOP,.45);
+  const prop=makeGlass(rc.glass);prop.group.scale.setScalar(.8);
+  if(d.drop)prop.group.position.set(d.drop.x,d.drop.y,d.drop.z);else prop.group.position.set(g.x,COUNTER_TOP,.45);       // a cafe table for seats away from the bar
   prop.setLevel(d.ml);prop.setColor(d.col);if(iceOf(rc))prop.setIce(iceOf(rc));
   scene.add(prop.group);if(g.drink)scene.remove(g.drink.group);g.drink=prop;
 }
@@ -813,11 +814,16 @@ function updatePlayerPose(){
   const e=S.emote;
   if(e&&nowT<e.until)applyEmote(playerFig,e.kind,Math.sin(Math.min(1,(e.until-nowT)/EMOTE_MS[e.kind])*Math.PI),time);
   else{if(e)S.emote=null;relaxArms(playerFig);}
-  if(S.seat&&player.st.intent>.35)standUp();
+  /* Moving stands you up, but only a fresh push: walking into a sofa with the stick or key still held, then pressing Sit, must not stand you straight back up. */
+  if(S.seat){
+    const it=player.st.intent;
+    if(!S.sitArmed){if(it<.15)S.sitArmed=true;}
+    else if(it>.35)standUp();
+  }
 }
 function sitDown(seat){
   if(S.photo||S.mode!=='walk')return;
-  S.seat=seat;S.emote=null;
+  S.seat=seat;S.emote=null;S.sitArmed=false;
   player.place(seat.x,seat.z,seat.yaw,seat.yaw+Math.PI);player.pos.y=seat.y;player.st.locked=true;S.actionKey='';
 }
 function standUp(){
@@ -828,7 +834,7 @@ function standUp(){
 /* ordering from a bar stool (friends mode) */
 const myOpenOrder=()=>S.world&&S.world.seats.find(x=>x.customer===net.me.id&&x.order);
 function updateOrderBtn(){
-  const show=!!(net.active&&S.seat&&S.seat.kind==='stool'&&S.world&&S.world.session.chairs>0&&!myOpenOrder()&&!S.photo);
+  const show=!!(net.active&&canOrderFrom(S.seat)&&S.world&&S.world.session.chairs>0&&!myOpenOrder()&&!S.photo);
   const b=$('#btn-order');if(b.hidden===show)b.hidden=!show;
 }
 function openOrderMenu(){
@@ -901,7 +907,31 @@ const myChatEl=document.createElement('div');myChatEl.className='chatbubble';el.
 const typing=e=>!!(e.target&&e.target.closest&&e.target.closest('input,textarea'));
 function openChat(){if(!net.active||S.mode!=='walk'||S.paused||S.photo)return;$('#emotes').hidden=true;chatForm.hidden=false;chatInput.value='';chatInput.focus();}
 function closeChat(){chatForm.hidden=true;chatInput.blur();}
+/* chat history: every message stays for as long as you are in the room; a panel opens and closes on demand */
+const chatLog=[];let chatUnread=0;
+const histEl=$('#chat-hist'),histList=$('#chat-hist-list'),logBtn=$('#btn-chat-log'),badge=$('#chat-badge');
+function updateLogBadge(){badge.hidden=!(chatUnread>0&&histEl.hidden);badge.textContent=chatUnread>9?'9+':String(chatUnread);}
+function updateHistCount(){$('#chat-hist-n').textContent=chatLog.length?String(chatLog.length):'';$('#chat-hist-empty').hidden=chatLog.length>0;}
+function pushLog(name,text,mine){
+  const e={name,text,mine,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  chatLog.push(e);
+  if(chatLog.length>300){chatLog.shift();if(histList.firstChild)histList.firstChild.remove();}
+  const near=histList.scrollHeight-histList.scrollTop-histList.clientHeight<48;
+  const d=document.createElement('div');d.className='hl'+(mine?' me':'');
+  const tm=document.createElement('time');tm.textContent=e.time;
+  const b=document.createElement('b');b.textContent=name;
+  d.append(tm,b,document.createTextNode(text));histList.appendChild(d);      // text nodes only: a message is never read as HTML
+  if(!histEl.hidden){if(near||mine)histList.scrollTop=histList.scrollHeight;}
+  else if(!mine){chatUnread++;}
+  updateHistCount();updateLogBadge();
+}
+function openHist(){histEl.hidden=false;logBtn.setAttribute('aria-expanded','true');$('#app').classList.add('hist-open');chatUnread=0;updateLogBadge();histList.scrollTop=histList.scrollHeight;}
+function closeHist(){histEl.hidden=true;logBtn.setAttribute('aria-expanded','false');$('#app').classList.remove('hist-open');updateLogBadge();}
+function resetHist(){closeHist();chatLog.length=0;chatUnread=0;histList.textContent='';updateHistCount();updateLogBadge();}
+logBtn.addEventListener('click',()=>{if(histEl.hidden)openHist();else closeHist();});
+$('#chat-hist-x').addEventListener('click',closeHist);
 function addFeed(name,text,mine){
+  pushLog(name,text,mine);
   const d=document.createElement('div');d.className='cl'+(mine?' me':'');
   const b=document.createElement('b');b.textContent=name;d.append(b,' ',document.createTextNode(text));
   chatFeed.appendChild(d);while(chatFeed.children.length>5)chatFeed.firstChild.remove();
@@ -1006,6 +1036,7 @@ onLang(refreshAll);
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(!chatForm.hidden){closeChat();return;}
+    if(!histEl.hidden){closeHist();return;}
     if(!$('#photo').hidden){closePhoto();return;}
     if(!emoPop.hidden){emoPop.hidden=true;return;}
     if(!inviteEl.hidden){closeInvite();return;}
@@ -1137,8 +1168,8 @@ function handleAct(from,m){
   if(m.k==='music'){S.world.session=Object.assign({},S.world.session,{music:m.genre});S.world.rev++;S.musicSeen=m.genre;setMusic(m.genre,true);commitWorld();return;}
   if(m.k==='order'){
     const seat=from===net.me.id?S.seat:seatByWireId((net.peers.get(from)||{}).st);
-    if(!seat||seat.kind!=='stool'||!isFree(seat))return;
-    const r=placeOrder(S.world,from,m.rec,seat.x,time,poolFor(S.world.session,RECIPES));
+    if(!canOrderFrom(seat)||!isFree(seat))return;
+    const drop=dropFor(seat),r=placeOrder(S.world,from,m.rec,drop?Math.max(-3.7,Math.min(3.7,drop.x)):seat.x,time,poolFor(S.world.session,RECIPES),drop);
     if(r.ok){commitWorld();}
     return r;
   }
@@ -1155,6 +1186,7 @@ net.onGame(raw=>{
     if(isHost()&&S.synced&&m.id>=net.me.id)return;          // two hosts: the lower id wins
     if(acceptSnapshot(S.world,m.w,S.synced)||(isHost()&&m.id<net.me.id))adoptWorld(m.w);
   }else if(m.k==='need'){if(isHost())broadcastWorld();}
+  else if(m.k==='bar'){if(m.id!==net.me.id)remoteBarMsg(m.id,m);}      // visual only: every client draws it, the host does not act on it
   else if(isHost())handleAct(m.id,m);
 });
 /* Ticket claiming is optimistic: step behind the counter at once, the host confirms (or overrules) a moment later.
@@ -1221,7 +1253,7 @@ $('#btn-npc').addEventListener('click',()=>{
 });
 function refreshRoomUI(){
   refreshNpcRow();
-  const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;if(!net.active&&!chatForm.hidden)closeChat();
+  const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;logBtn.hidden=!net.active;if(!net.active&&(chatLog.length||!histEl.hidden))resetHist();if(!net.active&&!chatForm.hidden)closeChat();
   if(net.active){chip.setAttribute('aria-label',t('inv_aria',{code:net.code,n:net.count}));}
 }
 function connectRoom(onl){
@@ -1245,6 +1277,89 @@ function connectRoom(onl){
 }
 const STATION_X=[-.9,.9];
 const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0,st:S.seat?SEATS.indexOf(S.seat)+1:0});
+/* ── friends can watch you make a drink ──
+   While you tend the bar, a small state (recipe, stage, liquid in each glass, what is being poured, shaking/stirring, garnish) goes out about five times a second
+   and every other client draws a copy of your work at your station: glasses, bottle, shaker or spoon, and your hands. Nothing here changes the game state. */
+let barWas=false,barLast='',barLastAt=0;
+setInterval(()=>{
+  if(!net.active)return;
+  const inBar=S.mode==='bar'&&S.recipe&&S.drink&&S.stage;
+  if(!inBar){if(barWas){net.sendGame({k:'bar',off:true});barWas=false;barLast='';}return;}
+  const col=(S.strainColor||blendColor()||null),r3=v=>+v.toFixed(3);
+  const msg={k:'bar',rec:S.recipe.id,stage:S.stage==='result'?'serve':S.stage,
+    v:Math.round((S.vessel&&S.vessel.ml)||0),s:Math.round((S.serv&&S.serv!==S.vessel&&S.serv.ml)||0),
+    col:col?col.map(r3):null,pour:S.pourId||'',drag:!!S.drag,mix:+(S.drink.mixProg||0).toFixed(2),gar:S.drink.garnish||'none',srv:+(S.serveT||0).toFixed(2)};
+  const j=JSON.stringify(msg);
+  if(j!==barLast||performance.now()-barLastAt>1500){net.sendGame(msg);barLast=j;barLastAt=performance.now();}
+  barWas=true;
+},200);
+const remoteBars=new Map(),BAR_STALE_MS=3500;
+function disposeBar(b){scene.remove(b.group);}
+function remoteBarMsg(id,m){
+  if(m.off){const b=remoteBars.get(id);if(b){disposeBar(b);remoteBars.delete(id);}return;}
+  let b=remoteBars.get(id);
+  if(b&&b.rec!==m.rec){disposeBar(b);remoteBars.delete(id);b=null;}
+  if(!b){
+    const rc=RECIPE_BY_ID[m.rec],group=new THREE.Group();scene.add(group);
+    const vessel=makeGlass(pourVesselOf(rc)),serv=rc.method==='build'?null:makeGlass(rc.glass);
+    vessel.group.position.set(VP.x,0,0);group.add(vessel.group);
+    if(serv){serv.group.position.set(SP.x,0,0);group.add(serv.group);}
+    let shaker=null,spoonG=null;
+    if(rc.method==='shake'){shaker=makeShaker();shaker.group.position.set(VP.x,0,0);shaker.group.visible=false;group.add(shaker.group);}
+    if(rc.method==='stir'){spoonG=new THREE.Group();cyl(.004,.004,.44,brass,0,.22,0,spoonG,8);spoonG.visible=false;group.add(spoonG);}
+    const pivot=new THREE.Group();pivot.visible=false;group.add(pivot);
+    const streamM=new THREE.Mesh(new THREE.CylinderGeometry(.013,.011,1,10),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.85}));streamM.visible=false;group.add(streamM);
+    b={rec:m.rec,rc,group,vessel,serv,shaker,spoon:spoonG,pivot,streamM,bottle:null,bottleId:'',garn:null,garnId:'none',lv:-1,ls:-1,iceSet:false,m,last:0};
+    remoteBars.set(id,b);
+  }
+  b.m=m;b.last=performance.now();
+}
+const _rb=new THREE.Vector3();
+function updateRemoteBar(id,r,t){
+  const b=remoteBars.get(id);if(!b)return;
+  if(performance.now()-b.last>BAR_STALE_MS){disposeBar(b);remoteBars.delete(id);return;}
+  const m=b.m,rc=b.rc,tgt=b.serv||b.vessel;
+  b.group.position.set(r.fig.position.x,COUNTER_TOP,VP.z);
+  /* liquid */
+  if(Math.abs(m.v-b.lv)>=1){b.vessel.setLevel(m.v);b.lv=m.v;}
+  if(b.serv&&Math.abs(m.s-b.ls)>=1){b.serv.setLevel(m.s);b.ls=m.s;}
+  if(m.col){b.vessel.setColor(m.col);if(b.serv)b.serv.setColor(m.col);}
+  const shaking=rc.method==='shake'&&(m.stage==='mix'||m.stage==='strain'),stirring=rc.method==='stir'&&m.stage==='mix';
+  /* ice: like the local flow (stirred drinks are chilled in the mixing glass, the rest goes in the serving glass at the end) */
+  if(stirring&&!b.iceSet){b.vessel.setIce(5);b.iceSet=true;}
+  if(m.stage==='garnish'||m.stage==='serve'){if(!b.iceFinal&&iceOf(rc)){tgt.setIce(iceOf(rc));b.iceFinal=true;}if(rc.method!=='build')b.vessel.setIce(0);}
+  /* shaker: replaces the tin while shaking */
+  if(b.shaker){
+    b.shaker.group.visible=shaking;b.vessel.group.visible=!shaking;
+    if(shaking){const w=m.drag?Math.sin(t*30):0;b.shaker.group.position.set(VP.x+(m.drag?Math.sin(t*38)*.006:0),(m.drag?.06+w*.05:0),0);b.shaker.group.rotation.z=m.drag?Math.sin(t*30)*.04:0;}
+  }
+  /* stirring spoon circles in the mixing glass */
+  if(b.spoon){b.spoon.visible=stirring;if(stirring){const a=m.drag?t*7:0;b.spoon.position.set(VP.x+Math.cos(a)*.03,.014,Math.sin(a)*.03);b.spoon.rotation.set(Math.sin(a)*.1,0,-Math.cos(a)*.1);}}
+  /* garnish on the serving glass */
+  if(m.gar!==b.garnId){
+    if(b.garn&&b.garn.parent)b.garn.parent.remove(b.garn);b.garn=null;b.garnId=m.gar;
+    if(m.gar!=='none'){const go=makeGarnish(m.gar);if(m.gar==='cherry')go.position.set(.02,tgt.level+.005,0);else go.position.set(tgt.rimR*.82,tgt.rimY+.005,0);tgt.group.add(go);b.garn=go;}
+  }
+  /* the bottle being poured: tilted above the vessel, a stream down to the liquid */
+  const pour=m.stage==='pour'?m.pour:'';
+  if(pour&&pour!==b.bottleId){
+    if(b.bottle)b.pivot.remove(b.bottle);
+    const ing=ING[pour],bt=makeBottle(ing.bottle,{flip:true,scale:ing.small?.72:1,labelMap:ing.labelTex});
+    bt.position.set(0,-(bt.userData.h||.3)*bt.scale.x,0);b.pivot.add(bt);b.bottle=bt;b.bottleId=pour;b.streamM.material.color.set(ing.color);
+  }
+  b.pivot.visible=!!pour&&!!b.bottle;b.streamM.visible=!!pour;
+  if(pour){
+    const lipY=b.vessel.rimY+.07,topY=b.vessel.level;
+    b.pivot.position.set(VP.x,lipY,0);b.pivot.rotation.z=2.1;
+    const len=Math.max(.02,lipY-topY);b.streamM.scale.set(1,len,1);b.streamM.position.set(VP.x,topY+len/2,0);
+  }
+  /* hands: one on the glass, the other on whatever is being handled */
+  const fig=r.fig;
+  const hand=(i,obj,dx,dy)=>{b.group.updateMatrixWorld(true);_rb.set(dx,dy,0);obj.localToWorld(_rb);reachArm(fig,i,_rb,.35);};
+  const work=b.shaker&&shaking?b.shaker.group:b.spoon&&stirring?b.spoon:null;
+  hand(0,b.vessel.group,-.07,.12);
+  if(pour)hand(1,b.pivot,0,0);else if(work)hand(1,work,.0,.12);else hand(1,tgt.group,.07,.1);
+}
 function syncRemotes(dt,t){
   if(!net.active&&!remotes.size)return;
   net.update(myState());
@@ -1273,6 +1388,7 @@ function syncRemotes(dt,t){
     }
     const l=p.emoteUntil>nowT?Math.sin(Math.min(1,(p.emoteUntil-nowT)/(EMOTE_MS[p.emote]||1600))*Math.PI):0;
     if(l>0)applyEmote(r.fig,p.emote,l,t);else relaxArms(r.fig);
+    if(remoteBars.has(id))updateRemoteBar(id,r,t);
     if(p.chatSeq!==r.seq){r.seq=p.chatSeq;if(p.chat)addFeed(p.name,p.chat.text,false);}
     const od=S.world&&S.world.seats.find(x=>x.customer===id&&x.order),tagText=p.name+(od?' · '+RECIPE_BY_ID[od.order.recipeId].name:'');
     if(r.tag.textContent!==tagText)r.tag.textContent=tagText;
@@ -1281,7 +1397,7 @@ function syncRemotes(dt,t){
     if(p.chat&&nowT<p.chat.until){if(r.chat.textContent!==p.chat.text)r.chat.textContent=p.chat.text;place(r.chat,r.fig.position.x,hy,r.fig.position.z,26);}
     else r.chat.style.display='none';
   });
-  remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();r.chat.remove();remotes.delete(id);}});
+  remotes.forEach((r,id)=>{if(!net.peers.has(id)){scene.remove(r.fig);r.tag.remove();r.chat.remove();remotes.delete(id);const b=remoteBars.get(id);if(b){disposeBar(b);remoteBars.delete(id);}}});
   if(S.myChat&&nowT<S.myChat.until)place(myChatEl,playerFig.position.x,playerFig.position.y+1.95,playerFig.position.z,4);else myChatEl.style.display='none';
 }
 /* ── invite: one card, three ways in (the chip, the settings row, and automatically when you open a room) ── */
