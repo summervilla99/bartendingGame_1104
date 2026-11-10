@@ -950,8 +950,9 @@ $('#mood-seg').addEventListener('click',e=>{
 const chatForm=$('#chat-form'),chatInput=$('#chat-input'),chatFeed=$('#chatfeed');
 const myChatEl=document.createElement('div');myChatEl.className='chatbubble';el.bubbles.appendChild(myChatEl);
 const typing=e=>!!(e.target&&e.target.closest&&e.target.closest('input,textarea'));
-function openChat(){if(!net.active||S.mode!=='walk'||S.paused||S.photo)return;$('#emotes').hidden=true;chatForm.hidden=false;chatInput.value='';chatInput.focus();}
-function closeChat(){chatForm.hidden=true;chatInput.blur();}
+let histByChat=false;                                   // opening the chat box also shows the kept log; closing it hides the log again if the box opened it
+function openChat(){if(!net.active||S.mode!=='walk'||S.paused||S.photo)return;$('#emotes').hidden=true;chatForm.hidden=false;chatInput.value='';chatInput.focus();if(histEl.hidden){openHist();histByChat=true;}}
+function closeChat(){chatForm.hidden=true;chatInput.blur();if(histByChat){histByChat=false;closeHist();}}
 /* chat history: every message stays for as long as you are in the room; a panel opens and closes on demand */
 const chatLog=[];let chatUnread=0;
 const histEl=$('#chat-hist'),histList=$('#chat-hist-list'),logBtn=$('#btn-chat-log'),badge=$('#chat-badge');
@@ -971,7 +972,7 @@ function pushLog(name,text,mine){
   updateHistCount();updateLogBadge();
 }
 function openHist(){histEl.hidden=false;logBtn.setAttribute('aria-expanded','true');$('#app').classList.add('hist-open');chatUnread=0;updateLogBadge();histList.scrollTop=histList.scrollHeight;}
-function closeHist(){histEl.hidden=true;logBtn.setAttribute('aria-expanded','false');$('#app').classList.remove('hist-open');updateLogBadge();}
+function closeHist(){histByChat=false;histEl.hidden=true;logBtn.setAttribute('aria-expanded','false');$('#app').classList.remove('hist-open');updateLogBadge();}
 function resetHist(){closeHist();chatLog.length=0;chatUnread=0;histList.textContent='';updateHistCount();updateLogBadge();}
 logBtn.addEventListener('click',()=>{if(histEl.hidden)openHist();else closeHist();});
 $('#chat-hist-x').addEventListener('click',closeHist);
