@@ -48,6 +48,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
     const limitRow=['off','easy','mid','hard'].map(d=>opt('limit',d,d==='off'?!timerOn:(timerOn&&cfg.diff===d),'st-guide',d==='off'?t('limit_off'):t('diff_'+d))).join('');
     const limitHtml='<h2>'+t('st_limit')+'</h2><div class="st-row st-diffs">'+limitRow+'</div><p class="st-note">'+t('limit_note')+'</p>';
     const hourMenu='<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div><h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>';
+    const goLabel=kind==='room'&&!lock&&(onl.mode==='join'||onl.mode.indexOf('public')===0)?t('join_go'):t('open_bar');      // arriving by an invite link or choosing a hall: the button says Join
     const nameField='<label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>';      // one nickname for every way of playing: it follows you between the menus
     let body='';
     if(kind==='tale'){
@@ -107,7 +108,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     if(compact){
       const nn=cfg.night||nextNight(),def=NIGHTS.find(x=>x.n===nn),all=NIGHTS.every(x=>tale.done[x.n]),dn=Object.keys(tale.done).length;
       const full=designHtml+'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'+body+musicHtml
-        +(kind==='tale'?'':'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button>');
+        +(kind==='tale'?'':'<button class="btn lg primary st-go" id="st-go" type="button">'+goLabel+'</button>');
       root.innerHTML='<div class="st-card st-compact" role="dialog" aria-labelledby="st-h">'+head
         +'<h1 id="st-h">'+t(all?'st_replay':'st_next')+'</h1><p class="st-sub">'+t('st_next_note',{n:dn})+'</p>'
         +'<button class="st-next" id="st-next" type="button">'+(def&&def.epilogue?star('sn-n'):moon(nn,'sn-n'))+'<span class="sn-t"><em>'+t(def&&def.epilogue?'epi_h':'sn_next')+'</em>'+esc(def?tr(def.title).replace(/^(후일담|Epilogue)\s*[·:]\s*/,''):'')+'</span><i class="sn-go" aria-hidden="true">→</i></button>'
@@ -122,7 +123,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       +'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'
       +body
       +musicHtml
-      +'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button></div>';
+      +'<button class="btn lg primary st-go" id="st-go" type="button">'+goLabel+'</button></div>';
   }
   root.addEventListener('click',e=>{
     if(!open)return;
