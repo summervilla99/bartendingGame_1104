@@ -654,3 +654,5 @@ body.xmas #start .st-card{position:relative;z-index:1}
 .rd-sec ol,.rd-sec ul{margin:0;padding-left:20px}
 .rd-sec .oc-row{font-size:14px}
 .rd-story{font-style:italic;font-family:var(--f-serif)}
+
+.k-more{margin:0 0 8px;min-height:40px}

@@ -999,9 +999,9 @@ function expandCard(b){
   acts.append(ob,mb);p.append(rows,meta,hint,acts);b.appendChild(p);
   b.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
-function openDetail(id){
+function openDetail(id,fromTicket){
   const r=RECIPE_BY_ID[id];if(!r)return;
-  S.detailId=id;
+  S.detailId=id;$('#rd-order').hidden=!!fromTicket;      // from the order ticket the drink is already being made
   $('#rd-h').textContent=r.name;
   const bd=$('#rd-badges');bd.innerHTML='';
   const mk=(cls,txt)=>{const x=document.createElement('span');x.className=cls;x.textContent=txt;bd.appendChild(x);};
@@ -1061,6 +1061,7 @@ function orderCardClick(e){
 $('#order-list').addEventListener('click',orderCardClick);
 $('#order-list').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('oc')){e.preventDefault();orderCardClick(e);}});
 $('#rd-close').addEventListener('click',closeDetail);
+$('#tk-more').addEventListener('click',()=>{if(S.recipe)openDetail(S.recipe.id,true);});
 $('#rd-order').addEventListener('click',()=>{if(S.detailId)doOrder(S.detailId);});
 $('#recipe-detail').addEventListener('click',e=>{if(e.target.id==='recipe-detail')closeDetail();});
 /* solo pause: freezes game time (orders, animation, the bartending clock) until resumed */
