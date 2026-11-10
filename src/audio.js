@@ -5,7 +5,7 @@ export const Snd=(function(){
   /* Music is mixed about 15 dB louder than the raw synth level (it measured -37 dBFS) and a compressor keeps peaks in check. */
   const MUSIC_LEVEL=3.8;
   let media=null,wired=false;
-  let ctx=null,master=null,meter=null,noise=null,pourG=null,musicG=null,musicOn=false,timer=null,next=0,step=0;
+  let ctx=null,master=null,meter=null,noise=null,pourG=null,pourBP=null,pourTimer=null,pourFill=0,musicG=null,musicOn=false,timer=null,next=0,step=0;
   const mtof=n=>440*Math.pow(2,(n-69)/12);
   /* iPhone Safari: Web Audio is silenced by the ringer switch unless the page's audio session is 'playback'.
      A looping silent <audio> element (started from a tap) and navigator.audioSession both move it there. */
@@ -35,9 +35,11 @@ export const Snd=(function(){
       meter=ctx.createAnalyser();meter.fftSize=2048;comp.connect(meter);
       const len=ctx.sampleRate*2;noise=ctx.createBuffer(1,len,ctx.sampleRate);
       const d=noise.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+      /* liquid pour voice: a soft low-passed stream plus a mid 'body' band, both level-controlled by pourG; bubbles are scheduled in pour() */
       const src=ctx.createBufferSource();src.buffer=noise;src.loop=true;
-      const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=2300;bp.Q.value=.8;
-      pourG=ctx.createGain();pourG.gain.value=0;src.connect(bp);bp.connect(pourG);pourG.connect(master);src.start();
+      const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=.6;pourBP=bp;
+      const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;lp.Q.value=.3;
+      pourG=ctx.createGain();pourG.gain.value=0;src.connect(bp);bp.connect(lp);lp.connect(pourG);pourG.connect(master);src.start();
       /* the music bus has no noise bed and a gentle low-pass: boosted ~15 dB, a hiss or sizzle up top became the 'shhh' people heard */
       musicG=ctx.createGain();musicG.gain.value=0;
       const musicLP=ctx.createBiquadFilter();musicLP.type='lowpass';musicLP.frequency.value=5200;musicLP.Q.value=.5;
@@ -121,10 +123,59 @@ export const Snd=(function(){
       else{musicG.gain.setTargetAtTime(0,ctx.currentTime,.3);clearInterval(timer);}
       return true;
     },
-    pour(on){if(!ctx)return;pourG.gain.setTargetAtTime(on?.1:0,ctx.currentTime,.05);},
-    clink(v){if(!ctx)return;const t=ctx.currentTime;tone(2500+rand(0,500),t,.55,'sine',.1*(v||1));tone(3900+rand(0,500),t+.01,.4,'sine',.06*(v||1));},
-    shake(){if(!ctx)return;const t=ctx.currentTime;hit(t,.1,1400,.12);if(Math.random()<.5)tone(3000+rand(0,800),t,.15,'sine',.03);},
-    stir(){if(!ctx)return;tone(3200+rand(0,900),ctx.currentTime,.25,'sine',.04);},
+    /* pouring: a gentle stream whose pitch climbs as the glass fills, plus random bubble 'glugs' */
+    pour(on,fill){
+      if(!ctx)return;
+      pourFill=fill||0;
+      pourG.gain.setTargetAtTime(on?.07:0,ctx.currentTime,.06);
+      if(on)pourBP.frequency.setTargetAtTime(1100+pourFill*1500,ctx.currentTime,.1);
+      if(on&&!pourTimer){
+        pourTimer=setInterval(()=>{
+          if(!ctx)return;const t=ctx.currentTime,f=380+pourFill*700+rand(0,260);
+          const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';
+          o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.9,t+.05);
+          g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+.07);
+          o.connect(g);g.connect(master);o.start(t);o.stop(t+.09);
+        },90);
+      }else if(!on&&pourTimer){clearInterval(pourTimer);pourTimer=null;}
+    },
+    /* glass touching glass: a bright, bell-like cluster of inharmonic partials with a tiny tick */
+    clink(v){
+      if(!ctx)return;v=v||1;const t=ctx.currentTime,f=2300+rand(0,500);
+      [[1,.07,.7],[2.32,.05,.45],[4.17,.03,.3],[6.4,.018,.18]].forEach(([r,vol,d])=>tone(f*r,t,d,'sine',vol*v));
+      hit(t,.015,5000,.05*v);
+    },
+    /* ice rattling inside the shaker: a burst of short cold ticks over a dull metal knock */
+    shake(){
+      if(!ctx)return;const t=ctx.currentTime;
+      for(let i=0;i<7;i++){const tt=t+i*rand(.012,.028);hit(tt,rand(.02,.045),rand(2400,5200),rand(.05,.1));tone(rand(3000,5200),tt,.05,'sine',.012);}
+      hit(t,.09,350,.08);tone(rand(180,230),t,.12,'triangle',.05);
+    },
+    /* spoon swirling ice in a mixing glass: two soft glassy tinks */
+    stir(){
+      if(!ctx)return;const t=ctx.currentTime,f=rand(2600,3400);
+      tone(f,t,.22,'sine',.035);tone(f*2.4,t+.004,.12,'sine',.015);hit(t+.03,.04,3000,.02);
+    },
+    /* ice cubes dropped into the tin or glass */
+    ice(){
+      if(!ctx)return;const t=ctx.currentTime;
+      for(let i=0;i<3;i++){const tt=t+i*rand(.05,.1);hit(tt,.03,2800,.09);tone(rand(1800,2800),tt,.08,'sine',.03);}
+    },
+    /* garnish landing on the drink: a soft wet plop */
+    plop(){
+      if(!ctx)return;const t=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.setValueAtTime(520,t);o.frequency.exponentialRampToValueAtTime(190,t+.09);
+      g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+.12);o.connect(g);g.connect(master);o.start(t);o.stop(t+.14);
+      hit(t,.03,2000,.03);
+    },
+    /* glass slid across the counter: a short low scrape, then a soft set-down */
+    slide(){
+      if(!ctx)return;const t=ctx.currentTime;
+      const s2=ctx.createBufferSource();s2.buffer=noise;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=1.2;
+      const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+.08);g.gain.linearRampToValueAtTime(0,t+.32);
+      s2.connect(f);f.connect(g);g.connect(master);s2.start(t,Math.random());s2.stop(t+.35);
+      tone(150,t+.32,.1,'triangle',.07);
+    },
     pause(){if(ctx&&ctx.state==='running')ctx.suspend();if(media&&!media.paused)media.pause();},
     resume(){if(ctx&&ctx.state!=='running')ctx.resume();if(media&&media.paused)media.play().catch(()=>{});}
   };

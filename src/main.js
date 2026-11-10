@@ -487,7 +487,7 @@ function updateBottles(dt){
       v.setLevel(S.drink.total);v.setColor(blendColor());dirtyUI=true;
       stream.material.color.setRGB.apply(stream.material.color,ING[S.pourId].rgb);
       const len=Math.max(.02,tipY-surf);stream.scale.set(1,len,1);stream.position.set(VP.x,surf+len/2,VP.z);
-      Snd.pour(true);
+      Snd.pour(true,S.drink.total/v.cap);
       if(S.drink.total>=v.cap-.01){toast(t('toast_full'));stopPour();}
     }else Snd.pour(false);
   }else if(S.stage==='strain'){
@@ -509,7 +509,7 @@ function afterPour(){
   if(r.method==='shake'){
     S.vessel.group.visible=false;
     S.shaker=makeShaker();S.shaker.group.position.copy(VP);scene.add(S.shaker.group);S.src=S.shaker;
-    Snd.clink(.4);
+    Snd.ice();
     S.mixKey='mix_shake';el.mixSay.textContent=t(S.mixKey);
   }else{
     S.vessel.setIce(5);S.src=S.vessel;
@@ -625,7 +625,7 @@ function chooseGarnish(id,silent){
     const go=makeGarnish(id);
     if(id==='cherry')go.position.set(.02,sv.level+.005,0);else go.position.set(sv.rimR*.82,sv.rimY+.005,0);
     sv.group.add(go);S.garnishObj=go;
-    if(!silent)Snd.clink(.4);
+    if(!silent)Snd.plop();
   }
 }
 
@@ -633,7 +633,7 @@ function chooseGarnish(id,silent){
 function serveDrink(){
   if(S.stage!=='garnish')return;
   gameServe(S.drink);setStage('serve');S.serveT=0;
-  el.pGar.hidden=true;Snd.clink(1);
+  el.pGar.hidden=true;Snd.slide();setTimeout(()=>Snd.clink(.8),330);
 }
 function updateServe(dt){
   S.serveT=Math.min(1,S.serveT+dt/.9);
