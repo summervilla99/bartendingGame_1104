@@ -102,6 +102,114 @@ function paintCity(g,w,h,kind){
     }
   }
 }
+/* Window view: Seoul's Myeongdong in the snow. Myeongdong Cathedral glows on its hill, Namsan Tower stands far behind, neon signs and street lamps below.
+   kind = 'golden' (dusk), anything else is night. Seeded, so the scene does not change when the hour is repainted. */
+function paintSeoul(g,w,h,kind){
+  const dusk=kind==='golden';
+  let sd=4242;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647;};
+  const X=v=>v*w,Y=v=>v*h;
+  /* sky */
+  const sky=g.createLinearGradient(0,0,0,h);
+  if(dusk){sky.addColorStop(0,'#2a2a52');sky.addColorStop(.3,'#8a5068');sky.addColorStop(.55,'#e08a58');sky.addColorStop(.75,'#f2c088');sky.addColorStop(1,'#3a2a2a');}
+  else{sky.addColorStop(0,'#05070f');sky.addColorStop(.35,'#0d1326');sky.addColorStop(.62,'#2a2640');sky.addColorStop(.8,'#4a3446');sky.addColorStop(1,'#1a1620');}
+  g.fillStyle=sky;g.fillRect(0,0,w,h);
+  for(let i=0;i<6;i++){                                   // low snow clouds lit from below by the city
+    const x=rnd()*w,y=Y(.1+rnd()*.35),r=X(.18+rnd()*.14);
+    const cg=g.createRadialGradient(x,y,0,x,y,r);cg.addColorStop(0,dusk?'rgba(255,200,150,.22)':'rgba(120,110,150,.2)');cg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=cg;g.fillRect(x-r,y-r,r*2,r*2);
+  }
+  const lit=a=>dusk?a*.45:a;
+  /* Namsan and its tower, far away */
+  g.fillStyle=dusk?'#3a2a3a':'#0c0e1a';
+  g.beginPath();g.moveTo(X(.5),Y(.6));g.quadraticCurveTo(X(.78),Y(.5),X(1),Y(.56));g.lineTo(X(1),Y(.8));g.lineTo(X(.5),Y(.8));g.fill();
+  const tx=X(.8);
+  g.fillStyle=dusk?'#2c2030':'#0a0c16';g.fillRect(tx-1.5,Y(.3),3,Y(.24));
+  g.beginPath();g.ellipse(tx,Y(.375),7,5,0,0,7);g.fill();
+  g.fillStyle='rgba(255,230,200,'+lit(.8)+')';g.fillRect(tx-4,Y(.372),8,2);
+  g.fillStyle='rgba(255,70,60,'+lit(.9)+')';g.fillRect(tx-1,Y(.285),2,Y(.02));
+  /* far buildings: dark blocks, a few lit windows, snow on the roofs */
+  const row=(y0,hmin,hmax,col,step0,step1,winA)=>{
+    for(let x=-10;x<w;){
+      const bw=step0+rnd()*(step1-step0),bh=hmin+rnd()*(hmax-hmin);
+      g.fillStyle=col;g.fillRect(x,Y(y0)-bh,bw,bh+Y(.4));
+      g.fillStyle='rgba(235,240,255,.55)';g.fillRect(x,Y(y0)-bh,bw,1.6);
+      for(let wy=Y(y0)-bh+6;wy<Y(y0)-4;wy+=8)for(let wx=x+3;wx<x+bw-3;wx+=6){if(rnd()<winA){g.fillStyle=rnd()<.7?'rgba(255,205,140,'+lit(.5+rnd()*.4)+')':'rgba(170,200,255,'+lit(.4)+')';g.fillRect(wx,wy,2.4,3.2);}}
+      x+=bw+1+rnd()*2;
+    }
+  };
+  row(.74,40,110,dusk?'#2e2230':'#10121f',16,30,.16);
+  /* Myeongdong Cathedral: red-brick Gothic, a tall central spire flanked by two smaller ones, lit by floodlights */
+  const cx=X(.42),base=Y(.8);
+  const halo=g.createRadialGradient(cx,Y(.5),0,cx,Y(.5),X(.5));halo.addColorStop(0,dusk?'rgba(255,190,120,.18)':'rgba(255,170,95,.34)');halo.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=halo;g.fillRect(0,0,w,h);
+  g.fillStyle=dusk?'#1c1418':'#0e0b12';                    // the hill it stands on
+  g.beginPath();g.moveTo(cx-X(.36),base+Y(.06));g.quadraticCurveTo(cx,base-Y(.1),cx+X(.36),base+Y(.06));g.lineTo(cx+X(.36),h);g.lineTo(cx-X(.36),h);g.fill();
+  const brick=g.createLinearGradient(0,Y(.35),0,base);
+  brick.addColorStop(0,dusk?'#7a5044':'#a85e44');brick.addColorStop(1,dusk?'#4a2e2a':'#5a2e26');
+  const slate=dusk?'#3c3a4c':'#555a70',lampy='rgba(255,205,130,';
+  const nave=g.createLinearGradient(0,0,w,0);void nave;
+  g.fillStyle=brick;
+  g.fillRect(cx-X(.19),Y(.58),X(.38),base-Y(.58));          // the long nave behind the facade
+  g.fillStyle=slate;g.beginPath();g.moveTo(cx-X(.2),Y(.58));g.lineTo(cx-X(.12),Y(.5));g.lineTo(cx+X(.12),Y(.5));g.lineTo(cx+X(.2),Y(.58));g.fill();   // roof, snow-dusted
+  g.fillStyle='rgba(240,245,255,.7)';g.beginPath();g.moveTo(cx-X(.2),Y(.58));g.lineTo(cx-X(.12),Y(.5));g.lineTo(cx+X(.12),Y(.5));g.lineTo(cx+X(.2),Y(.58));g.lineTo(cx+X(.2),Y(.585));g.lineTo(cx-X(.2),Y(.585));g.fill();
+  const spire=(x,top,half,bottom,sw)=>{                    // a tower with a steep pointed spire and a cross
+    g.fillStyle=brick;g.fillRect(x-half,top+(bottom-top)*.38,half*2,bottom-top-(bottom-top)*.38);
+    g.fillStyle=slate;g.beginPath();g.moveTo(x-half*1.12,top+(bottom-top)*.4);g.lineTo(x,top);g.lineTo(x+half*1.12,top+(bottom-top)*.4);g.fill();
+    g.fillStyle='rgba(240,245,255,.6)';g.beginPath();g.moveTo(x-half*.3,top+(bottom-top)*.12);g.lineTo(x,top);g.lineTo(x+half*.3,top+(bottom-top)*.12);g.fill();
+    g.fillStyle=lampy+'.95)';g.fillRect(x-.8,top-sw*2,1.6,sw*2.4);g.fillRect(x-sw*.7,top-sw*1.5,sw*1.4,1.4);   // cross
+    g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x+half*.45,top+(bottom-top)*.4,half*.55,bottom-top-(bottom-top)*.4);
+    for(let k=0;k<3;k++){const wy=top+(bottom-top)*(.5+k*.14);g.fillStyle=lampy+(dusk?.35:.9)+')';g.beginPath();g.moveTo(x-half*.35,wy+8);g.lineTo(x-half*.35,wy+2);g.quadraticCurveTo(x,wy-5,x+half*.35,wy+2);g.lineTo(x+half*.35,wy+8);g.fill();}   // lancet windows
+  };
+  spire(cx-X(.12),Y(.4),X(.028),base,3);
+  spire(cx+X(.12),Y(.4),X(.028),base,3);
+  spire(cx,Y(.15),X(.04),base,4);
+  const door=g.createLinearGradient(0,Y(.7),0,base);door.addColorStop(0,lampy+(dusk?.3:.85)+')');door.addColorStop(1,lampy+(dusk?.15:.45)+')');
+  g.fillStyle=door;g.beginPath();g.moveTo(cx-X(.03),base);g.lineTo(cx-X(.03),Y(.73));g.quadraticCurveTo(cx,Y(.68),cx+X(.03),Y(.73));g.lineTo(cx+X(.03),base);g.fill();      // lit doorway
+  g.fillStyle='rgba(255,235,200,'+lit(.8)+')';g.beginPath();g.arc(cx,Y(.56),X(.014),0,7);g.fill();                                    // rose window
+  g.globalCompositeOperation='lighter';                     // floodlights wash the brick from below
+  for(const dx of [-.12,0,.12]){const fl=g.createRadialGradient(cx+X(dx),base,0,cx+X(dx),base,X(.16));fl.addColorStop(0,'rgba(255,170,100,'+lit(.35)+')');fl.addColorStop(1,'rgba(255,170,100,0)');g.fillStyle=fl;g.fillRect(cx+X(dx)-X(.16),base-X(.16),X(.32),X(.18));}
+  g.globalCompositeOperation='source-over';
+  g.fillStyle='rgba(235,240,255,.75)';for(let s=0;s<5;s++)g.fillRect(cx-X(.06)-s*3,base+s*3+2,X(.12)+s*6,1.4);        // steps in the snow
+  /* near buildings on both sides, with neon signs */
+  const signs=[['명동','#ff4d6d'],['CAFE','#ffb347'],['약국','#5ee6a8'],['호텔','#7ab8ff'],['치킨','#ff8a3d'],['노래방','#d27aff'],['화장품','#ff6fb5'],['SALE','#ffd447']];
+  const near=(x0,x1,top,col)=>{
+    g.fillStyle=col;g.fillRect(x0,Y(top),x1-x0,h);
+    g.fillStyle='rgba(235,240,255,.8)';g.fillRect(x0,Y(top),x1-x0,2.4);
+    for(let wy=Y(top)+14;wy<Y(.74);wy+=14)for(let wx=x0+6;wx<x1-8;wx+=12)if(rnd()<.35){g.fillStyle='rgba(255,210,150,'+lit(.45+rnd()*.4)+')';g.fillRect(wx,wy,5,6);}
+    let sy=Y(top)+Y(.1);
+    for(let k=0;k<2;k++){
+      const [txt,c]=signs[Math.floor(rnd()*signs.length)];
+      const sw=Math.min(x1-x0-8,52);g.save();g.shadowColor=c;g.shadowBlur=dusk?4:14;
+      g.fillStyle='rgba(10,8,14,.85)';g.fillRect(x0+4,sy,sw,22);
+      g.fillStyle=c;g.font='700 15px "Black Han Sans","Noto Sans KR",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,x0+4+sw/2,sy+11.5);
+      g.restore();
+      const rg=g.createLinearGradient(0,sy+22,0,sy+60);rg.addColorStop(0,c+'55');rg.addColorStop(1,c+'00');g.fillStyle=rg;g.fillRect(x0+4,sy+22,sw,38);
+      sy+=Y(.14);
+    }
+  };
+  near(-4,X(.2),.42,dusk?'#2a1e26':'#120f1a');
+  near(X(.76),w+4,.36,dusk?'#2a1e26':'#14111c');
+  /* the street: wet snow, neon reflections, lamps and bokeh */
+  const st=g.createLinearGradient(0,Y(.84),0,h);st.addColorStop(0,dusk?'#3a2c30':'#1a1420');st.addColorStop(1,dusk?'#6a5a60':'#3a3444');
+  g.fillStyle=st;g.fillRect(0,Y(.84),w,h-Y(.84));
+  g.fillStyle='rgba(235,240,255,.22)';g.fillRect(0,Y(.84),w,3);
+  for(const lx of [.14,.34,.58,.9]){
+    const x=X(lx),top=Y(.7);
+    g.fillStyle=dusk?'#2a2228':'#0a0a12';g.fillRect(x-1.2,top,2.4,Y(.14));
+    g.globalCompositeOperation='lighter';
+    const lg=g.createRadialGradient(x,top,0,x,top,X(.09));lg.addColorStop(0,'rgba(255,215,150,'+lit(.9)+')');lg.addColorStop(1,'rgba(255,170,90,0)');g.fillStyle=lg;g.fillRect(x-X(.09),top-X(.09),X(.18),X(.18));
+    const rg=g.createLinearGradient(0,Y(.84),0,h);rg.addColorStop(0,'rgba(255,190,110,'+lit(.28)+')');rg.addColorStop(1,'rgba(255,190,110,0)');g.fillStyle=rg;g.fillRect(x-X(.04),Y(.84),X(.08),h-Y(.84));
+    g.globalCompositeOperation='source-over';
+  }
+  g.globalCompositeOperation='lighter';
+  for(let i=0;i<34;i++){                                    // out-of-focus lights, taillights and shop glow
+    const x=rnd()*w,y=Y(.62+rnd()*.34),r=3+rnd()*9,c=['255,190,120','255,120,110','150,180,255','255,230,170'][Math.floor(rnd()*4)];
+    const bg=g.createRadialGradient(x,y,0,x,y,r);bg.addColorStop(0,'rgba('+c+','+lit(.3+rnd()*.3)+')');bg.addColorStop(1,'rgba('+c+',0)');g.fillStyle=bg;g.fillRect(x-r,y-r,r*2,r*2);
+  }
+  g.globalCompositeOperation='source-over';
+  g.fillStyle='rgba(240,245,255,.1)';g.fillRect(0,Y(.93),w,h-Y(.93));   // snow haze at the bottom
+}
+function seoulCity(){return canvasTex(480,660,(g,w,h)=>paintSeoul(g,w,h,'night'));}
 function nightCity(){return canvasTex(256,512,(g,w,h)=>paintCity(g,w,h,'night'));}
 function rugTex(){
   return canvasTex(512,384,(g,w,h)=>{
@@ -229,8 +337,10 @@ export function buildRoom(scene){
   col(ROOM.x0-.5,ROOM.x0,ROOM.z0,ROOM.z1,0,H);col(ROOM.x1,ROOM.x1+.5,ROOM.z0,ROOM.z1,0,H);
 
   /* front wall: entrance door + arched night windows with velvet drapes */
-  const city=nightCity();
-  const glassMat=new THREE.MeshBasicMaterial({map:city,color:new THREE.Color(.85,.85,.95)});
+  const city=seoulCity(),cityT=nightCity();           // the big windows show Myeongdong; the small transom over the door keeps a plain night
+  const glassMat=new THREE.MeshBasicMaterial({map:city,color:new THREE.Color(.95,.95,1)});
+  const glassMatT=new THREE.MeshBasicMaterial({map:cityT,color:new THREE.Color(.85,.85,.95)});
+  const WWD=2.9,WHT=4.0,SPR=WHT-WWD/2;
   const archGeo=(w,h)=>{const s=new THREE.Shape();s.moveTo(-w/2,0);s.lineTo(w/2,0);s.lineTo(w/2,h-w/2);s.absarc(0,h-w/2,w/2,0,Math.PI,false);s.lineTo(-w/2,0);const g=new THREE.ShapeGeometry(s,24);remapUV(g,w,h,-w/2,0);return g;};
   /* falling snow outside the big windows (every mode): three scrolling layers of soft flakes at different scales and speeds give depth */
   const flakeTex=(n,r0,r1,seed)=>{
@@ -255,19 +365,18 @@ export function buildRoom(scene){
   const snowFall=[];                                   // {tex, layer, phase} per window and layer
   [-5.2,5.2].forEach((u,wi)=>{
     const g=onWall(WALLS.front,u,.85,.01);
-    g.add(new THREE.Mesh(archGeo(2,3.4),glassMat));
+    g.add(new THREE.Mesh(archGeo(WWD,WHT),glassMat));
     SNOW_LAYERS.forEach((L,li)=>{
       const tx=L.tex.clone();tx.needsUpdate=true;tx.repeat.set(L.rep[0],L.rep[1]);tx.offset.set(wi*.37+li*.21,wi*.5+li*.33);
       const mat=new THREE.MeshBasicMaterial({map:tx,transparent:true,opacity:L.op,depthWrite:false});
-      const m=new THREE.Mesh(archGeo(2,3.4),mat);m.position.z=L.z;m.renderOrder=2;g.add(m);
+      const m=new THREE.Mesh(archGeo(WWD,WHT),mat);m.position.z=L.z;m.renderOrder=2;g.add(m);
       snowFall.push({tx,mat,L,ph:wi*1.7+li*2.3});
     });
-    box(.06,2.4,.06,trim,0,1.2,.03,g);
-    [.9,1.8].forEach(y=>box(2,.05,.05,trim,0,y,.03,g));
-    [-1,1].forEach(s=>box(.12,2.4,.12,mahogMid,s*1.04,1.2,.05,g));
-    box(2.3,.12,.22,mahogMid,0,-.02,.08,g);
-    const arc=new THREE.Mesh(new THREE.TorusGeometry(1.04,.06,8,32,Math.PI),mahogMid);arc.position.set(0,2.4,.05);g.add(arc);
-    const bokeh=glow(2.4,3,0x6f86c8,.12);bokeh.position.set(0,1.7,.3);g.add(bokeh);
+    box(WWD,.05,.05,trim,0,.5,.03,g);                       // one low rail only: a clear pane so the cathedral is not cut by bars
+    [-1,1].forEach(s=>box(.12,SPR,.12,mahogMid,s*(WWD/2+.04),SPR/2,.05,g));
+    box(WWD+.3,.12,.22,mahogMid,0,-.02,.08,g);
+    const arc=new THREE.Mesh(new THREE.TorusGeometry(WWD/2+.04,.06,8,32,Math.PI),mahogMid);arc.position.set(0,SPR,.05);g.add(arc);
+    const bokeh=glow(WWD+.4,WHT,0x6f86c8,.1);bokeh.position.set(0,WHT/2,.3);g.add(bokeh);
   });
   const curtainGeo=new THREE.PlaneGeometry(.95,4.7,36,1);
   {const p=curtainGeo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*26)*.045+Math.sin(x*9)*.02);}curtainGeo.computeVertexNormals();}
@@ -283,7 +392,7 @@ export function buildRoom(scene){
     });
     [-1,1].forEach(s=>box(.14,3.0,.14,trim,s*.98,1.5,.07,g));
     box(2.1,.16,.16,trim,0,2.78,.07,g);
-    const tr=new THREE.Mesh(archGeo(1.8,.9),glassMat);tr.position.set(-0,2.86,.02);tr.scale.y=.9;g.add(tr);
+    const tr=new THREE.Mesh(archGeo(1.8,.9),glassMatT);tr.position.set(-0,2.86,.02);tr.scale.y=.9;g.add(tr);
     const t=new THREE.Mesh(new THREE.TorusGeometry(.92,.05,8,32,Math.PI),trim);t.position.set(0,2.86,.06);t.scale.y=.85;g.add(t);
   }
 
@@ -597,7 +706,7 @@ export function buildRoom(scene){
     bbLight.intensity=look.bb;loungeLight.intensity=look.lounge;stageLight.intensity=look.stage;
     neonK=look.neon;
     glassMat.color.setRGB(look.win[0],look.win[1],look.win[2]);
-    if(curSky!==look.sky){curSky=look.sky;const c=city.image;paintCity(c.getContext('2d'),c.width,c.height,look.sky);if(snow)paintSnow(c.getContext('2d'),c.width,c.height);city.needsUpdate=true;}
+    if(curSky!==look.sky){curSky=look.sky;const c=city.image;paintSeoul(c.getContext('2d'),c.width,c.height,look.sky);if(snow)paintSnow(c.getContext('2d'),c.width,c.height);city.needsUpdate=true;const ct=cityT.image;paintCity(ct.getContext('2d'),ct.width,ct.height,look.sky);cityT.needsUpdate=true;}
   }
   /* Bar stools follow the room's chair count: move, show or hide them (and their collision boxes). */
   function setStools(xs){
