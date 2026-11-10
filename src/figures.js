@@ -114,6 +114,7 @@ export function makeCharacter(cfg){
   g.traverse(o=>{if(o.isMesh){o.castShadow=true;}});
   if(cfg.h)g.scale.y=cfg.h;
   g.userData={pelvis,torso,head,legs,arms,brows,mouth,walkPh:0};
+  setFace(g,'neutral');
   return g;
 }
 
@@ -196,7 +197,7 @@ export const LOUNGE_CFG=[
 
 /* Facial expression: neutral | smile | surprised | sad | angry. */
 const FACES={
-  neutral:{a:0,by:0,my:-.034,rz:Math.PI,sx:.9,sy:.22},
+  neutral:{a:0,by:0,my:-.03,rz:Math.PI,sx:1,sy:.6},       // a soft, friendly smile (the raw mouth arc is a frown)
   smile:{a:0,by:.004,my:-.028,rz:Math.PI,sx:1.1,sy:1},
   surprised:{a:0,by:.016,my:-.045,rz:0,sx:.55,sy:1.7},
   sad:{a:-.35,by:.004,my:-.052,rz:0,sx:.8,sy:.8},
