@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {RECIPES,ING} from '../src/data.js';
-import {STAGES,DIFFS,limitOf,goalOf,stageOf,poolFor,isUnlocked,DEFAULT,TIMES,loadSession} from '../src/session.js';
+import {STAGES,DIFFS,limitOf,goalOf,stageOf,stageRecipes,paramsOf,poolFor,isUnlocked,DEFAULT,TIMES,loadSession} from '../src/session.js';
 import {createWorld,tickOrders,nightOver} from '../src/game/world.js';
 import {quip,QUIPS,RECIPE_QUIPS} from '../src/game/quips.js';
 import {bonusOf,recordServe,breakCombo,patienceOf,COMBO_MAX,RUSH_PATIENCE} from '../src/game/bonus.js';
@@ -9,35 +9,59 @@ import {claimSeat,applyServed,fireLate} from '../src/game/shared.js';
 
 const cfg=o=>Object.assign({},DEFAULT,o||{});
 
-test('story stages cover the menu from easy to complex without gaps or duplicates',()=>{
-  const ids=new Set(RECIPES.map(r=>r.id)),seen=new Set();
-  for(const st of STAGES){
-    assert.ok(st.recipes.length>=4);
-    for(const id of st.recipes){assert.ok(ids.has(id),id+' unknown');assert.ok(!seen.has(id),id+' repeated');seen.add(id);}
-  }
-  const avgIngredients=st=>st.recipes.reduce((a,id)=>a+Object.keys(RECIPES.find(r=>r.id===id).parts).length,0)/st.recipes.length;
-  assert.ok(avgIngredients(STAGES[0])<avgIngredients(STAGES[2]),'later stages must be more complex');
-  assert.ok(STAGES[0].goal<=STAGES[1].goal&&STAGES[1].goal<=STAGES[2].goal);
-  assert.ok(STAGES[0].minStars<=STAGES[1].minStars&&STAGES[1].minStars<=STAGES[2].minStars);
+test('practice levels grow step by step and every drink is reachable',()=>{
+  assert.equal(STAGES.length,8);
+  const ids=new Set(RECIPES.map(r=>r.id));
+  const last=stageRecipes(STAGES[7],RECIPES);
+  ids.forEach(id=>assert.ok(last.includes(id),id+' unreachable in the last level'));
+  let prev=0;
+  STAGES.forEach((st,i)=>{
+    const pool=stageRecipes(st,RECIPES);
+    assert.ok(pool.length>=prev&&pool.length>=8,st.id+' pool grows');prev=pool.length;
+    pool.forEach(id=>assert.ok(ids.has(id),id+' unknown'));
+    if(i){const p=STAGES[i-1];
+      assert.ok(st.goal>=p.goal&&st.minStars>=p.minStars&&st.guests>=p.guests&&st.maxPending>=p.maxPending,st.id+' not easier than '+p.id);
+      assert.ok(st.every[1]<=p.every[1]&&st.rushP>=p.rushP,st.id+' pace');
+      if(p.limit&&st.limit)assert.ok(st.limit<=p.limit);
+    }
+    assert.ok(st.name.ko&&st.name.en&&st.desc.ko&&st.desc.en);
+  });
+  assert.equal(STAGES[0].limit,0);assert.equal(STAGES[7].limit,30);
+  assert.ok(STAGES[0].guests===1&&STAGES[7].guests===4);
 });
-test('story mode orders only the stage recipes and ends at the stage goal',()=>{
+test('a level sets the guest count, pace, pool and goal of the night',()=>{
   for(const st of STAGES){
     const c=cfg({mode:'story',stage:st.id});
-    assert.deepEqual(poolFor(c,RECIPES).map(r=>r.id).sort(),st.recipes.slice().sort());
-    assert.equal(goalOf(c),st.goal);
-    const w=createWorld(c,5,0),seen=new Set();let ordered=0;
-    for(let t=0;t<3000;t+=.1){const ev=tickOrders(w,t);if(ev){seen.add(ev.recipeId);ordered++;w.seats.find(s=>s.id===ev.seatId).order=null;}}
+    assert.deepEqual(poolFor(c,RECIPES).map(r=>r.id).sort(),stageRecipes(st,RECIPES).slice().sort());
+    assert.equal(goalOf(c),st.goal);assert.equal(limitOf(c),st.limit);
+    const w=createWorld(c,5,0);
+    assert.equal(w.seats.filter((s,i)=>i<4&&s.active).length,st.guests);
+    const seen=new Set();let ordered=0,maxOpen=0;
+    for(let t=0;t<4000;t+=.1){const ev=tickOrders(w,t);if(ev){seen.add(ev.recipeId);ordered++;}
+      maxOpen=Math.max(maxOpen,w.seats.filter(s=>s.order).length);
+      if(t%7<.1)w.seats.forEach(s=>{s.order=null;});}
     assert.equal(ordered,st.goal,'orders stop at the goal');
-    for(const id of seen)assert.ok(st.recipes.includes(id));
+    assert.ok(maxOpen<=st.maxPending,st.id+' open orders '+maxOpen);
+    const pool=stageRecipes(st,RECIPES);for(const id of seen)assert.ok(pool.includes(id));
     w.night.served=st.goal;assert.equal(nightOver(w),true);
   }
   assert.equal(stageOf(cfg({stage:'zzz'})).id,'s1');
+});
+test('free practice can set guest count and pace',()=>{
+  const base=paramsOf(cfg({mode:'practice'}));
+  assert.deepEqual(base.guests,TIMES.prime.guests);
+  const one=paramsOf(cfg({mode:'practice',guests:1,pace:'slow'}));
+  assert.equal(one.guests.length,1);assert.equal(one.maxPending,1);assert.ok(one.every[0]>base.every[0]);
+  const rush=paramsOf(cfg({mode:'practice',guests:4,pace:'rush'}));
+  assert.equal(rush.maxPending,4);assert.ok(rush.every[1]<base.every[1]);
+  assert.deepEqual(paramsOf(cfg({mode:'practice',guests:9})).guests,TIMES.prime.guests,'bad count is ignored');
 });
 test('stages unlock in order',()=>{
   assert.equal(isUnlocked('s1',{cleared:{}}),true);
   assert.equal(isUnlocked('s2',{cleared:{}}),false);
   assert.equal(isUnlocked('s2',{cleared:{s1:2}}),true);
   assert.equal(isUnlocked('s3',{cleared:{s1:2}}),false);
+  assert.equal(isUnlocked('s8',{cleared:{s1:2,s2:2,s3:2,s4:2,s5:2,s6:2,s7:2}}),true);
 });
 test('difficulty sets the time limit; practice has none; bad values fall back',()=>{
   assert.deepEqual(DIFFS,{easy:60,mid:45,hard:30});

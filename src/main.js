@@ -25,7 +25,7 @@ import {buildEnv} from './env.js';
 import {createComposer} from './composer.js';
 import {buildRoom,brass,COUNTER_TOP,STOOL_Z,BAR_ZONE,ROOM} from './room.js';
 import {makeBottle} from './bottles.js';
-import {TIMES,FAMILIES,FAM_ORDER,loadSession,saveSession,poolFor,STAGES,stageOf,goalOf,limitOf,DIFFS,clearStage} from './session.js';
+import {TIMES,FAMILIES,FAM_ORDER,paramsOf,loadSession,saveSession,poolFor,STAGES,stageOf,goalOf,limitOf,DIFFS,clearStage} from './session.js';
 import {quip} from './game/quips.js';
 import {patienceOf,breakCombo} from './game/bonus.js';
 import {createZoom} from './zoom.js';
@@ -377,7 +377,7 @@ function enterBar(g){
   playerFig.position.copy(BAR_STAND);playerFig.rotation.y=0;poseWalk(playerFig,0,0,time);
   resetBar();
   el.uiWalk.hidden=true;el.uiBar.hidden=false;el.act.hidden=true;S.actionKey='';
-  el.ticket.open=tkPref!==null?tkPref:(window.innerWidth>=900||S.session.mode==='practice'||S.session.mode==='tale');
+  el.ticket.open=tkPref!==null?tkPref:(window.innerWidth>=900||S.session.mode==='practice'||S.session.mode==='story'||S.session.mode==='tale');
   setTab(ING[Object.keys(S.recipe.parts)[0]].cat);layoutRail(true);
   goCam();updateTicket();
   S.barLimit=S.world.session.limit>0?patienceOf(S.world.session.limit,g.rush):0;
@@ -1613,7 +1613,7 @@ function leaveRoom(){
   if(S.seat)standUp();
   net.leave();setRoomParam(null);
   if(S.world){
-    const T=TIMES[S.world.session.time];
+    const T=paramsOf(S.world.session);
     S.world.session=Object.assign({},S.world.session,{chairs:0,limit:limitOf(S.world.session)});
     S.world.hostId=null;S.world.seats.forEach((st,i)=>{st.active=i<4&&T.guests.indexOf(i)>=0;st.order=null;st.claim=null;st.customer=null;});
     S.world.stations=[null,null];adoptSession(S.world.session);updateWalkUI();
@@ -1634,7 +1634,7 @@ function adoptSession(cfg){
   S.session=cfg;S.time=TIMES[cfg.time];setXmas(xmasOn,false);applyDecor(cfg.decor);
   applyLook(cfg.time);
   room.setStools(layoutStools(cfg.chairs||0));
-  guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:S.time.guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
+  guests.forEach((g,i)=>{g.active=cfg.mode==='tale'?false:cfg.chairs>0?i===0:paramsOf(cfg).guests.indexOf(i)>=0;g.nameOv=null;g.noTalk=false;restyleGuest(g,null);});
   proxies.forEach(g=>{g.order=null;g.claimBy=null;g.claimName='';g.servedRev=0;g.reaction=null;if(g.drink){scene.remove(g.drink.group);g.drink=null;}});
   loungers.forEach((g,i)=>{g.active=!(cfg.chairs>0)&&S.time.lounge.indexOf(i)>=0;});     // a friends room has one NPC guest, so the lounge chairs are free
   setLoungeTaken(loungers.map(g=>g.active));
@@ -1643,7 +1643,7 @@ function adoptSession(cfg){
     if(g.drink){scene.remove(g.drink.group);g.drink=null;}
   });
   $('#app').classList.toggle('instinct',cfg.guide==='instinct');
-  $('#app').classList.toggle('practice',cfg.mode==='practice');
+  $('#app').classList.toggle('practice',cfg.mode==='practice'||cfg.mode==='story');
   S.actionKey='';
 }
 function applySession(cfg){

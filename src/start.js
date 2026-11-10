@@ -1,5 +1,5 @@
 import {t,tr,getLang,setLang,onLang} from './i18n.js';
-import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,DIFFS,poolFor} from './session.js';
+import {TALE_TIME,TIMES,TIME_ORDER,FAM_ORDER,DIFFS,STAGES,stageOf,isUnlocked,loadStory,poolFor} from './session.js';
 import {normalizeCode,CODE_LEN} from './net/room.js';
 import {NIGHTS,ENDINGS} from './story/nights.js';
 import {loadTale,isNightOpen,resetTale} from './story/save.js';
@@ -44,7 +44,20 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +(confirmReset?'<span class="st-confirm">'+t('tale_reset_q')+' <button type="button" class="btn sm" data-act="reset-yes">'+t('tale_reset_yes')+'</button> <button type="button" class="btn sm" data-act="reset-no">'+t('tale_reset_no')+'</button></span>'
           :'<button type="button" class="btn sm" data-act="reset">'+t('tale_reset')+'</button>')+'</div>';
     }else if(kind==='practice'){
-      body=hourMenu+limitHtml;
+      const prog=loadStory(),isLevel=cfg.mode==='story',st=stageOf(cfg);
+      const lv=STAGES.map((x,i)=>{const ok=isUnlocked(x.id,prog),done=prog.cleared[x.id]!=null;
+        return opt('level',x.id,isLevel&&st.id===x.id,'st-night'+(ok?'':' soon'),'<b>'+(i+1)+'</b><span>'+tr(x.name)+'</span><i>'+(done?t('tale_done_tag'):(ok?'':t('night_lock')))+'</i>',!ok);}).join('')
+        +opt('level','free',!isLevel,'st-night','<b>∞</b><span>'+t('lvl_free')+'</span><i>'+t('lvl_free_d')+'</i>');
+      let detail='';
+      if(isLevel){
+        detail='<p class="st-note"><b>'+esc(tr(st.name))+'</b> · '+esc(tr(st.desc))+'<br>'+t('lvl_info',{g:st.guests,p:st.maxPending,l:st.limit?st.limit+t('sec'):t('limit_off'),n:st.goal,s:st.minStars})+'</p>'
+          +'<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div>';
+      }else{
+        const gRow=['auto',1,2,3,4].map(v=>opt('guests',v,(cfg.guests||'auto')+''===v+'','st-guide',v==='auto'?t('auto'):v)).join('');
+        const pRow=['auto','slow','mid','fast','rush'].map(v=>opt('pace',v,(cfg.pace||'auto')===v,'st-guide',v==='auto'?t('auto'):t('pace_'+v))).join('');
+        detail='<h2>'+t('st_guests')+'</h2><div class="st-row st-chairs">'+gRow+'</div><h2>'+t('st_pace')+'</h2><div class="st-row st-chairs">'+pRow+'</div>'+hourMenu+limitHtml;
+      }
+      body='<h2>'+t('st_levels')+'</h2><div class="st-nights">'+lv+'</div>'+detail;
     }else{
       const sub=['create','join'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
       body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+sub+'</div>');
@@ -113,7 +126,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       const locked=roomLock&&roomLock(),kind=kindOf();
       if(!locked&&kind==='room'&&onl.mode==='join'&&onl.code.length!==CODE_LEN){err=t('onl_bad');render();return;}
       if(kind==='tale'){onl.mode='solo';cfg.mode='tale';cfg.time=TALE_TIME;cfg.timer=false;}
-      else if(kind==='practice'){onl.mode='solo';cfg.mode='practice';cfg.timer=cfg.timers.practice===true;}
+      else if(kind==='practice'){onl.mode='solo';if(cfg.mode!=='story')cfg.mode='practice';cfg.timer=cfg.timers.practice===true;}
       else{cfg.mode='service';cfg.timer=cfg.timers.room!==false;}
       err='';hide();onStart(Object.assign({},cfg),locked?{mode:'keep',code:'',name:onl.name}:Object.assign({},onl));return;
     }
@@ -123,10 +136,11 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       if(k==='kind'){
         if(v!=='tale')compact=false;
         if(v==='tale'){cfg.mode='tale';onl.mode='solo';}
-        else if(v==='practice'){cfg.mode='practice';onl.mode='solo';}
+        else if(v==='practice'){cfg.mode='story';onl.mode='solo';if(!isUnlocked(cfg.stage,loadStory()))cfg.stage='s1';}
         else{cfg.mode='service';if(onl.mode==='solo')onl.mode='create';}
         err='';previewTime();
       }else if(k==='online'){onl.mode=v;err='';}
+      else if(k==='level'){if(v==='free')cfg.mode='practice';else{cfg.mode='story';cfg.stage=v;}}
       else if(k==='chairs')onl.chairs=+v;
       else if(k==='npc')onl.npc=v==='on';
       else if(k==='music'){if(onMusic)onMusic(v);}
@@ -147,7 +161,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     cfg=Object.assign({},getCfg());cfg.night=nextNight();
     cfg.timers=Object.assign({room:true,practice:false},cfg.timers);                 // remembered per kind of play
     if(onl.mode!=='solo')cfg.mode='service';                       // joining or creating a room
-    else if(cfg.mode!=='tale')cfg.mode='practice';                 // anything else is solo practice
+    else if(cfg.mode!=='tale'&&cfg.mode!=='story')cfg.mode='practice';                 // anything else is solo practice (levels or free)
     compact=!(roomLock&&roomLock())&&onl.mode==='solo'&&Object.keys(loadTale().done).length>0;
     if(compact)cfg.mode='tale';
     open=true;root.hidden=false;render();previewTime();const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});

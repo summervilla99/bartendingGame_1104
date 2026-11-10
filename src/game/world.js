@@ -1,5 +1,5 @@
 import {RECIPES} from '../data.js';
-import {TIMES,poolFor,goalOf} from '../session.js';
+import {TIMES,poolFor,goalOf,paramsOf} from '../session.js';
 import {nextRandom,randRange,pickFrom} from './rng.js';
 
 /* The serialisable state of one night. Everything the rules need is here (or in the active drink); the renderer only reads it.
@@ -8,7 +8,7 @@ export const VERSION=2;
 export const SEAT_COUNT=8,STATION_COUNT=2;   // g0-g3: NPC guests, g4-g7: seated players who ordered
 
 export function createWorld(session,seed,now){
-  const T=TIMES[session.time],s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
+  const T=paramsOf(session),s=(seed==null?(Math.random()*4294967296)>>>0:seed>>>0);
   return {v:VERSION,seed:s,rng:s,rev:1,hostId:null,fired:{},combo:0,regulars:{},stations:Array(STATION_COUNT).fill(null),session:Object.assign({},session),nextOrderAt:now+2.5,orderNo:0,tips:0,
     night:{served:0,ordered:0,stars:0,tips:0,best:null},
     seats:Array.from({length:SEAT_COUNT},(_,i)=>({id:'g'+i,active:i<4&&(session.chairs>0?i===0:T.guests.indexOf(i)>=0),order:null,last:null,reaction:null,claim:null,served:null,customer:null,stoolX:0,drop:null}))};
@@ -20,7 +20,7 @@ export const pendingSeats=world=>world.seats.filter(s=>s.order).sort((a,b)=>a.or
 export function tickOrders(world,now){
   if(world.session.mode==='tale')return null;               // the tale places its own orders
   if(now<world.nextOrderAt)return null;
-  const T=TIMES[world.session.time],N=world.night;
+  const T=paramsOf(world.session),N=world.night;
   if(world.session.chairs>0&&world.session.npcOrders===false){world.nextOrderAt=now+randRange(world,T.every[0],T.every[1]);return null;}      // friends room with the NPC guest's orders switched off
   const more=(world.session.mode!=='service'&&world.session.mode!=='story')||N.ordered<goalOf(world.session);
   const free=world.seats.filter(s=>s.active&&!s.order&&(!s.reaction||now>s.reaction.until));
@@ -28,7 +28,7 @@ export function tickOrders(world,now){
   if(more&&free.length&&pendingSeats(world).length<T.maxPending){
     const seat=pickFrom(world,free),pool=poolFor(world.session,RECIPES);
     let r;do{r=pickFrom(world,pool);}while(r.id===seat.last&&pool.length>1);
-    const rush=N.ordered>=2&&nextRandom(world)<.2;
+    const rush=N.ordered>=2&&nextRandom(world)<(T.rushP==null?.2:T.rushP);
     seat.order={recipeId:r.id,at:now,rush};seat.last=r.id;seat.reaction=null;seat.served=null;N.ordered++;world.rev++;
     ev={seatId:seat.id,recipeId:r.id,rush};
   }

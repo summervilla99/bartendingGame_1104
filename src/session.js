@@ -31,7 +31,7 @@ export const FAMILIES={
 export const FAM_ORDER=['all','sours','stirred','long','agave','gin','sparkling','creamy','korean','xmas','house'];
 
 /* Modes: story = solo scenario (stages), service = a free night with a goal, practice = no limits, lab = soon. */
-export const MODES=['tale','practice','service'];     // story = the tale, practice = solo cocktail practice, service = a room with friends
+export const MODES=['tale','practice','service','story'];     // story = the tale, practice = solo cocktail practice, service = a room with friends
 export const DEFAULT={time:'prime',menu:'all',mode:'tale',guide:'full',diff:'easy',stage:'s1'};
 
 /* Difficulty = how long a drink may take (seconds). Practice has no limit. */
@@ -39,19 +39,28 @@ export const DIFFS={easy:60,mid:45,hard:30};
 /* The bartending time limit can be switched on or off (cfg.timer). Default: on with friends, off in practice; the tale never has one. */
 export const limitOf=cfg=>{
   if(cfg.mode==='tale')return 0;
+  if(cfg.mode==='story')return stageOf(cfg).limit;
   const on=cfg.timer===undefined?cfg.mode!=='practice':!!cfg.timer;
   return on?(DIFFS[cfg.diff]||DIFFS.easy):0;
 };
 
-/* Scenario: easiest drinks first, then the classics, then the complicated ones. */
-export const STAGES=[
-  {id:'s1',goal:5,minStars:1.5,recipes:['highball','americano','gimlet','daiquiri','whiskeysour','neat'],
-   name:{ko:'첫 손님',en:'First guests'},desc:{ko:'재료가 적은 쉬운 칵테일부터 시작해요.',en:'Start with easy drinks that need few ingredients.'}},
-  {id:'s2',goal:7,minStars:1.8,recipes:['negroni','faust','oldfashioned','manhattan','margarita','tommys','boulevardier','tomcollins','mojito'],
-   name:{ko:'클래식의 밤',en:'Classics night'},desc:{ko:'바텐더라면 꼭 알아야 할 클래식 칵테일이에요.',en:'The classic cocktails every bartender should know.'}},
-  {id:'s3',goal:8,minStars:2,recipes:['paloma','cosmopolitan','moscowmule','espressomartini','whitenegroni','mezcalnegroni','courtenoir','amberhour','velvetrose'],
-   name:{ko:'마스터의 시험',en:"The master's test"},desc:{ko:'재료가 많고 까다로운 칵테일에 도전해요.',en:'Complex drinks with many ingredients.'}}
+/* Practice levels (solo): eight steps from one calm guest to a full, fast bar. Each level sets how many guests sit at the counter,
+   how often they order, how many orders may be open at once, how many are rushed, the time limit per drink, the drinks that can be
+   ordered (everything from earlier levels stays on the menu) and the goal. Clearing a level (average stars >= minStars) opens the next.
+   ids stay s1..s8 because earlier progress is stored under them. */
+const L=(id,goal,minStars,guests,every,maxPending,limit,rushP,add,ko,en,dko,den)=>({id,goal,minStars,guests,every,maxPending,limit,rushP,add,name:{ko,en},desc:{ko:dko,en:den}});
+const LEVEL_DEFS=[
+  L('s1',4,1.2,1,[14,20],1,0,0,['highball','americano','gimlet','daiquiri','neat','screwdriver','ginandtonic','cubalibre'],'첫 손님','First guest','손님 한 명, 재료가 적은 쉬운 칵테일부터. 시간 제한 없이 천천히.','One guest and easy drinks with few ingredients. No time limit.'),
+  L('s2',5,1.4,2,[12,17],2,0,0,['whiskeysour','blackrussian','sojufizz','sojutonic','kamikaze','ginrickey','mimosa','greyhound'],'두 번째 자리','A second seat','손님이 두 명으로 늘고, 셰이크가 처음 나와요.','Two guests, and the first shaken drinks.'),
+  L('s3',6,1.5,2,[10,14],2,0,0,['margarita','tommys','oldfashioned','negroni','tomcollins','mojito','godfather','seabreeze'],'클래식 입문','Classics 101','바텐더라면 꼭 아는 클래식. 스터와 셰이크를 번갈아 만나요.','The classics every bartender should know.'),
+  L('s4',7,1.6,3,[9,13],2,60,0,['manhattan','boulevardier','paloma','cosmopolitan','moscowmule','whiterussian','lemondrop','sidecar','beesknees','goldrush'],'저녁 장사','Evening trade','손님 세 명, 드디어 제한시간(60초)이 생겨요.','Three guests, and now a 60-second limit per drink.'),
+  L('s5',9,1.7,3,[7,11],3,60,.15,['espressomartini','whitenegroni','mezcalnegroni','aperolspritz','french75','bramble','sbagliato','mexicanmule','kentuckymule','brownderby','hemingway'],'피크 타임','Peak hour','주문이 동시에 세 개까지. 급한 손님이 가끔 와요.','Up to three orders at once, and the occasional rushed guest.'),
+  L('s6',10,1.8,3,[6,10],3,45,.2,['sojuHolder'],'한국 술의 밤','Korean spirits night','소주·막걸리·매실주로 만드는 칵테일. 제한시간 45초.','Cocktails from soju, makgeolli and plum liqueur. 45 seconds each.'),
+  L('s7',12,1.9,4,[5,8],4,45,.25,['pinacolada','maitai','longisland','mudslide','amarettosour','faust','kirroyale','tequilasunrise','sojuRest'],'라스트 콜','Last call','손님 네 명이 꽉 찬 바. 주문이 쉴 새 없이 들어와요.','A full counter of four, with orders nonstop.'),
+  L('s8',14,2,4,[4,7],4,30,.3,['courtenoir','amberhour','velvetrose','xmasHolder'],'마스터의 시험','The Master’s test','가장 빠르고 까다로운 밤. 제한시간 30초, 크리스마스 한정 메뉴까지.','The fastest, hardest night: 30 seconds, plus the seasonal menu.')
 ];
+export const STAGES=LEVEL_DEFS;
+/* pools are cumulative; placeholders are resolved from the recipe data in poolOfStage */
 export const stageOf=cfg=>STAGES.find(s=>s.id===cfg.stage)||STAGES[0];
 /* How many drinks end the night. */
 export const goalOf=cfg=>cfg.mode==='story'?stageOf(cfg).goal:TIMES[cfg.time].goal;
@@ -79,9 +88,36 @@ export function loadSession(){
 }
 export function saveSession(c){try{localStorage.setItem(KEY,JSON.stringify(c));}catch(_){}}
 
+/* the drinks a level can order: its own plus everything from the levels before it (placeholders = recipe groups) */
+export function stageRecipes(stage,recipes){
+  const upTo=STAGES.indexOf(stage),out=[];
+  const korean=recipes.filter(r=>r.korean).map(r=>r.id),season=recipes.filter(r=>r.season).map(r=>r.id);
+  for(let i=0;i<=upTo;i++)STAGES[i].add.forEach(id=>{
+    if(id==='sojuHolder')korean.forEach(k=>out.push(k));else if(id==='xmasHolder')season.forEach(k=>out.push(k));
+    else if(id==='sojuRest'){}else out.push(id);
+  });
+  /* anything still unassigned (new recipes) joins the last two levels so no drink is unreachable */
+  if(upTo>=STAGES.length-2)recipes.forEach(r=>{if(out.indexOf(r.id)<0&&!r.season)out.push(r.id);});
+  return out.filter((id,i)=>out.indexOf(id)===i);
+}
 export function poolFor(cfg,recipes){
-  if(cfg.mode==='story'){const ids=stageOf(cfg).recipes;return recipes.filter(r=>ids.indexOf(r.id)>=0);}
+  if(cfg.mode==='story'){const ids=stageRecipes(stageOf(cfg),recipes);return recipes.filter(r=>ids.indexOf(r.id)>=0);}
   const ids=FAMILIES[cfg.menu];
   const p=ids?recipes.filter(r=>ids.indexOf(r.id)>=0):recipes.filter(r=>!r.season);   // seasonal drinks only come with their own menu
   return p.length?p:recipes.slice();
+}
+
+/* Order pace for a night: the hour's defaults, replaced by the level's (story) or the practice sliders (cfg.guests 1-4, cfg.pace slow|mid|fast|rush). */
+const SPREAD={1:[1],2:[0,2],3:[0,1,3],4:[0,1,2,3]};
+const PACE={slow:{k:1.6,pend:1},mid:{k:1,pend:2},fast:{k:.6,pend:3},rush:{k:.4,pend:4}};
+export function paramsOf(cfg){
+  const T=TIMES[cfg.time]||TIMES[DEFAULT.time];
+  const P={every:T.every,maxPending:T.maxPending,guests:T.guests,rushP:.2,tipMult:T.tipMult};
+  if(cfg.mode==='story'){const st=stageOf(cfg);P.every=st.every;P.maxPending=st.maxPending;P.guests=SPREAD[st.guests];P.rushP=st.rushP;}
+  else if(cfg.mode==='practice'){
+    const n=+cfg.guests;if(n>=1&&n<=4)P.guests=SPREAD[n];
+    const pc=PACE[cfg.pace];if(pc){P.every=[Math.max(2,Math.round(T.every[0]*pc.k)),Math.max(3,Math.round(T.every[1]*pc.k))];P.maxPending=Math.min(pc.pend,P.guests.length);}
+    else P.maxPending=Math.min(P.maxPending,P.guests.length);
+  }
+  return P;
 }
