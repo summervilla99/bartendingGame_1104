@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {SEATS,SEAT_MAX,seatByWireId,PHOTO_SPOTS,layoutStools,stoolXs,isFree,STOOL_MAX} from '../src/game/seats.js';
+import {SEATS,SEAT_MAX,seatByWireId,PHOTO_SPOTS,layoutStools,stoolXs,isFree,STOOL_MAX,STOOLS,standSpot} from '../src/game/seats.js';
 
 const inRoom=(x,z)=>x>-10&&x<10&&z>-3&&z<12;
 const active=()=>SEATS.filter(s=>s.active);
@@ -23,13 +23,13 @@ test('solo layout: players only get the stools the guests are not using',()=>{
 });
 test('room layout: N stools spread evenly, the leftmost is the NPC guest, the rest are for players',()=>{
   for(let n=2;n<=STOOL_MAX;n++){
-    const xs=layoutStools(n),stools=SEATS.slice(0,STOOL_MAX);
+    const xs=layoutStools(n),stools=STOOLS;
     assert.equal(xs.length,n);
     assert.equal(stools.filter(s=>s.active).length,n);
     assert.equal(stools[0].x,-3.7);assert.equal(stools[0].npc,true);
     assert.equal(stools.filter(s=>isFree(s)).length,n-1);
     assert.equal(xs[n-1],3.7);
-    for(let i=1;i<n;i++)assert.ok(xs[i]-xs[i-1]>=1.4,'stools too close at n='+n);
+    for(let i=1;i<n;i++)assert.ok(xs[i]-xs[i-1]>=1.0,'stools too close at n='+n);
     stools.filter(s=>!s.active).forEach(s=>assert.equal(isFree(s),false));
   }
   assert.deepEqual(stoolXs(2),[-3.7,3.7]);assert.deepEqual(stoolXs(3),[-3.7,0,3.7]);
@@ -37,7 +37,7 @@ test('room layout: N stools spread evenly, the leftmost is the NPC guest, the re
   layoutStools(0);
 });
 test('no two active seats overlap and every stand-up spot is clear of other seats',()=>{
-  for(const n of [0,2,3,4,5,6]){
+  for(const n of [0,2,3,4,5,6,7,8]){
     layoutStools(n);
     for(const a of active())for(const b of active()){
       if(a===b)continue;
@@ -64,4 +64,9 @@ test('the lounge armchairs are seats; they are taken only while the lounge guest
   setLoungeTaken([true,false]);assert.equal(isFree(seats[0]),false);assert.equal(isFree(seats[1]),true);
   setLoungeTaken([false,false]);seats.forEach(s=>assert.equal(isFree(s),true));      // a friends room: nobody in the lounge
   setLoungeTaken([false,false]);
+});
+test('standing spots: front of the counter and beside cafe tables, nowhere else',()=>{
+  assert.deepEqual(standSpot(1.2,2.6),{stoolX:1.2,drop:null});
+  const t=standSpot(-8.2,1.9);assert.ok(t&&t.drop&&t.drop.y===.78);
+  assert.equal(standSpot(0,8),null);assert.equal(standSpot(NaN,2),null);
 });

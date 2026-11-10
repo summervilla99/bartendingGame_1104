@@ -1,8 +1,8 @@
 /* Where players can sit and where they can take a photo. Pure data (no three.js) so it is shared by the client and the tests.
    Seats are numbered 1..SEAT_MAX on the wire (0 = standing). y is the avatar's vertical offset while seated.
    The first STOOL_MAX seats are bar stools; layoutStools() moves/hides them for the room's chair count. */
-export const STOOL_Z=1.25,STOOL_MAX=6;
-export const COUNTER_STOOL_X=[-3.7,-2.6,-1.5,1.5,2.6,3.7];
+export const STOOL_Z=1.25,STOOL_MAX=8;
+export const COUNTER_STOOL_X=[-3.7,-2.6,-1.5,1.5,2.6,3.7];          // the classic solo six
 export const NPC_STOOL_X=[-3.7,-1.5,1.5,2.6];          // taken by the counter guests when playing solo
 
 const mk=(id,kind,x,z,yaw,y,lean,sx,sz,name)=>({id,kind,x,z,yaw,y,lean,stand:{x:sx,z:sz},name,active:true,npc:false});
@@ -17,6 +17,8 @@ SEATS.push(mk('piano','piano',7.1,7.7,-.6,.18,.6,7.7,6.7,{ko:'피아노 의자',
 /* the two armchairs on either side of the lounge table; the lounge guests (Haeun, Teo) sit there in some hours */
 SEATS.push(mk('lounge0','chair',-6.2,6.6,Math.PI/2,-.46,.25,-6.2,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
 SEATS.push(mk('lounge1','chair',-4.4,6.6,-Math.PI/2,-.46,.25,-4.4,5.6,{ko:'라운지 의자',en:'Lounge chair'}));
+/* two more bar stools for the public rooms (8 chairs). Appended last because wire ids are indices. */
+[6,7].forEach(i=>SEATS.push(mk('stool'+i,'stool',0,STOOL_Z,Math.PI,-.11,.95,0,2.3,{ko:'바 스툴',en:'Bar stool'})));
 export const LOUNGE_SEAT_IDS=['lounge0','lounge1'];
 /* Ordering works from every seat except the piano bench. A bar stool gets its drink on the counter; any other seat gets it on the nearest cafe table (top at y .76). */
 const TABLES=[[-8.85,1.8],[-8.85,3.8],[8.85,1.8],[8.85,3.8],[-5.3,6.6]];
@@ -28,11 +30,22 @@ export function dropFor(seat){
   const dx=seat.x-best[0],dz=seat.z-best[1],l=Math.hypot(dx,dz)||1;
   return {x:+(best[0]+dx/l*.16).toFixed(2),y:.78,z:+(best[1]+dz/l*.16).toFixed(2)};          // a little toward the seat, away from the candle
 }
+/* Drinking on your feet: stand at the front of the counter or beside a cafe table to order. Returns {stoolX,drop} or null. */
+export function standSpot(x,z){
+  if(!Number.isFinite(x)||!Number.isFinite(z))return null;
+  if(z>=1.9&&z<=3.3&&Math.abs(x)<=4.4)return {stoolX:Math.max(-3.7,Math.min(3.7,+x.toFixed(2))),drop:null};
+  let best=null,bd=1.7;
+  TABLES.forEach(t=>{const d=Math.hypot(t[0]-x,t[1]-z);if(d<bd){bd=d;best=t;}});
+  if(!best)return null;
+  const dx=x-best[0],dz=z-best[1],l=Math.hypot(dx,dz)||1;
+  return {stoolX:Math.max(-3.7,Math.min(3.7,best[0])),drop:{x:+(best[0]+dx/l*.16).toFixed(2),y:.78,z:+(best[1]+dz/l*.16).toFixed(2)}};
+}
 export function setLoungeTaken(flags){LOUNGE_SEAT_IDS.forEach((id,i)=>{const s=SEATS.find(x=>x.id===id);if(s)s.npc=!!flags[i];});}
 export const SEAT_MAX=SEATS.length;
 export const seatByWireId=n=>(Number.isInteger(n)&&n>=1&&n<=SEAT_MAX)?SEATS[n-1]:null;
 
-/* Bar stool positions: solo keeps the classic six; in a room the chosen number is spread evenly (2..6). */
+/* Bar stool positions: solo keeps the classic six; in a room the chosen number is spread evenly (2..8). */
+export const STOOLS=SEATS.filter(s=>s.kind==='stool');           // stool0..5 then stool6, stool7
 export const stoolXs=chairs=>{
   if(!chairs)return COUNTER_STOOL_X.slice();
   const n=Math.max(2,Math.min(STOOL_MAX,chairs|0));
@@ -41,7 +54,7 @@ export const stoolXs=chairs=>{
 /* Apply a layout. Solo: guests sit on NPC_STOOL_X. Room: only the leftmost stool is taken (by the one NPC guest); the rest are for players. */
 export function layoutStools(chairs){
   const xs=stoolXs(chairs);
-  SEATS.slice(0,STOOL_MAX).forEach((s,i)=>{
+  STOOLS.forEach((s,i)=>{
     s.active=i<xs.length;
     if(s.active){s.x=xs[i];s.stand.x=xs[i];s.npc=chairs?i===0:NPC_STOOL_X.indexOf(xs[i])>=0;}
     else s.npc=false;

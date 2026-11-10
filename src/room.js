@@ -385,7 +385,7 @@ export function buildRoom(scene){
   const seatGeo=lathe([[0,0],[.25,0],[.27,.04],[.265,.09],[.22,.115],[0,.12]],28);
   const backGeo=new THREE.CylinderGeometry(.27,.27,.22,24,1,true,-Math.PI*.42,Math.PI*.84);
   const stools=[];
-  STOOL_X.forEach(x=>{
+  STOOL_X.concat([0,0]).forEach(x=>{
     const g=grp(x,0,STOOL_Z);
     cyl(.24,.27,.03,brass,0,.015,0,g,28);
     cyl(.035,.035,.68,brass,0,.37,0,g,12);

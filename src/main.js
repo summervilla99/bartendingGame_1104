@@ -33,7 +33,7 @@ import {createStart} from './start.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
 import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
-import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken,canOrderFrom,dropFor} from './game/seats.js';
+import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken,canOrderFrom,dropFor,standSpot} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,FIRE_COOLDOWN} from './game/shared.js';
 import {jointToast,giftDrink,pruneSocial,TOAST_RANGE,TOAST_WINDOW_MS} from './game/social.js';
 import {createWorld,tickOrders,orderRecipe,releaseSeat,nightOver as worldNightOver,nightSummary,snapshot} from './game/world.js';
@@ -932,7 +932,8 @@ function standUp(){
 /* ordering from a bar stool (friends mode) */
 const myOpenOrder=()=>S.world&&S.world.seats.find(x=>x.customer===net.me.id&&x.order);
 function updateOrderBtn(){
-  const show=!!(net.active&&canOrderFrom(S.seat)&&S.world&&S.world.session.chairs>0&&!myOpenOrder()&&!S.photo);
+  const spot=net.active&&!S.seat&&S.mode==='walk'&&S.world&&S.world.session.chairs>0&&!S.claimSeat?standSpot(playerFig.position.x,playerFig.position.z):null;
+  const show=!!(net.active&&(canOrderFrom(S.seat)||spot)&&S.world&&S.world.session.chairs>0&&!myOpenOrder()&&!S.photo);
   const b=$('#btn-order');if(b.hidden===show)b.hidden=!show;
   const pk=!!(!net.active&&S.session&&S.session.mode==='practice'&&S.mode==='walk'&&!S.paused&&!S.photo&&!S.userPause),pb=$('#btn-pick');if(pb.hidden===pk)pb.hidden=!pk;
 }
@@ -1317,8 +1318,16 @@ function handleAct(from,m){
   if(m.k==='music'){S.world.session=Object.assign({},S.world.session,{music:m.genre});S.world.rev++;S.musicSeen=m.genre;setMusic(m.genre,true);commitWorld();return;}
   if(m.k==='order'){
     const seat=from===net.me.id?S.seat:seatByWireId((net.peers.get(from)||{}).st);
-    if(!canOrderFrom(seat)||!isFree(seat))return;
-    const drop=dropFor(seat),r=placeOrder(S.world,from,m.rec,drop?Math.max(-3.7,Math.min(3.7,drop.x)):seat.x,time,poolFor(S.world.session,RECIPES),drop);
+    let drop,sx;
+    if(seat){
+      if(!canOrderFrom(seat)||!isFree(seat))return;
+      drop=dropFor(seat);sx=drop?Math.max(-3.7,Math.min(3.7,drop.x)):seat.x;
+    }else{                                         // standing: the host checks where the player really is
+      const pp=from===net.me.id?playerFig.position:net.peers.get(from),sp=pp&&standSpot(pp.x,pp.z);
+      if(!sp)return;
+      drop=sp.drop;sx=sp.stoolX;
+    }
+    const r=placeOrder(S.world,from,m.rec,sx,time,poolFor(S.world.session,RECIPES),drop);
     if(r.ok){commitWorld();}
     return r;
   }
@@ -1440,13 +1449,15 @@ function refreshRoomUI(){
   const chip=$('#room-chip');chip.hidden=!net.active;if(net.active){chip.querySelector('.rc-code').textContent=net.code;chip.querySelector('.rc-n').textContent='· '+net.count+(isHost()?' ★':'');}$('#row-room').hidden=!net.active;chip.classList.toggle('wait',transport.status==='connecting');$('#row-mood').hidden=!(net.active&&isHost());$('#row-genre').hidden=net.active&&!isHost();$('#btn-chat').hidden=!net.active;logBtn.hidden=!net.active;if(!net.active&&(chatLog.length||!histEl.hidden))resetHist();if(!net.active&&!chatForm.hidden)closeChat();
   if(net.active){chip.setAttribute('aria-label',t('inv_aria',{code:net.code,n:net.count}));}
 }
+const PUBLIC_CODES={public1:'CODA1',public2:'CODA2'};
 function connectRoom(onl){
   if(onl.mode==='keep')return;
   if(onl.mode==='solo'){if(net.active)leaveRoom();return;}
-  if(net.active&&(onl.mode==='create'||normalizeCode(onl.code)===net.code))return;
+  if(net.active&&(onl.mode==='create'||(PUBLIC_CODES[onl.mode]||normalizeCode(onl.code))===net.code))return;
   const name=(onl.name||'').trim()||t('guest_default');
   try{localStorage.setItem(NAME_KEY,name);}catch(_){}
-  const code=onl.mode==='create'?makeCode():normalizeCode(onl.code);
+  const isPublic=onl.mode==='public1'||onl.mode==='public2';
+  const code=onl.mode==='create'?makeCode():isPublic?PUBLIC_CODES[onl.mode]:normalizeCode(onl.code);
   net.join(code,name,myLook());setRoomParam(code);
   if(onl.mode==='create'){
     const limit=limitOf(S.session),chairs=Math.max(2,Math.min(6,(onl.chairs|0)||4));
@@ -1455,8 +1466,15 @@ function connectRoom(onl){
     S.world.hostId=net.me.id;S.world.rev++;S.synced=true;
     adoptSession(S.world.session);commitWorld();refreshRoomUI();
   }
-  else{S.synced=false;S.syncWait=0;S.world.hostId=null;net.sendGame({k:'need'});}
-  toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
+  else{
+    if(isPublic){                                    // a public hall: 8 bar chairs, endless service; whoever is there first (lowest id) hosts it
+      S.world.session=Object.assign({},S.world.session,{mode:'practice',time:'prime',menu:'all',chairs:8,limit:0,npcOrders:true});
+      S.world.seats.forEach((st,i)=>{st.active=i===0;st.order=null;st.claim=null;});
+      adoptSession(S.world.session);
+    }
+    S.synced=false;S.syncWait=0;S.world.hostId=null;net.sendGame({k:'need'});
+  }
+  toast(isPublic?t('public_joined',{n:onl.mode==='public1'?1:2}):t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
   if(onl.mode==='create'){const g=startMusicChoice();if(g!=='off'&&isHost()){S.world.session=Object.assign({},S.world.session,{music:g});S.world.rev++;S.musicSeen=g;commitWorld();}setTimeout(openInvite,700);}                 // the host's first job is to invite someone
 }
 const STATION_X=[-.9,.9];

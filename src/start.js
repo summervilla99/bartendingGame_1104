@@ -59,14 +59,14 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       }
       body='<h2>'+t('st_levels')+'</h2><div class="st-nights">'+lv+'</div>'+detail;
     }else{
-      const sub=['create','join'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
+      const sub=['create','join','public1','public2'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
       body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+sub+'</div>');
       if(!lock){
         body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
           +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
           +'</div>'
           +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div><div class="st-field"><span>'+t('st_npc')+'</span><div class="st-row st-chairs">'+opt('npc','on',onl.npc!==false,'st-guide',t('npc_on'))+opt('npc','off',onl.npc===false,'st-guide',t('npc_off'))+'</div></div></div><p class="st-note">'+t('st_npc_note')+'</p>':'')
-          +'<p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
+          +'<p class="st-note">'+t(onl.mode==='create'?'onl_hint_create':onl.mode.indexOf('public')===0?'onl_hint_public':'onl_hint_join')+' '+t('onl_note')+'</p>'+(err?'<p class="st-err">'+esc(err)+'</p>':'');
       }
       if(lock||onl.mode==='create')body+=hourMenu+limitHtml;
     }

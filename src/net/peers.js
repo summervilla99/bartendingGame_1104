@@ -1,7 +1,7 @@
 /* Pure peer bookkeeping for a room: validate untrusted messages, track other players, expire silent ones, smooth motion.
    No DOM, no three.js, no timers, so it runs the same in the browser, in Node tests and later on a server. */
 import {SEAT_MAX} from '../game/seats.js';
-export const STALE_MS=5000,MAX_PEERS=8,LOOK_COUNT=8,NAME_MAX=16,CHAT_MAX=100,CHAT_GAP_MS=600,CHAT_SHOW_MS=6000;
+export const STALE_MS=5000,MAX_PEERS=16,LOOK_COUNT=8,NAME_MAX=16,CHAT_MAX=100,CHAT_GAP_MS=600,CHAT_SHOW_MS=6000;
 export const EMOTES=['cheers','wave','clap','bow','dance','jump'];
 export const EMOTE_MS={cheers:1600,wave:1600,clap:1600,bow:1600,dance:5000,jump:800};
 const BOUNDS={x0:-9.7,x1:9.7,z0:-3,z1:11.7};

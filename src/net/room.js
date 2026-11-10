@@ -43,7 +43,8 @@ export function createRoom(transport,opts){
     if(!code)return;
     const t=now();state=s;
     const changedSeat=(s.st||0)!==(prevSt||0);prevSt=s.st||0;
-    if(changedSeat||t-lastSent>=(s.sp>.02?iv.moving:iv.idle)){send('pos');lastSent=t;}
+    const k=peers.size>=8?2:1;                    // a crowded room (public halls) sends half as often to spare the message quota
+    if(changedSeat||t-lastSent>=(s.sp>.02?iv.moving:iv.idle)*k){send('pos');lastSent=t;}
     if(expire(peers,t).length)onChange();
   }
   function emote(kind){if(code&&EMOTES.indexOf(kind||'cheers')>=0)send('emote',{e:kind||'cheers'});}
