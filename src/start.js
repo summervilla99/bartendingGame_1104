@@ -9,8 +9,12 @@ import {portraitOf} from './portrait.js';
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
 export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,getDesign,onDesign,initialOnline,roomLock}){
-  let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false,design=0,phIdx=0,phTimer=0;
-  const PH_NAMES=['에렌 예거','몽키 D.루피','프리렌'];          // the empty nickname box cycles through these as a playful hint
+  let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false,design=0;
+  /* someone with no saved nickname starts with a random anime character name, picked once per visit (they can type over it) */
+  const PH_NAMES=['몽키 D.루피','로로노아 조로','나미','우솝','상디','토니토니 쵸파','니코 로빈','프랑키','브룩','포트거스 D.에이스','샹크스','트라팔가 로',
+    '에렌 예거','미카사 아커만','아르민 아를레르트','리바이 아커만','한지 조에','엘빈 스미스','사샤 블라우스','코니 스프링거','장 키르슈타인','히스토리아','라이너 브라운','애니 레온하트',
+    '프리렌','페른','슈타르크','힘멜','하이터','아이젠','자인','유벨'];
+  const defaultName=PH_NAMES[Math.floor(Math.random()*PH_NAMES.length)];
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4,npc:true},initialOnline||{});
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -71,7 +75,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       const sub=subRow(['create','join'])+subRow(['public1','public2']);      // the public halls sit on their own line
       body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':sub);
       if(!lock){
-        body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" placeholder="'+esc(PH_NAMES[phIdx])+'" value="'+esc(onl.name)+'"></label>'
+        body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
           +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
           +'</div>'
           +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div><div class="st-field"><span>'+t('st_npc')+'</span><div class="st-row st-chairs">'+opt('npc','on',onl.npc!==false,'st-guide',t('npc_on'))+opt('npc','off',onl.npc===false,'st-guide',t('npc_off'))+'</div></div></div><p class="st-note">'+t('st_npc_note')+'</p>':'')
@@ -179,8 +183,8 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
     else if(cfg.mode!=='tale'&&cfg.mode!=='story')cfg.mode='practice';                 // anything else is solo practice (levels or free)
     compact=!(roomLock&&roomLock())&&onl.mode==='solo'&&Object.keys(loadTale().done).length>0;
     if(compact)cfg.mode='tale';
-    open=true;root.hidden=false;clearInterval(phTimer);phTimer=setInterval(()=>{phIdx=(phIdx+1)%PH_NAMES.length;const i=root.querySelector('#st-name');if(i)i.placeholder=PH_NAMES[phIdx];},2200);render();previewTime();const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});
+    open=true;root.hidden=false;if(!onl.name)onl.name=defaultName;render();previewTime();const g=root.querySelector('#st-go');if(g)g.focus({preventScroll:true});
   }
-  function hide(){open=false;root.hidden=true;clearInterval(phTimer);}
+  function hide(){open=false;root.hidden=true;}
   return {show,hide,isOpen:()=>open};
 }
