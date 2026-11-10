@@ -514,15 +514,24 @@ export function buildRoom(scene){
   }
   function groundAt(x,z){return Math.hypot(x-STAGE.x,z-STAGE.z)<STAGE.r-.05?STAGE.h:0;}
   /* Hour of the night: lights, window view, neon strength. look comes from session.js TIMES. */
-  let neonK=1,curSky=null;
+  let neonK=1,curSky=null,lastLook=null,snow=false;
+  /* snow behind the window glass is painted onto the city texture */
+  function paintSnow(g,w,h){
+    let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+    g.fillStyle='rgba(255,255,255,.85)';
+    for(let i=0;i<150;i++){g.globalAlpha=.35+rnd()*.6;g.beginPath();g.arc(rnd()*w,rnd()*h,.8+rnd()*2.1,0,Math.PI*2);g.fill();}
+    g.globalAlpha=1;
+  }
+  function setSnow(on){snow=!!on;if(lastLook){curSky=null;setTime(lastLook);}}
   function setTime(look){
+    lastLook=look;
     hemi.color.setHex(look.hemi[0]);hemi.groundColor.setHex(look.hemi[1]);hemi.intensity=look.hemi[2];
     pend.forEach(l=>{l.color.setHex(look.pend[0]);l.intensity=look.pend[1];});
     key.color.setHex(look.key[0]);key.intensity=look.key[1];
     bbLight.intensity=look.bb;loungeLight.intensity=look.lounge;stageLight.intensity=look.stage;
     neonK=look.neon;
     glassMat.color.setRGB(look.win[0],look.win[1],look.win[2]);
-    if(curSky!==look.sky){curSky=look.sky;const c=city.image;paintCity(c.getContext('2d'),c.width,c.height,look.sky);city.needsUpdate=true;}
+    if(curSky!==look.sky){curSky=look.sky;const c=city.image;paintCity(c.getContext('2d'),c.width,c.height,look.sky);if(snow)paintSnow(c.getContext('2d'),c.width,c.height);city.needsUpdate=true;}
   }
   /* Bar stools follow the room's chair count: move, show or hide them (and their collision boxes). */
   function setStools(xs){
@@ -532,5 +541,5 @@ export function buildRoom(scene){
       else{st.c.min.x=st.c.max.x=1e4;}
     });
   }
-  return {colliders,animate,groundAt,drawNeon,setTime,setStools};
+  return {colliders,animate,groundAt,drawNeon,setTime,setStools,setSnow};
 }

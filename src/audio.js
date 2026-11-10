@@ -176,6 +176,11 @@ export const Snd=(function(){
       s2.connect(f);f.connect(g);g.connect(master);s2.start(t,Math.random());s2.stop(t+.35);
       tone(150,t+.32,.1,'triangle',.07);
     },
+    /* sleigh bells: a handful of bright, quick bell clusters */
+    jingle(){
+      if(!ctx)return;const t=ctx.currentTime;
+      for(let i=0;i<7;i++){const tt=t+i*.075+rand(0,.02),f=3400+rand(0,900);tone(f,tt,.35,'sine',.03);tone(f*1.51,tt,.25,'sine',.02);hit(tt,.05,6000,.025);}
+    },
     pause(){if(ctx&&ctx.state==='running')ctx.suspend();if(media&&!media.paused)media.pause();},
     resume(){if(ctx&&ctx.state!=='running')ctx.resume();if(media&&media.paused)media.play().catch(()=>{});}
   };

@@ -3,9 +3,12 @@
    Any node (or choice option) may carry hearts:{who:n} and flag:'name'; they apply when it is reached.
    state = {night, node, hearts, flags, gain, events, order} */
 export const MAX_HEARTS=5;
+const OVER_DRINK={ko:'다른 술로 다시 시도해 보세요.',en:'Try again with a different drink.'};
+const HINT_TALK={ko:'마스터의 노트: 손님의 첫 마디보다 표정과 말투를 보라.',en:'Master’s note: watch their face and tone, not just their first words.'};
+const HINT_DRINK={ko:'마스터의 노트: 술은 취향보다 그날의 기분에 맞춰 낸다.',en:'Master’s note: pour for the mood of the night, not only for taste.'};
 
 export function newState(night,save){
-  return {night,node:null,hearts:Object.assign({},save&&save.hearts),flags:Object.assign({},save&&save.flags),gain:{},events:[],order:null};
+  return {night,node:null,hearts:Object.assign({},save&&save.hearts),flags:Object.assign({},save&&save.flags),gain:{},events:[],order:null,why:null,tries:{}};
 }
 
 function addHearts(st,who,n){
@@ -48,7 +51,10 @@ export function view(st,graph){
     if(st.order)return {kind:'wait',order:st.order,who:n.who};
     return {kind:'recommend',who:n.who,hint:n.hint,cands:n.cands.map(c=>c.id)};
   }
-  if(n.t==='over')return {kind:'over',title:n.title,tip:n.tip};
+  if(n.t==='over'){                                    // the card says why (a wrong drink or a wrong word) and, after repeated tries, nudges
+    const drink=st.why==='drink',tries=(st.check&&st.tries&&st.tries[st.check.node])||0;
+    return {kind:'over',title:n.title,tip:drink?OVER_DRINK:n.tip,hint:tries>=2?(drink?HINT_DRINK:HINT_TALK):null};
+  }
   if(n.t==='close')return {kind:'close',title:n.title,note:n.note,gain:Object.assign({},st.gain),hearts:Object.assign({},st.hearts)};
   return {kind:'end'};
 }
@@ -83,6 +89,7 @@ export function served(st,graph,stars){
   if(!n||!st.order||(n.t!=='recommend'&&n.t!=='order'))return false;
   const o=st.order;
   let key=null;
+  st.why=o.match==='miss'&&n.fail?'drink':null;
   if(o.match==='miss'&&n.fail)key=n.fail;           // a drink that does not suit the guest: they walk out
   else{
     const eff=reactStars(o.match,stars);
@@ -100,6 +107,7 @@ export function drainEvents(st){const e=st.events;st.events=[];return e;}
 /* After a guest walked out: start that guest's scene again with the hearts and memories they had before it. */
 export function retry(st,graph){
   if(!st.check)return false;
+  st.tries=st.tries||{};st.tries[st.check.node]=(st.tries[st.check.node]||0)+1;st.why=null;
   st.hearts=Object.assign({},st.check.hearts);st.flags=Object.assign({},st.check.flags);st.gain={};
   goto(st,graph,st.check.node);return true;
 }

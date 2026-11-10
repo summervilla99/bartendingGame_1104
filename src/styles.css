@@ -513,3 +513,12 @@ button.st-night.on{background:linear-gradient(140deg,rgba(29,74,54,.58),rgba(201
 .ticket .tk-row b{flex:1 1 auto;min-width:0;font-size:21px;line-height:1.15;word-break:keep-all;overflow-wrap:anywhere}
 .ticket .tk-method{flex:none;white-space:nowrap}
 .ticket .tk-live{grid-area:live;margin:0;white-space:nowrap}
+.tl-hint{margin:8px 0 0;font:italic 500 13px/1.45 var(--f-serif);color:var(--brass)}
+
+/* Christmas: falling snow behind the start screen and a festive hairline */
+@keyframes snowfall{from{background-position:0 0,0 0,0 0}to{background-position:140px 900px,-90px 700px,60px 520px}}
+body.xmas #start::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.85;
+  background-image:radial-gradient(2.2px 2.2px at 20px 30px,#fff 55%,transparent 60%),radial-gradient(1.6px 1.6px at 90px 120px,rgba(255,255,255,.85) 55%,transparent 60%),radial-gradient(1.2px 1.2px at 150px 60px,rgba(255,255,255,.7) 55%,transparent 60%);
+  background-size:170px 170px,230px 230px,130px 130px;animation:snowfall 18s linear infinite}
+body.xmas #start .st-card{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){body.xmas #start::before{animation:none}}

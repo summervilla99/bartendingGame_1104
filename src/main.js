@@ -11,7 +11,9 @@ import {newState as taleNew,begin as taleBegin,view as taleView,advance as taleA
 import {loadTale,commitNight} from './story/save.js';
 import {createTaleUI} from './tale-ui.js';
 import {makeProp} from './props.js';
-import {makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
+import {createFx} from './fx.js';
+import {buildXmas} from './xmas.js';
+import {setSantaHats,makeCharacter,setFace,poseSit,poseWalk,reachArm,resetArms,GUEST_CFG,LOUNGE_CFG,PLAYER_CFG,BARTENDER_CFG} from './figures.js';
 import {Snd} from './audio.js';
 import {buildEnv} from './env.js';
 import {createComposer} from './composer.js';
@@ -53,6 +55,15 @@ function cyl(rt,rb,h,mat,x,y,z,parent,seg){const m=new THREE.Mesh(new THREE.Cyli
 
 /* ───────────── room ───────────── */
 const room=buildRoom(scene);
+const fx=createFx(scene),xmas=buildXmas(scene);
+/* Christmas decoration: on by default, remembered once the player switches it */
+const XMAS_KEY='courte.xmas';
+let xmasOn=(()=>{try{return localStorage.getItem(XMAS_KEY)!=='off';}catch(_){return true;}})();
+function setXmas(on,save){
+  xmasOn=!!on;xmas.setOn(xmasOn);setSantaHats(xmasOn);room.setSnow(xmasOn);document.body.classList.toggle('xmas',xmasOn);
+  const b=document.getElementById('btn-xmas');if(b){b.textContent=t(xmasOn?'xmas_on':'xmas_off');b.setAttribute('aria-pressed',xmasOn?'true':'false');}
+  if(save){try{localStorage.setItem(XMAS_KEY,xmasOn?'on':'off');}catch(_){}}
+}
 
 /* bar spoon (the shaker is built per drink) */
 const spoon=new THREE.Group();
@@ -1034,6 +1045,7 @@ el.music.addEventListener('click',()=>{
 $('#btn-lang').addEventListener('click',()=>setLang(getLang()==='ko'?'en':'ko'));
 /* Re-render every piece of dynamic text (language or unit change). */
 function refreshAll(){
+  setXmas(xmasOn,false);
   INGR.forEach(ing=>{chipEls[ing.id].querySelector('.nm').textContent=ing.name;});
   GARNISH.forEach(gn=>{garnEls[gn.id].querySelector('.nm').textContent=gn.name;});
   CATS.forEach(c=>{tabEls[c.id].textContent=t(c.key);});
@@ -1079,7 +1091,7 @@ function frame(now){
   const dt=Math.min(DT_MAX,(now-last)/1000);last=now;time+=dt;
   if(S.mode==='walk'){if(!S.paused){player.update(dt,time);updatePlayerPose();}player.view.off=portraitNow()?.12:0;}
   updatePhoto(dt);
-  updateCamera(dt);room.animate(dt,time);
+  updateCamera(dt);room.animate(dt,time);xmas.animate(time);fx.update(dt);
   updateProps(dt);
   if(S.mode==='bar'){updateRail(dt);updateBar(dt,time);}
   updateNpcs(dt,time);updateOrders();updateAction();updateBubbles();syncRemotes(dt,time);
@@ -1595,6 +1607,7 @@ function taleStep(){
   S.paused=true;player.st.enabled=false;el.uiWalk.hidden=true;el.act.hidden=true;S.actionKey='';playerFig.visible=false;
   if(v.kind==='say'&&TALE_CHARS[v.who]&&TALE_CHARS[v.who].seat){const g=taleGuest(v.who);if(g.active){setTalkCam(g);setFace(g.fig,v.face);}}
   else if(v.kind==='over'||v.kind==='close')setTalkCam(null);
+  if(v.kind==='close'){const nx=NIGHTS.find(n=>n.n===T.night.n+1);if(nx)v.next=nx.title;}
   taleUI.show(v);
 }
 /* The talk is over for now: put the order on the board and let the player walk to the counter. */
@@ -1628,6 +1641,8 @@ function openStart(){
   S.paused=true;player.st.enabled=false;$('#summary').hidden=true;startUI.show();
 }
 $('#btn-night').addEventListener('click',openStart);
+$('#btn-xmas').addEventListener('click',()=>{setXmas(!xmasOn,true);toast(t(xmasOn?'xmas_toast_on':'xmas_toast_off'),2200);if(xmasOn){Snd.init();Snd.jingle();}});
+setXmas(xmasOn,false);
 /* settings popover (language, units, music) */
 const setBtn=$('#btn-settings'),setPop=$('#settings');
 function toggleSettings(open){setPop.hidden=!open;setBtn.setAttribute('aria-expanded',String(open));}

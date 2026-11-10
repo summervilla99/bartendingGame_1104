@@ -25,6 +25,10 @@ function limb(parent,geo,mat,len,y){
   return j;
 }
 
+/* Santa hats: every character gets one, hidden until the holiday decoration is on */
+const santaRed=M(0xc4202c,{roughness:.8,envMapIntensity:.2}),santaWhite=M(0xf4f0e6,{roughness:.95,envMapIntensity:.15});
+const hats=new Set();let hatsOn=false;
+export function setSantaHats(on){hatsOn=!!on;hats.forEach(h=>{h.visible=hatsOn;});}
 export function makeCharacter(cfg){
   const g=new THREE.Group();
   const skin=M(cfg.skin,{roughness:.62,envMapIntensity:.25});
@@ -84,6 +88,14 @@ export function makeCharacter(cfg){
     const brim=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.012,20),hatM);brim.position.y=.085;head.add(brim);
     const crown=new THREE.Mesh(new THREE.CylinderGeometry(.09,.105,.1,18),hatM);crown.position.y=.135;head.add(crown);
     const band=new THREE.Mesh(new THREE.CylinderGeometry(.106,.106,.022,18),M(0x2a120c));band.position.y=.1;head.add(band);
+  }
+
+  if(cfg.hat==null){                                   // a Santa hat that the holiday switch shows or hides
+    const hat=new THREE.Group();hat.position.set(0,.085,-.012);hat.rotation.x=-.22;hat.visible=hatsOn;
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(.098,.21,16),santaRed);cone.position.set(0,.1,-.012);cone.rotation.x=-.28;
+    const band=new THREE.Mesh(new THREE.TorusGeometry(.099,.019,8,20),santaWhite);band.rotation.x=Math.PI/2;
+    const pom=new THREE.Mesh(new THREE.SphereGeometry(.027,10,8),santaWhite);pom.position.set(0,.19,-.075);
+    hat.add(cone,band,pom);head.add(hat);hats.add(hat);if(hats.size>160)hats.delete(hats.values().next().value);
   }
 
   const arms=[-1,1].map(s=>{

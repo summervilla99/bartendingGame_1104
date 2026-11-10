@@ -34,6 +34,7 @@ export function createTaleUI(root,{onAdvance,onPick,onClose,onRetry,onExit}){
       stop();typed=true;nextEl.hidden=true;box.classList.add('close');
       textEl.textContent='';
       textEl.append(el('b','tl-ctitle',tr(v.title)),el('p','tl-note',tr(v.tip)));
+      if(v.hint)textEl.append(el('p','tl-hint',tr(v.hint)));
       const r=el('button','btn primary',t('tale_retry'));r.type='button';r.dataset.retry='1';
       const x=el('button','btn sm',t('tale_exit'));x.type='button';x.dataset.exit='1';
       optsEl.append(r,x);
@@ -48,6 +49,7 @@ export function createTaleUI(root,{onAdvance,onPick,onClose,onRetry,onExit}){
         ul.append(li);
       });
       textEl.append(ul,el('p','tl-note',tr(v.note)));
+      if(v.next)textEl.append(el('p','tl-hint',t('tale_tomorrow',{title:tr(v.next)})));
       const b=el('button','btn primary',t('tale_done'));b.type='button';b.dataset.close='1';optsEl.append(b);
     }
   }
