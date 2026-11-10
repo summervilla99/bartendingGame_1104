@@ -89,7 +89,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +'<button class="btn lg primary st-go" id="st-back" type="button">'+t('gal_back')+'</button></div>';
       return;
     }
-    const designHtml=onDesign?'<h2>'+t('st_design')+'</h2><div class="st-row st-designs">'+DESIGNS.map((d,i)=>{
+    const designHtml=onDesign&&kind!=='tale'?'<h2>'+t('st_design')+'</h2><div class="st-row st-designs">'+DESIGNS.map((d,i)=>{
       const img=portraitOf('design:'+d.id,d.look,'smile');
       return opt('design',i,design===i,'st-design',(img?'<img src="'+img+'" alt="">':'<span class="st-ph"></span>')+'<b>'+t('design_n',{n:i+1})+'</b><i>'+esc(tr(d.name))+'</i>');
     }).join('')+'</div>':'';
