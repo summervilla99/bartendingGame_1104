@@ -27,10 +27,12 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
       return opt('menu',id,cfg.menu===id,'st-fam',t('fam_'+id)+'<em>'+n+'</em>'+(T.suggest===id?'<u>'+t('suggested')+'</u>':''));
     }).join('');
     const tale=loadTale();
-    const nights=Array.from({length:NIGHTS.length},(_,i)=>{
-      const n=i+1,def=NIGHTS.find(x=>x.n===n),done=tale.done[n],ok=!!def&&isNightOpen(n,tale);
-      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(ok?'':' soon'),'<b>'+(def&&def.epilogue?'+':n)+'</b><span>'+(def?tr(def.title):t('tale_soon'))+'</span><i>'+(done?t('tale_done_tag'):(def&&!ok?t('night_lock'):''))+'</i>',!ok);
-    }).join('');
+    const nightBtn=(def)=>{
+      const n=def.n,done=tale.done[n],ok=isNightOpen(n,tale);
+      return opt('night',n,ok&&(cfg.night||1)===n,'st-night'+(def.epilogue?' epi':'')+(ok?'':' soon'),'<b>'+(def.epilogue?'+':n)+'</b><span>'+tr(def.title)+'</span><i>'+(done?t('tale_done_tag'):(!ok?t('night_lock'):''))+'</i>',!ok);
+    };
+    const nights=NIGHTS.filter(d=>!d.epilogue).map(nightBtn).join('');
+    const epis=NIGHTS.filter(d=>d.epilogue).map(nightBtn).join('');
     const kinds=KINDS.map(id=>opt('kind',id,kind===id,'st-mode','<b>'+t('kind_'+id)+'</b><span class="st-d">'+t('kind_'+id+'_d')+'</span>')).join('');
     const timerOn=(kind==='room'?cfg.timers.room:cfg.timers.practice)===true;
     const limitRow=['off','easy','mid','hard'].map(d=>opt('limit',d,d==='off'?!timerOn:(timerOn&&cfg.diff===d),'st-guide',d==='off'?t('limit_off'):t('diff_'+d))).join('');
@@ -39,7 +41,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
     let body='';
     if(kind==='tale'){
 const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
-      body='<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div><p class="st-note">'+t('tale_note')+'</p>'
+      body='<h2>'+t('st_tale')+'</h2><div class="st-nights">'+nights+'</div>'+(epis?'<h3 class="st-epi-h">'+t('epi_h')+'</h3><div class="st-epis">'+epis+'</div>':'')+'<p class="st-note">'+t('tale_note')+'</p>'
         +'<div class="st-row st-tools"><button type="button" class="btn sm" data-act="gallery">'+t('gal_btn',{n:seen,m:ENDINGS.length})+'</button>'
         +(confirmReset?'<span class="st-confirm">'+t('tale_reset_q')+' <button type="button" class="btn sm" data-act="reset-yes">'+t('tale_reset_yes')+'</button> <button type="button" class="btn sm" data-act="reset-no">'+t('tale_reset_no')+'</button></span>'
           :'<button type="button" class="btn sm" data-act="reset">'+t('tale_reset')+'</button>')+'</div>';
