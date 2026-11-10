@@ -7,7 +7,7 @@ const say=(id,who,ko,en,next,x)=>Object.assign({id,t:'say',who,text:{ko,en},next
 const nar=(id,ko,en,next,x)=>say(id,'narr',ko,en,next,x);
 const opt=(ko,en,next,x)=>Object.assign({text:{ko,en},next},x||{});
 const cand=(id,match,ko,en)=>({id,match,lead:{ko,en}});
-const over=(id,retry)=>({id,t:'over',retry,title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}});
+const over=(id,retry)=>({id,t:'over',retry,title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'다시 시도해 보세요.',en:'Give it another try.'}});
 
 const NODES=[
   nar('o1','마지막 밤. 마스터의 노트 7페이지에는 한 줄만 적혀 있다. “이 페이지는 네가 써라.”','The last night. Page seven of the Master’s notebook holds a single line: “This page, you write.”','o2'),

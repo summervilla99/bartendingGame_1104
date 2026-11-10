@@ -7,7 +7,7 @@ const say=(id,who,ko,en,next,x)=>Object.assign({id,t:'say',who,text:{ko,en},next
 const nar=(id,ko,en,next,x)=>say(id,'narr',ko,en,next,x);
 const opt=(ko,en,next,x)=>Object.assign({text:{ko,en},next},x||{});
 const cand=(id,match,ko,en)=>({id,match,lead:{ko,en}});
-const over=(id,retry)=>({id,t:'over',retry,title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}});
+const over=(id,retry)=>({id,t:'over',retry,title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'다시 시도해 보세요.',en:'Give it another try.'}});
 
 const NODES=[
   nar('o1','셋째 밤. 마스터의 노트 3페이지. “비싼 술을 찾는 사람은 대개 값 말고는 말할 게 없는 사람이다.”','Night three. Page three of the Master’s notebook. “Someone who asks for the priciest drink usually has nothing else to say.”','yj_pre'),

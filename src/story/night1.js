@@ -32,7 +32,7 @@ const NODES=[
   say('sy_x2','seoyun','……민트초코요? (잠시) 농담이죠? ……농담이 아니네요.','…Mint-choc? (pause) You’re joking, right? …You’re not joking.','sy_x2n'),
   nar('sy_x2n','그녀는 말없이 가방을 들었다. 표정 하나 변하지 않는 게 오히려 더 무서웠다.','She took her bag without a word. Not a flicker on her face, which was somehow scarier.','l_x_sy2'),
   {id:'l_x_sy2',t:'leave',who:'seoyun',next:'ov_sy'},
-  {id:'ov_sy',t:'over',retry:'e_sy',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
+  {id:'ov_sy',t:'over',retry:'e_sy',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'다시 시도해 보세요.',en:'Give it another try.'}},
   say('sy_a1','seoyun','쓴 거. 근데 너무 독하진 않은 거요. 오늘은 취하러 온 게 아니라서.','Something bitter. But not too strong. I’m not here to get drunk tonight.','sy_a1n',{hearts:{seoyun:1}}),
   nar('sy_a1n','힌트가 두 개. 쓰다, 그리고 독하지 않다.','Two hints: bitter, and not too strong.','rec_sy'),
   {id:'rec_sy',t:'recommend',who:'seoyun',hint:{ko:'쓴맛 · 너무 독하지 않게',en:'Bitter · not too strong'},fail:'sy_m',
@@ -75,7 +75,7 @@ const NODES=[
   say('ts_x2','taesik','샴페인 타워?! 나 월급날 아직 멀었어! 이 집 이상한 데야!','A champagne tower?! Payday is far off! This place is weird!','ts_x2n'),
   nar('ts_x2n','부장님의 위기 대응은 빠른 후퇴였다.','The department head’s crisis response was a swift retreat.','l_x_ts2'),
   {id:'l_x_ts2',t:'leave',who:'taesik',next:'ov_ts'},
-  {id:'ov_ts',t:'over',retry:'e_ts',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'더 그럴듯한 말을 골라 보세요.',en:'Try a more fitting thing to say.'}},
+  {id:'ov_ts',t:'over',retry:'e_ts',title:{ko:'손님이 떠났어요',en:'The guest left'},tip:{ko:'다시 시도해 보세요.',en:'Give it another try.'}},
   say('ts_b1','taesik','오, 비슷한 거? 소주처럼 쭉 넘어가는, 독한 걸로. 안주 없어도 되는 거.','Oh, something similar? Strong, and straight down like soju. Something that needs no snacks.','rec_ts',{hearts:{taesik:1}}),
   {id:'rec_ts',t:'recommend',who:'taesik',hint:{ko:'소주처럼 쭉, 독하게',en:'Strong, straight down like soju'},fail:'ts_m',
    cands:[
