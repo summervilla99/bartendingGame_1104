@@ -857,6 +857,12 @@ function refreshMusicUI(){
   document.querySelectorAll('#genre-seg [data-g]').forEach(b=>b.classList.toggle('on',b.dataset.g===g&&Snd.on));
   document.querySelectorAll('#mood-seg [data-t]').forEach(b=>b.classList.toggle('on',!!S.world&&b.dataset.t===S.world.session.time));
 }
+const GENRE_KEY='courte.genre';
+const savedGenre=()=>{try{const g=localStorage.getItem(GENRE_KEY);return g==='classical'||g==='house'||g==='jazz'?g:'jazz';}catch(_){return 'jazz';}};
+const saveGenre=g=>{try{localStorage.setItem(GENRE_KEY,g);}catch(_){}};
+Snd.setGenre(savedGenre());
+/* what the start screen shows: the remembered genre, or 'off' */
+const startMusicChoice=()=>musicPref()==='off'?'off':(Snd.on?Snd.genre:savedGenre());
 const MUSIC_PREF='courte.music';          // 'off' once the player turned the music off; absent means on
 const musicPref=()=>{try{return localStorage.getItem(MUSIC_PREF);}catch(_){return null;}};
 const saveMusicPref=on=>{try{if(on)localStorage.removeItem(MUSIC_PREF);else localStorage.setItem(MUSIC_PREF,'off');}catch(_){}};
@@ -870,7 +876,7 @@ function startMusicOnOpen(quiet){
 function setMusic(g,remote){
   if(g==='off'){saveMusicPref(false);if(Snd.on){Snd.music(false);refreshMusic();}refreshMusicUI();return;}
   saveMusicPref(true);
-  Snd.init();Snd.setGenre(g);
+  Snd.init();Snd.setGenre(g);if(!remote)saveGenre(g);
   if(!remote||Snd.on){if(Snd.music(true))refreshMusic();}
   refreshMusicUI();
 }
@@ -1221,7 +1227,7 @@ function connectRoom(onl){
   }
   else{S.synced=false;S.syncWait=0;S.world.hostId=null;net.sendGame({k:'need'});}
   toast(t(onl.mode==='create'?'room_open':'room_joined',{code}),3200);
-  if(onl.mode==='create')setTimeout(openInvite,700);                 // the host's first job is to invite someone
+  if(onl.mode==='create'){const g=startMusicChoice();if(g!=='off'&&isHost()){S.world.session=Object.assign({},S.world.session,{music:g});S.world.rev++;S.musicSeen=g;commitWorld();}setTimeout(openInvite,700);}                 // the host's first job is to invite someone
 }
 const STATION_X=[-.9,.9];
 const myState=()=>({x:S.mode==='bar'&&S.claimInfo?STATION_X[S.claimInfo.station]:playerFig.position.x,z:playerFig.position.z,yaw:playerFig.rotation.y,sp:S.mode==='walk'?Math.min(1.25,player.st.amt):0,st:S.seat?SEATS.indexOf(S.seat)+1:0});
@@ -1440,7 +1446,8 @@ function taleStart(){
   updateWalkUI();taleStep();
 }
 const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session||loadSession(),
-  onFirstTap:()=>startMusicOnOpen(true),          // the first tap on the start screen is the browser's cue to let the music begin
+  onFirstTap:()=>startMusicOnOpen(true),
+  getMusic:startMusicChoice,onMusic:g=>setMusic(g,false),          // the first tap on the start screen is the browser's cue to let the music begin
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),

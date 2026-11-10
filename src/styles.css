@@ -473,3 +473,6 @@ button.st-night.on{background:linear-gradient(140deg,rgba(29,74,54,.58),rgba(201
 .inv-link{width:100%;margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text-2);font:500 12px var(--f-ui);text-overflow:ellipsis;-webkit-user-select:text;user-select:text;outline:none}
 .inv-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .inv-row .btn{min-width:130px}
+
+.st-music{display:flex;flex-wrap:wrap;gap:8px}
+.st-music .st-opt{min-width:74px;text-align:center}

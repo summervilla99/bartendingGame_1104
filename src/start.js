@@ -6,7 +6,7 @@ import {loadTale,isNightOpen,resetTale} from './story/save.js';
 
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
-export function createStart({root,recipes,getCfg,onPreview,onStart,onFirstTap,initialOnline,roomLock}){
+export function createStart({root,recipes,getCfg,onPreview,onStart,onFirstTap,getMusic,onMusic,initialOnline,roomLock}){
   let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false;
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4},initialOnline||{});
@@ -67,11 +67,14 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         +'<button class="btn lg primary st-go" id="st-back" type="button">'+t('gal_back')+'</button></div>';
       return;
     }
+    const mus=getMusic?getMusic():'jazz';
+    const musicHtml=(kind==='room'&&onl.mode==='join'&&!lock)?'':'<h2>'+t('st_music')+'</h2><div class="st-row st-music">'+['jazz','classical','house','off'].map(g=>opt('music',g,mus===g,'st-guide',t('mus_'+g))).join('')+'</div>';
     root.innerHTML='<div class="st-card" role="dialog" aria-labelledby="st-h">'
       +'<div class="st-head"><span class="neon">Bar Coda</span><button class="btn sm" id="st-lang" type="button" aria-label="'+esc(t('lang_aria'))+'"><span data-l="ko">KO</span>/<span data-l="en">EN</span></button></div>'
       +'<h1 id="st-h">'+t('st_title')+'</h1><p class="st-sub">'+t('st_sub')+'</p>'
       +'<h2>'+t('st_kind')+'</h2><div class="st-row st-modes st-kinds">'+kinds+'</div>'
       +body
+      +musicHtml
       +'<button class="btn lg primary st-go" id="st-go" type="button">'+t('open_bar')+'</button></div>';
   }
   root.addEventListener('click',e=>{
@@ -106,6 +109,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         err='';previewTime();
       }else if(k==='online'){onl.mode=v;err='';}
       else if(k==='chairs')onl.chairs=+v;
+      else if(k==='music'){if(onMusic)onMusic(v);}
       else{cfg[k]=v;if(k==='time')previewTime();}
       render();const c2=root.querySelector('.st-card');if(c2)c2.scrollTop=y;
     }
