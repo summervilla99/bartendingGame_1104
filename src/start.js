@@ -66,8 +66,9 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
       }
       body='<h2>'+t('st_levels')+'</h2><div class="st-nights">'+lv+'</div>'+detail;
     }else{
-      const sub=['create','join','public1','public2'].map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('');
-      body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':'<div class="st-row st-onl">'+sub+'</div>');
+      const subRow=ids=>'<div class="st-row st-onl">'+ids.map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('')+'</div>';
+      const sub=subRow(['create','join'])+subRow(['public1','public2']);      // the public halls sit on their own line
+      body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':sub);
       if(!lock){
         body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
           +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')

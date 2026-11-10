@@ -265,7 +265,8 @@ button{font:inherit;color:inherit}
 .nametag{position:absolute;left:0;top:0;display:none;padding:3px 10px;border-radius:99px;font:600 10.5px var(--f-ui);letter-spacing:.08em;color:var(--text);white-space:nowrap;pointer-events:none;will-change:transform;
   background:rgba(28,15,12,.72);border:1px solid var(--line);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #bubbles.off .nametag{display:none!important}
-.st-onl{grid-template-columns:repeat(3,1fr)}
+.st-onl{grid-template-columns:repeat(2,1fr)}
+.st-onl+.st-onl{margin-top:8px}
 .st-fields{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
 .st-field{display:flex;flex-direction:column;gap:5px;flex:1 1 180px;font:600 10px var(--f-ui);letter-spacing:.2em;text-transform:uppercase;color:var(--text-3)}
 .st-input{width:100%;font:500 15px var(--f-ui);letter-spacing:.02em;color:var(--text);background:var(--glass-3);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px;outline:none;-webkit-user-select:text;user-select:text;text-transform:none}
