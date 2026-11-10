@@ -11,9 +11,9 @@ const KINDS=['tale','room','practice'];
 export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,getDesign,onDesign,initialOnline,roomLock}){
   let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false,design=0;
   /* someone with no saved nickname starts with a random anime character name, picked once per visit (they can type over it) */
-  const PH_NAMES=['몽키 D.루피','로로노아 조로','나미','우솝','상디','토니토니 쵸파','니코 로빈','프랑키','브룩','포트거스 D.에이스','샹크스','트라팔가 로',
-    '에렌 예거','미카사 아커만','아르민 아를레르트','리바이 아커만','한지 조에','엘빈 스미스','사샤 블라우스','코니 스프링거','장 키르슈타인','히스토리아','라이너 브라운','애니 레온하트',
-    '프리렌','페른','슈타르크','힘멜','하이터','아이젠','자인','유벨'];
+  const PH_NAMES=['몽키 D. 루피','로로노아 조로','빈스모크 상디','토니토니 쵸파','니코 로빈','포트거스 D. 에이스','트라팔가 D. 워터 로','골 D. 로저','몽키 D. 가프',
+    '에렌 예거','미카사 아커만','아르민 아를레르트','리바이 아커만','한지 조에','엘빈 스미스','사샤 블라우스','코니 스프링거','장 키르슈타인','히스토리아 레이스','라이너 브라운','애니 레온하트','지크 예거','피크 핑거',
+    '프리렌','페른','슈타르크','힘멜','하이터','아이젠'];
   const defaultName=PH_NAMES[Math.floor(Math.random()*PH_NAMES.length)];
   /* online choice lives outside the session config (it is per player, not part of the night) */
   const onl=Object.assign({mode:'solo',code:'',name:'',chairs:4,npc:true},initialOnline||{});
