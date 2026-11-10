@@ -8,7 +8,7 @@ import {portraitOf} from './portrait.js';
 
 /* "Open the bar" screen. Three ways to play: the story, a room with friends, and cocktail practice. */
 const KINDS=['tale','room','practice'];
-export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,getDesign,onDesign,initialOnline,roomLock}){
+export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFirstTap,getMusic,onMusic,getDesign,onDesign,onName,initialOnline,roomLock}){
   let cfg=null,open=false,err='',view='main',confirmReset=false,tapped=false,compact=false,more=false,design=0;
   /* someone with no saved nickname starts with a random anime character name, picked once per visit (they can type over it) */
   const PH_NAMES=['몽키 D. 루피','롤로노아 조로','빈스모크 상디','토니토니 쵸파','니코 로빈','포트거스 D. 에이스','트라팔가 D. 워터 로','골 D. 로저','몽키 D. 가프',
@@ -48,6 +48,7 @@ export function createStart({root,recipes,getCfg,onPreview,onStart,onStill,onFir
     const limitRow=['off','easy','mid','hard'].map(d=>opt('limit',d,d==='off'?!timerOn:(timerOn&&cfg.diff===d),'st-guide',d==='off'?t('limit_off'):t('diff_'+d))).join('');
     const limitHtml='<h2>'+t('st_limit')+'</h2><div class="st-row st-diffs">'+limitRow+'</div><p class="st-note">'+t('limit_note')+'</p>';
     const hourMenu='<h2>'+t('st_time')+'</h2><div class="st-row st-times">'+times+'</div><h2>'+t('st_menu')+'</h2><div class="st-row st-fams">'+fams+'</div>';
+    const nameField='<label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>';      // one nickname for every way of playing: it follows you between the menus
     let body='';
     if(kind==='tale'){
 const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
@@ -69,13 +70,13 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
         const pRow=['auto','slow','mid','fast','rush'].map(v=>opt('pace',v,(cfg.pace||'auto')===v,'st-guide',v==='auto'?t('auto'):t('pace_'+v))).join('');
         detail='<h2>'+t('st_guests')+'</h2><div class="st-row st-chairs">'+gRow+'</div><h2>'+t('st_pace')+'</h2><div class="st-row st-chairs">'+pRow+'</div>'+hourMenu+limitHtml;
       }
-      body='<h2>'+t('st_levels')+'</h2><div class="st-nights">'+lv+'</div>'+detail;
+      body='<div class="st-fields">'+nameField+'</div><h2>'+t('st_levels')+'</h2><div class="st-nights">'+lv+'</div>'+detail;
     }else{
       const subRow=ids=>'<div class="st-row st-onl">'+ids.map(id=>opt('online',id,onl.mode===id,'st-guide',t('onl_'+id))).join('')+'</div>';
       const sub=subRow(['create','join'])+subRow(['public1','public2']);      // the public halls sit on their own line
       body='<h2>'+t('st_online')+'</h2>'+(lock?'<p class="st-note">'+t('onl_locked',{code:lock})+'</p>':sub);
       if(!lock){
-        body+='<div class="st-fields"><label class="st-field"><span>'+t('onl_name')+'</span><input class="st-input" id="st-name" maxlength="16" autocomplete="off" value="'+esc(onl.name)+'"></label>'
+        body+='<div class="st-fields">'+nameField
           +(onl.mode==='join'?'<label class="st-field"><span>'+t('onl_code')+'</span><input class="st-input st-code" id="st-code" maxlength="'+CODE_LEN+'" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(onl.code)+'"></label>':'')
           +'</div>'
           +(onl.mode==='create'?'<div class="st-fields"><div class="st-field"><span>'+t('st_chairs')+'</span><div class="st-row st-chairs">'+[2,3,4,5,6].map(n=>opt('chairs',n,onl.chairs===n,'st-guide',n)).join('')+'</div></div><div class="st-field"><span>'+t('st_npc')+'</span><div class="st-row st-chairs">'+opt('npc','on',onl.npc!==false,'st-guide',t('npc_on'))+opt('npc','off',onl.npc===false,'st-guide',t('npc_off'))+'</div></div></div><p class="st-note">'+t('st_npc_note')+'</p>':'')
@@ -170,7 +171,7 @@ const seen=ENDINGS.filter(e=>tale.endings[e.id]).length;
   });
   root.addEventListener('input',e=>{
     const el=e.target;
-    if(el.id==='st-name')onl.name=el.value;
+    if(el.id==='st-name'){onl.name=el.value;if(onName)onName(el.value);}
     else if(el.id==='st-code'){onl.code=normalizeCode(el.value);el.value=onl.code;}
   });
   onLang(()=>{if(open)render();});

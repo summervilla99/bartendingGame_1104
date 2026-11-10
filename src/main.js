@@ -34,7 +34,7 @@ import {createStart} from './start.js';
 import {LOOKS} from './looks.js';
 import {createTransport} from './net/transport.js';
 import {createRoom,makeCode,normalizeCode} from './net/room.js';
-import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS} from './net/peers.js';
+import {smooth as smoothPeer,EMOTES,EMOTE_MS,CHAT_SHOW_MS,sanitizeName} from './net/peers.js';
 import {SEATS,seatByWireId,PHOTO_SPOTS,layoutStools,isFree,setLoungeTaken,canOrderFrom,dropFor,standSpot} from './game/seats.js';
 import {claimSeat,releaseClaim,expireClaims,applyServed,autoServe,hostMissing,electHost,acceptSnapshot,parseGameMessage,tipFor,placeOrder,fireLate,FIRE_COOLDOWN} from './game/shared.js';
 import {jointToast,giftDrink,pruneSocial,TOAST_RANGE,TOAST_WINDOW_MS} from './game/social.js';
@@ -1923,10 +1923,11 @@ const startUI=createStart({root:$('#start'),recipes:RECIPES,getCfg:()=>S.session
   onStill:(id,done)=>{const pc=$('#peek-close');setStill(id);pc.hidden=false;pc.onclick=()=>{setStill(null);pc.hidden=true;done();};},
   getMusic:startMusicChoice,onMusic:g=>setMusic(g,false),          // the first tap on the start screen is the browser's cue to let the music begin
   getDesign:()=>Math.max(0,storedLook()),onDesign:setDesign,
+  onName:v=>{try{localStorage.setItem(NAME_KEY,sanitizeName(v));}catch(_){}},
   onPreview:applyLook,
   roomLock:()=>net.active?net.code:null,
   initialOnline:(()=>{let nm='';try{nm=localStorage.getItem(NAME_KEY)||'';}catch(_){}const rc=normalizeCode(new URLSearchParams(location.search).get('room'));return {mode:rc.length===5?'join':'solo',code:rc,name:nm};})(),
-  onStart:(cfg,onl)=>{if(cfg.mode==='tale'&&net.active){cfg=Object.assign({},cfg,{mode:'service'});toast(t('tale_online'),3600);}applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);startMusicOnOpen();if(cfg.mode==='tale'){taleStart();return;}if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
+  onStart:(cfg,onl)=>{if(onl&&onl.name){try{localStorage.setItem(NAME_KEY,sanitizeName(onl.name));}catch(_){}}if(cfg.mode==='tale'&&net.active){cfg=Object.assign({},cfg,{mode:'service'});toast(t('tale_online'),3600);}applySession(cfg);S.paused=false;player.st.enabled=true;connectRoom(onl);startMusicOnOpen();if(cfg.mode==='tale'){taleStart();return;}if(cfg.mode==='story'&&onl.mode==='solo'){const st=stageOf(cfg);toast(tr(st.name)+' · '+tr(st.desc),4500);}}});
 function openStart(){
   if(S.mode!=='walk')return;
   if(net.active&&!isHost()){toast(t('host_only'));return;}
