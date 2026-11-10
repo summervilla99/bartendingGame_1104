@@ -6,6 +6,8 @@
 
 *A 3D bartending game set in a dim mahogany listening lounge: mix cocktails, listen to your regulars, and play it with friends.*
 
+한국어 · [English](README.en.md)
+
 [**▶ 지금 플레이하기 · Play now**](https://bar-coda.vercel.app)
 
 `브라우저 · 설치 없음 · 모바일/PC · 한국어 / English`
