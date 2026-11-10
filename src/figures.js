@@ -65,16 +65,6 @@ export function makeCharacter(cfg){
   const head=new THREE.Group();head.position.y=.72;torso.add(head);
   const hm=new THREE.Mesh(headGeo,skin);hm.scale.set(.95,1.08,1);head.add(hm);
   [-1,1].forEach(s=>{const e=new THREE.Mesh(eyeGeo,eyeMat);e.position.set(s*.038,.01,.096);head.add(e);});
-  if(cfg.mature){                                         // an older, tired face: longer and narrower head, heavy lids, eye bags, a nose, faint lines
-    hm.scale.set(.89,1.15,.98);
-    const sh=new THREE.Color(cfg.skin).lerp(new THREE.Color(0x6a4a4c),.3),shM=M(sh.getHex(),{roughness:.8,envMapIntensity:.15});
-    const nose=new THREE.Mesh(new THREE.SphereGeometry(.013,10,8),skin);nose.scale.set(.9,1.5,1.1);nose.position.set(0,-.006,.104);head.add(nose);
-    [-1,1].forEach(s=>{
-      const bag=new THREE.Mesh(new THREE.SphereGeometry(.012,10,6),shM);bag.scale.set(1.8,.45,.35);bag.position.set(s*.038,-.012,.097);head.add(bag);
-      const lid=new THREE.Mesh(new THREE.SphereGeometry(.0145,10,6,0,Math.PI*2,0,Math.PI*.5),skin);lid.scale.set(1,.6,1);lid.position.set(s*.038,.0135,.0965);lid.rotation.x=-.2;head.add(lid);
-      const ln=new THREE.Mesh(new THREE.BoxGeometry(.003,.026,.002),shM);ln.position.set(s*.03,-.02,.099);ln.rotation.z=s*.35;head.add(ln);
-    });
-  }
   if(cfg.bald){                                           // thinning: hair only in a band round the sides and back
     const hb=new THREE.Mesh(hairBandGeo,hairM);hb.position.set(0,.012,-.012);hb.rotation.x=-.1;head.add(hb);
   }else{
