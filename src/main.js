@@ -1545,7 +1545,7 @@ function connectRoom(onl){
   const code=onl.mode==='create'?makeCode():isPublic?PUBLIC_CODES[onl.mode]:normalizeCode(onl.code);
   net.join(code,name,myLook());setRoomParam(code);
   if(onl.mode==='create'){
-    const limit=limitOf(S.session),chairs=Math.max(2,Math.min(6,(onl.chairs|0)||4));
+    const limit=limitOf(S.session),chairs=Math.max(2,Math.min(8,(onl.chairs|0)||4));
     S.world.session=Object.assign({},S.world.session,{chairs,limit,npcOrders:onl.npc!==false});
     S.world.seats.forEach((st,i)=>{st.active=i===0;st.order=null;st.claim=null;});
     S.world.hostId=net.me.id;S.world.rev++;S.synced=true;
