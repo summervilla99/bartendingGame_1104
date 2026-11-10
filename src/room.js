@@ -284,11 +284,14 @@ export function buildRoom(scene){
     rr(30,30,964,240,16);g.fillStyle=plate;g.fill();
     g.strokeStyle='#d6b26a';g.lineWidth=3;rr(46,46,932,208,10);g.stroke();
     g.strokeStyle='rgba(214,178,106,.55)';g.lineWidth=1.2;rr(56,56,912,188,6);g.stroke();
-    g.textAlign='left';g.textBaseline='alphabetic';g.font='112px Marcellus,"Cormorant Garamond",serif';
-    const word='Bar Coda',sp=20,chars=[...word],widths=chars.map(c=>g.measureText(c).width),total=widths.reduce((a,b)=>a+b,0)+sp*(chars.length-1);
-    const gold=g.createLinearGradient(0,100,0,190);gold.addColorStop(0,'#f6e3b2');gold.addColorStop(.6,'#dcb76f');gold.addColorStop(1,'#a98242');
-    g.fillStyle=gold;let x=512-total/2;chars.forEach((c,i)=>{g.fillText(c,x,172);x+=widths[i]+sp;});
-    g.strokeStyle='rgba(214,178,106,.7)';g.lineWidth=1.4;g.beginPath();g.moveTo(392,212);g.lineTo(632,212);g.stroke();
+    g.textAlign='left';g.textBaseline='alphabetic';g.font='96px Marcellus,"Cormorant Garamond",serif';
+    const word='Bar Coda',sp=18,chars=[...word],widths=chars.map(c=>g.measureText(c).width),total=widths.reduce((a,b)=>a+b,0)+sp*(chars.length-1);
+    const gold=g.createLinearGradient(0,80,0,150);gold.addColorStop(0,'#f6e3b2');gold.addColorStop(.6,'#dcb76f');gold.addColorStop(1,'#a98242');
+    g.fillStyle=gold;let x=512-total/2;chars.forEach((c,i)=>{g.fillText(c,x,150);x+=widths[i]+sp;});
+    g.strokeStyle='rgba(214,178,106,.7)';g.lineWidth=1.4;g.beginPath();g.moveTo(330,174);g.lineTo(694,174);g.stroke();
+    g.font='600 25px "Josefin Sans","DM Sans",sans-serif';g.fillStyle='#d9b878';
+    const sub='LISTENING LOUNGE',sw=[...sub].map(c=>g.measureText(c).width),sp2=13,st=sw.reduce((a,b)=>a+b,0)+sp2*(sub.length-1);
+    let sx=512-st/2;[...sub].forEach((c,i)=>{g.fillText(c,sx,222);sx+=sw[i]+sp2;});
     neonTex.needsUpdate=true;
   }
   drawNeon();

@@ -1465,6 +1465,6 @@ requestAnimationFrame(frame);
 
 /* fonts: repaint canvas text once the web fonts arrive */
 if(document.fonts&&document.fonts.load){
-  Promise.all([document.fonts.load('112px Marcellus','Bar Coda'),document.fonts.load('56px "Black Han Sans"','Coda 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
+  Promise.all([document.fonts.load('96px Marcellus','Bar Coda'),document.fonts.load('600 25px "Josefin Sans"','LISTENING LOUNGE'),document.fonts.load('56px "Black Han Sans"','Coda 라운지')]).then(()=>{room.drawNeon();paintAllLabels();}).catch(()=>{});
   document.fonts.ready.then(()=>{room.drawNeon();paintAllLabels();});
 }

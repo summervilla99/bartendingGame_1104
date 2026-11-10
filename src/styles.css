@@ -59,7 +59,7 @@ button{font:inherit;color:inherit}
 .top>*{pointer-events:auto}
 .brand{line-height:1;pointer-events:none}
 .neon{display:block;font:400 26px/1 var(--f-neon);letter-spacing:.16em;color:#e1c585;background:linear-gradient(180deg,#f3dfab 0%,#d9b46b 55%,#a98242 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.brand-sub{display:block;margin-top:7px;font:600 10px var(--f-ui);letter-spacing:.3em;color:var(--brass)}
+.brand-sub{display:block;margin-top:8px;font:400 9.5px 'Josefin Sans',var(--f-ui);letter-spacing:.46em;color:rgba(201,160,102,.92)}
 .night{margin-top:7px;font:600 10.5px var(--f-ui);letter-spacing:.16em;text-transform:uppercase;color:var(--brass);white-space:nowrap}
 .brand:has(.night:not([hidden])) .brand-sub{display:none}
 .top-r{display:flex;align-items:center;gap:10px}
@@ -430,3 +430,4 @@ body{text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
 .tk-toggle i{width:5px;height:5px;border-right:1.7px solid currentColor;border-bottom:1.7px solid currentColor;transform:rotate(45deg) translate(-1px,-1px);transition:transform .2s}
 .ticket[open] .tk-toggle i{transform:rotate(-135deg) translate(-1px,-1px)}
 .ticket:not([open]) .t-hide,.ticket[open] .t-show{display:none}
+
