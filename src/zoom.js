@@ -1,4 +1,4 @@
-/* Screen scale: pinch with two fingers, or scroll the wheel (Ctrl/Cmd + wheel is left to the browser's own page zoom). */
+/* Screen scale: pinch with two fingers, or scroll the wheel (Cmd + wheel is left to the browser). */
 export const gesture={pinching:false};
 export function createZoom(canvas,{get,set}){
   const pts=new Map();let d0=0,z0=1;
@@ -11,5 +11,6 @@ export function createZoom(canvas,{get,set}){
   },true);
   const up=e=>{pts.delete(e.pointerId);if(pts.size<2)gesture.pinching=false;};
   canvas.addEventListener('pointerup',up,true);canvas.addEventListener('pointercancel',up,true);
-  canvas.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey)return;e.preventDefault();set(get()*Math.exp(-e.deltaY*.0012));},{passive:false});
+  /* mouse wheel and a two-finger trackpad scroll zoom; a trackpad pinch arrives as ctrl+wheel (small deltas), which zooms the scene instead of the page. Cmd+wheel stays the browser's. */
+  canvas.addEventListener('wheel',e=>{if(e.metaKey)return;e.preventDefault();const k=e.ctrlKey?.012:.0012;set(get()*Math.exp(-Math.max(-120,Math.min(120,e.deltaY))*k));},{passive:false});
 }

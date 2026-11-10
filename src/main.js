@@ -589,7 +589,7 @@ canvas.addEventListener('pointerdown',e=>{
     if(hit){let o=hit.object;while(o&&!o.userData.ingId)o=o.parent;if(o)startPour(o.userData.ingId);}
     else startOrbit();                                                       // dragging empty space turns the view
   }else if(S.stage==='mix'){
-    S.drag={lastY:p.cy,midY:p.cy,dir:0,acc:0,counted:false,lastAng:null};   // one finger shakes/stirs; two fingers orbit (below)
+    S.drag={lastY:p.cy,midY:p.cy,dir:0,acc:0,counted:false,lastAng:null};   // one finger shakes/stirs; two fingers pinch-zoom (below)
   }else startOrbit();
 });
 canvas.addEventListener('pointermove',e=>{
@@ -597,7 +597,7 @@ canvas.addEventListener('pointermove',e=>{
   const prev=touches.get(e.pointerId);if(prev)touches.set(e.pointerId,[e.clientX,e.clientY]);
   if(S.mode!=='bar')return;
   if(orb.id===e.pointerId){orbitBy(e.clientX-orb.x,e.clientY-orb.y);orb.x=e.clientX;orb.y=e.clientY;return;}
-  if(touches.size>=2&&prev){orbitBy((e.clientX-prev[0])*.5,(e.clientY-prev[1])*.5);S.drag=null;return;}    // two fingers: orbit (the pinch zoom runs alongside)
+  if(touches.size>=2){S.drag=null;return;}                                   // two fingers: pinch zoom only (createZoom)
   if(S.stage!=='mix'||!S.drag)return;
   const d=S.drag;
   if(S.recipe.method==='shake'){
@@ -968,8 +968,8 @@ function updateOrderBtn(){
 S.pickFam='all';
 function fillOrderList(){
   const list=$('#order-list');list.innerHTML='';
-  const pick=!!S.pickMenu,ids=pick?(FAMILIES[S.pickFam]||null):null;
-  const rs=pick?RECIPES.filter(r=>!ids||ids.indexOf(r.id)>=0):poolFor(S.world.session,RECIPES);
+  const pick=!!S.pickMenu,ids=FAMILIES[S.pickFam]||null;
+  const rs=(pick?RECIPES:poolFor(S.world.session,RECIPES)).filter(r=>!ids||ids.indexOf(r.id)>=0);
   rs.forEach(r=>{
     const b=document.createElement('button');b.type='button';b.className='oc';b.dataset.r=r.id;
     const n=document.createElement('b');n.textContent=r.name;
@@ -982,11 +982,14 @@ function fillOrderList(){
 }
 function openOrderMenu(pick){
   S.pickMenu=pick===true;
-  const fams=$('#order-fams');fams.hidden=!S.pickMenu;
+  const fams=$('#order-fams');fams.hidden=false;
+  const poolIds=S.pickMenu?null:poolFor(S.world.session,RECIPES).map(r=>r.id);      // friends mode: only families that still have a drink in tonight's menu
+  const famOk=f=>!poolIds||!FAMILIES[f]||FAMILIES[f].some(id=>poolIds.indexOf(id)>=0);
+  if(!famOk(S.pickFam))S.pickFam='all';
   $('#order-h').textContent=t(S.pickMenu?'pick_title':'order_title');
-  if(S.pickMenu){
+  {
     fams.innerHTML='';
-    FAM_ORDER.forEach(f=>{const b=document.createElement('button');b.type='button';b.className='fchip'+(f===S.pickFam?' on':'');b.dataset.f=f;b.textContent=t('fam_'+f);fams.appendChild(b);});
+    FAM_ORDER.filter(famOk).forEach(f=>{const b=document.createElement('button');b.type='button';b.className='fchip'+(f===S.pickFam?' on':'');b.dataset.f=f;b.textContent=t('fam_'+f);fams.appendChild(b);});
   }
   fillOrderList();
   $('#order-menu').hidden=false;
